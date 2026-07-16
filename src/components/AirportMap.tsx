@@ -1,6 +1,6 @@
 // SVG airport map — aeronautical chart style matching TSN reference.
 
-import { type JSX } from 'react';
+import { type JSX, useEffect, useRef, useState } from 'react';
 import { airportGraph, SVG_WIDTH, SVG_HEIGHT } from '../data/airportGraph';
 import { getAircraftSpec } from '../data/aircraftTypes';
 import AirportLighting from './AirportLighting';
@@ -51,6 +51,80 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
   const isRain = state.config.weather === 'rain';
   const isThunderstorm = state.config.weather === 'thunderstorm';
 
+  // ── Pan / zoom (viewBox-based) ────────────────────────────────────────────────
+  // A stateful viewBox lets the user cuộn để phóng to vào khu vực sân đỗ (apron)
+  // and kéo để di chuyển. Full view = {0,0,SVG_WIDTH,SVG_HEIGHT}.
+  const svgRef = useRef<SVGSVGElement | null>(null);
+  const [view, setView] = useState({ x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT });
+  const [dragging, setDragging] = useState(false);
+  const drag = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
+  const ASPECT = SVG_HEIGHT / SVG_WIDTH;
+  const MIN_W = SVG_WIDTH * 0.12;   // phóng to tối đa ~8×
+  const MAX_W = SVG_WIDTH;          // không thu nhỏ quá khung đầy đủ
+
+  // Kẹp viewBox nằm trong ranh giới chart để không lộ vùng trống.
+  const clampView = (v: { x: number; y: number; w: number; h: number }) => {
+    const w = Math.min(MAX_W, Math.max(MIN_W, v.w));
+    const h = w * ASPECT;
+    const x = Math.min(SVG_WIDTH - w, Math.max(0, v.x));
+    const y = Math.min(SVG_HEIGHT - h, Math.max(0, v.y));
+    return { x, y, w, h };
+  };
+
+  const zoomAt = (clientX: number, clientY: number, factor: number) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    setView(v => {
+      const w = Math.min(MAX_W, Math.max(MIN_W, v.w * factor));
+      const h = w * ASPECT;
+      // Giữ điểm dưới con trỏ đứng yên khi phóng to/thu nhỏ.
+      const fx = (clientX - rect.left) / rect.width;
+      const fy = (clientY - rect.top) / rect.height;
+      const sx = v.x + fx * v.w;
+      const sy = v.y + fy * v.h;
+      return clampView({ x: sx - fx * w, y: sy - fy * h, w, h });
+    });
+  };
+
+  // Wheel listener gắn thủ công để preventDefault (React onWheel là passive).
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1 / 1.15 : 1.15);
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
+    if (e.button !== 0) return;
+    drag.current = { px: e.clientX, py: e.clientY, vx: view.x, vy: view.y };
+    setDragging(true);
+    svgRef.current?.setPointerCapture(e.pointerId);
+  };
+  const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
+    const d = drag.current;
+    const svg = svgRef.current;
+    if (!d || !svg) return;
+    const rect = svg.getBoundingClientRect();
+    setView(v => clampView({
+      ...v,
+      x: d.vx - (e.clientX - d.px) / rect.width * v.w,
+      y: d.vy - (e.clientY - d.py) / rect.height * v.h,
+    }));
+  };
+  const endDrag = (e: React.PointerEvent<SVGSVGElement>) => {
+    drag.current = null;
+    setDragging(false);
+    try { svgRef.current?.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+  };
+
+  const zoomed = view.w < SVG_WIDTH - 0.5;
+
   return (
     <div className="relative w-full h-full rounded-xl overflow-hidden border border-[#bbb]"
       style={{ background: isNight ? '#0a0e18' : isAfternoon ? '#dfc98a' : BG_OUTER }}>
@@ -90,11 +164,16 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
       )}
 
       <svg
-        viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
+        ref={svgRef}
+        viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         className="w-full h-full"
         preserveAspectRatio="none"
         shapeRendering="crispEdges"
-        style={{ fontFamily: 'Arial, Helvetica, sans-serif' }}
+        style={{ fontFamily: 'Arial, Helvetica, sans-serif', cursor: dragging ? 'grabbing' : zoomed ? 'grab' : 'default', touchAction: 'none' }}
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={endDrag}
+        onPointerLeave={endDrag}
       >
         <defs>
           <filter id="glow-green" x="-60%" y="-60%" width="220%" height="220%">
@@ -391,6 +470,27 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
         {/* ── Layer 11: legend ──────────────────────────────────────────── */}
         <MapLegend />
       </svg>
+
+      {/* ── Zoom controls ─────────────────────────────────────────────── */}
+      <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1 select-none">
+        <button
+          onClick={() => { const r = svgRef.current!.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.4); }}
+          className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-lg font-bold leading-none border border-gray-600 shadow"
+          title="Phóng to"
+        >+</button>
+        <button
+          onClick={() => { const r = svgRef.current!.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.4); }}
+          className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-lg font-bold leading-none border border-gray-600 shadow"
+          title="Thu nhỏ"
+        >−</button>
+        {zoomed && (
+          <button
+            onClick={() => setView({ x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT })}
+            className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-xs font-bold leading-none border border-gray-600 shadow"
+            title="Xem toàn bộ"
+          >⤢</button>
+        )}
+      </div>
     </div>
   );
 }
