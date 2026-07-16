@@ -19,246 +19,281 @@ export const SVG_HEIGHT = 860;
 
 export const airportGraph: AirportGraph = {
   nodes: [
-
-    // ── Runway thresholds ────────────────────────────────────────────────────
     { id: 'RWY07L_THR', label: '07L', type: 'runway_entry', x: 65,   y: 98,  description: 'Runway 07L threshold' },
     { id: 'RWY25R_THR', label: '25R', type: 'runway_entry', x: 1010, y: 98,  description: 'Runway 25R threshold' },
     { id: 'RWY07R_THR', label: '07R', type: 'runway_entry', x: 62,   y: 233, description: 'Runway 07R threshold' },
     { id: 'RWY25L_THR', label: '25L', type: 'runway_entry', x: 1130, y: 233, description: 'Runway 25L threshold' },
-
-    // Runway intermediate exit/entry points
     { id: 'R1_W4', label: '', type: 'runway_entry', x: 371, y: 98,  description: 'Top runway – W4 intersection' },
-    { id: 'R1_NS', label: '', type: 'runway_entry', x: 605, y: 98,  description: 'Top runway – NS1 intersection (INT TKOF 25R)' },
-    { id: 'R2_W7', label: '', type: 'runway_entry', x: 275,  y: 233, description: 'Bottom runway – W7 exit (INT TKOF 07R)' },
+    { id: 'R1_NS', label: '', type: 'runway_entry', x: 605, y: 98,  description: 'Top runway – NS1 intersection' },
+    { id: 'R2_W7', label: '', type: 'runway_entry', x: 275,  y: 233, description: 'Bottom runway – W7 exit' },
     { id: 'R2_W5', label: '', type: 'runway_entry', x: 492,  y: 233, description: 'Bottom runway – W5 intersection' },
     { id: 'R2_W3', label: '', type: 'runway_entry', x: 598,  y: 233, description: 'Bottom runway – W3 intersection' },
-    { id: 'R2_E4', label: '', type: 'runway_entry', x: 1095, y: 233, description: 'Bottom runway – E4 intersection (INT TKOF 25L)' },
-
-    // ── Holding points ───────────────────────────────────────────────────────
-    { id: 'H07L', label: 'H-07L', type: 'holding_point', x: 62,  y: 115, description: 'Holding point RWY 07L (top of W6 curve)' },
+    { id: 'R2_E4', label: '', type: 'runway_entry', x: 1095, y: 233, description: 'Bottom runway – E4 intersection' },
+    { id: 'H07L', label: 'H-07L', type: 'holding_point', x: 62,  y: 115, description: 'Holding point RWY 07L' },
     { id: 'H25R', label: 'H-25R', type: 'holding_point', x: 975, y: 120, description: 'Holding point RWY 25R' },
-    { id: 'H07R', label: 'H-07R', type: 'holding_point', x: 262, y: 292, description: 'Holding point RWY 07R (on the W7 curve)' },
-    { id: 'H25L', label: 'H-25L', type: 'holding_point', x: 1095, y: 258, description: 'Holding point RWY 25L (TWY E4)' },
-
-    // ── PARL TWY W11 (below south runway, chart y=343) ───────────────────────
-    { id: 'W11_W',    label: 'W11', type: 'intersection', x: 55,  y: 344, description: 'W11 west end' },
-    { id: 'W11_W7',   label: '',    type: 'intersection', x: 280, y: 343, description: 'W11 at W7' },
-    { id: 'W11_W4',   label: '',    type: 'intersection', x: 371, y: 343, description: 'W11 at W4' },
-    { id: 'W11_W1',   label: '',    type: 'intersection', x: 498, y: 343, description: 'W11 at W1' },
-    { id: 'W11_NS',   label: '',    type: 'intersection', x: 605, y: 343, description: 'W11 at NS' },
-    { id: 'W11_E4',   label: '',    type: 'intersection', x: 724, y: 343, description: 'W11 at E4' },
-    { id: 'W11_E_END',label: '',    type: 'intersection', x: 900, y: 343, description: 'W11 east end (near 25R/25L)' },
-
-    // ── W11 west loop + W6 curve up to RWY 07L (leftmost black taxiway) ───────
-    { id: 'W11_LOOP', label: '', type: 'intersection', x: 24, y: 340, description: 'W11 west end / base of leftmost vertical (loop)' },
-    { id: 'W6_A',     label: '', type: 'intersection', x: 20, y: 255, description: 'Leftmost vertical taxiway (W6 lower)' },
-    { id: 'W6_B',     label: '', type: 'intersection', x: 24, y: 185, description: 'W6 curve start (above 07R)' },
-    { id: 'W6_C',     label: 'W6', type: 'intersection', x: 45, y: 140, description: 'W6 curve toward 07L threshold' },
-
-    // ── W7 curve: south runway 07R exit → W11 (joins W11 at x≈390) ───────────
-    { id: 'W7J',  label: '', type: 'intersection', x: 390, y: 343, description: 'W7 curve junction with W11' },
-    { id: 'W7_C', label: '', type: 'intersection', x: 330, y: 330, description: 'W7 curve sweep point' },
-
-    // ── W5 curve: south runway → W11 (joins W11 at x≈455) ────────────────────
-    { id: 'W5J',  label: '', type: 'intersection', x: 455, y: 343, description: 'W5 curve junction with W11' },
-    { id: 'W5_C', label: '', type: 'intersection', x: 472, y: 290, description: 'W5 curve sweep point' },
-
-    // ── W3 curve: south runway → W11 (joins W11 at x≈685) ────────────────────
-    { id: 'W3J',  label: '', type: 'intersection', x: 685, y: 343, description: 'W3 curve junction with W11' },
-    { id: 'W3_C', label: 'W3', type: 'intersection', x: 640, y: 290, description: 'W3 curve sweep point' },
-
-    // ── NS north-south connector (x=605) — single feeder down into the apron ──
-    { id: 'NS_N', label: 'NS', type: 'intersection', x: 605, y: 351, description: 'TWY NS north junction' },
-    { id: 'NS_S', label: '',   type: 'intersection', x: 605, y: 362, description: 'TWY NS south junction' },
-
-    // ── E4 apron junction (x=724, near closed TWY W1) ────────────────────────
-    { id: 'E4_N', label: '', type: 'intersection', x: 724, y: 343, description: 'INTL apron upper junction' },
-    { id: 'E4_S', label: '',   type: 'intersection', x: 724, y: 362, description: 'INTL apron lower junction' },
-
-    // ── East end: W11 extension + E4/E-curve access to 25L / 25R thresholds ───
-    { id: 'W11_EE', label: '', type: 'intersection', x: 1090, y: 343, description: 'W11 far-east end (foot of TWY E4)' },
-    { id: 'E4_RC',  label: 'E4', type: 'intersection', x: 1093, y: 295, description: 'TWY E4 curve toward 25L' },
-    { id: 'E25R_C', label: '', type: 'intersection', x: 1035, y: 200, description: 'East taxiway crossing toward 25R threshold' },
-
-    // ── M1 apron taxiway (diagonal SW edge of the DOM apron) ─────────────────
-    // Positions trace the chart's black M1 centerline: x = 658.5 − 0.455·(y−396).
-    { id: 'M1_P3',  label: '',   type: 'apron', x: 658, y: 398, description: 'M1 apron taxiway P3 level junction' },
-    { id: 'M1_N',   label: 'M1', type: 'apron', x: 650, y: 415, description: 'M1 apron taxiway north junction (D5 level)' },
-    { id: 'M1_P2',  label: '',   type: 'apron', x: 643, y: 430, description: 'M1 apron taxiway P2 level junction' },
-    { id: 'M1_P1',  label: '',   type: 'apron', x: 634, y: 449, description: 'M1 apron taxiway P1 level junction' },
-    { id: 'M1_1',   label: '',   type: 'apron', x: 624, y: 471, description: 'M1 apron taxiway D4 junction' },
-    { id: 'M1_2',   label: '',   type: 'apron', x: 608, y: 507, description: 'M1 apron taxiway D3 junction' },
-    { id: 'M1_3',   label: '',   type: 'apron', x: 589, y: 548, description: 'M1 apron taxiway D2 junction' },
-    { id: 'M1_S',   label: '',   type: 'apron', x: 645, y: 580, description: 'M1 apron taxiway south end (D1 level, on the down-right elbow segment)' },
-
-    // ── DOM PAX Terminal stands (east of M1) ─────────────────────────────────
+    { id: 'H07R', label: 'H-07R', type: 'holding_point', x: 262, y: 292, description: 'Holding point RWY 07R' },
+    { id: 'H25L', label: 'H-25L', type: 'holding_point', x: 1095, y: 258, description: 'Holding point RWY 25L' },
     { id: 'DOM_S5', label: 'D5', type: 'stand', x: 729, y: 415, description: 'Domestic stand D5' },
     { id: 'DOM_S4', label: 'D4', type: 'stand', x: 694, y: 476, description: 'Domestic stand D4' },
     { id: 'DOM_S3', label: 'D3', type: 'stand', x: 682, y: 509, description: 'Domestic stand D3' },
     { id: 'DOM_S2', label: 'D2', type: 'stand', x: 666, y: 557, description: 'Domestic stand D2' },
     { id: 'DOM_S1', label: 'D1', type: 'stand', x: 662, y: 590, description: 'Domestic stand D1' },
-
-    // ── Parking positions P1-P5 (upper-apron area) ───────────────────────────
     { id: 'P1', label: 'P1', type: 'stand', x: 770, y: 444, description: 'Parking position P1' },
     { id: 'P2', label: 'P2', type: 'stand', x: 751, y: 430, description: 'Parking position P2' },
     { id: 'P3', label: 'P3', type: 'stand', x: 719, y: 397, description: 'Parking position P3' },
     { id: 'P4', label: 'P4', type: 'stand', x: 678, y: 520, description: 'Parking position P4' },
     { id: 'P5', label: 'P5', type: 'stand', x: 663, y: 565, description: 'Parking position P5' },
-
-    // ── INTL PAX Terminal (east area) ─────────────────────────────────────────
-    { id: 'INTL_APN', label: '',   type: 'apron', x: 724, y: 362, description: 'INTL apron junction' },
     { id: 'INTL_S1',  label: 'I1', type: 'stand', x: 724, y: 336, description: 'International stand I1' },
     { id: 'INTL_S2',  label: 'I2', type: 'stand', x: 724, y: 350, description: 'International stand I2' },
     { id: 'INTL_S3',  label: 'I3', type: 'stand', x: 724, y: 360, description: 'International stand I3' },
     { id: 'INTL_S4',  label: 'I4', type: 'stand', x: 724, y: 374, description: 'International stand I4' },
+    { id: 'HS15', label: 'HS15', type: 'hotspot', x: 110,  y: 258, description: 'Hot spot HS15' },
+    { id: 'HS16', label: 'HS16', type: 'hotspot', x: 268,  y: 215, description: 'Hot spot HS16' },
+    { id: 'HS4',  label: 'HS4',  type: 'hotspot', x: 700,  y: 365, description: 'Hot spot HS4' },
+    { id: 'HS5',  label: 'HS5',  type: 'hotspot', x: 700,  y: 455, description: 'Hot spot HS5' },
+    { id: 'HS3',  label: 'HS3',  type: 'hotspot', x: 655,  y: 562, description: 'Hot spot HS3' },
+    { id: 'HS11', label: 'HS11', type: 'hotspot', x: 812,  y: 298, description: 'Hot spot HS11' },
+    { id: 'HS12', label: 'HS12', type: 'hotspot', x: 945,  y: 298, description: 'Hot spot HS12' },
+    { id: 'HS9',  label: 'HS9',  type: 'hotspot', x: 1040, y: 300, description: 'Hot spot HS9' },
+    { id: 'HS10', label: 'HS10', type: 'hotspot', x: 1145, y: 300, description: 'Hot spot HS10' },
+    { id: 'HS14', label: 'HS14', type: 'hotspot', x: 1190, y: 312, description: 'Hot spot HS14' },
+    { id: 'HS7',  label: 'HS7',  type: 'hotspot', x: 915,  y: 250, description: 'Hot spot HS7' },
+    { id: 'HS13', label: 'HS13', type: 'hotspot', x: 1045, y: 270, description: 'Hot spot HS13' },
+    { id: 'HS17', label: 'HS17', type: 'hotspot', x: 818,  y: 326, description: 'Hot spot HS17' },
+    { id: 'HS6',  label: 'HS6',  type: 'hotspot', x: 915,  y: 358, description: 'Hot spot HS6' },
+    { id: 'HS8',  label: 'HS8',  type: 'hotspot', x: 1150, y: 348, description: 'Hot spot HS8' },
 
-    // ── HS hot-spots (the points aircraft can travel to/from) ────────────────
-    // West (07R / W7 area)
-    { id: 'HS15', label: 'HS15', type: 'hotspot', x: 110,  y: 258, description: 'Hot spot HS15 (07R / W11 west)' },
-    { id: 'HS16', label: 'HS16', type: 'hotspot', x: 268,  y: 215, description: 'Hot spot HS16 (RWY 07R x TWY W7)' },
-    // DOM apron
-    { id: 'HS4',  label: 'HS4',  type: 'hotspot', x: 700,  y: 365, description: 'Hot spot HS4 (apron entry)' },
-    { id: 'HS5',  label: 'HS5',  type: 'hotspot', x: 700,  y: 455, description: 'Hot spot HS5 (DOM apron)' },
-    { id: 'HS3',  label: 'HS3',  type: 'hotspot', x: 655,  y: 562, description: 'Hot spot HS3 (M1 apron)' },
-    // East interchange (E2/E4/E8/NS2 maze, between the runways)
-    // On/around TWY E8 (the horizontal spine at y≈298) and its vertical crossings
-    { id: 'HS11', label: 'HS11', type: 'hotspot', x: 812,  y: 298, description: 'Hot spot HS11 (E8 × NS2)' },
-    { id: 'HS12', label: 'HS12', type: 'hotspot', x: 945,  y: 298, description: 'Hot spot HS12 (E8)' },
-    { id: 'HS9',  label: 'HS9',  type: 'hotspot', x: 1040, y: 300, description: 'Hot spot HS9 (E8 × E4)' },
-    { id: 'HS10', label: 'HS10', type: 'hotspot', x: 1145, y: 300, description: 'Hot spot HS10 (E8)' },
-    { id: 'HS14', label: 'HS14', type: 'hotspot', x: 1190, y: 312, description: 'Hot spot HS14 (E8 east end)' },
-    { id: 'HS7',  label: 'HS7',  type: 'hotspot', x: 915,  y: 250, description: 'Hot spot HS7 (NS2 toward runway)' },
-    { id: 'HS13', label: 'HS13', type: 'hotspot', x: 1045, y: 270, description: 'Hot spot HS13 (E4 toward 25L)' },
-    { id: 'HS17', label: 'HS17', type: 'hotspot', x: 818,  y: 326, description: 'Hot spot HS17 (NS2 below E8)' },
-    { id: 'HS6',  label: 'HS6',  type: 'hotspot', x: 915,  y: 358, description: 'Hot spot HS6 (near E6 / W11 east)' },
-    { id: 'HS8',  label: 'HS8',  type: 'hotspot', x: 1150, y: 348, description: 'Hot spot HS8 (E6 south-east)' },
-  ],
+    // ── DRAWN taxiway nodes (from pen strokes) ──
+    { id: 'T1', label: '', type: 'intersection', x: 24, y: 246, description: 'drawn taxiway node' },
+    { id: 'T2', label: '', type: 'intersection', x: 24, y: 271, description: 'drawn taxiway node' },
+    { id: 'T3', label: '', type: 'intersection', x: 24, y: 303, description: 'drawn taxiway node' },
+    { id: 'T4', label: '', type: 'intersection', x: 35, y: 335, description: 'drawn taxiway node' },
+    { id: 'T5', label: '', type: 'intersection', x: 59, y: 350, description: 'drawn taxiway node' },
+    { id: 'T6', label: '', type: 'intersection', x: 1129, y: 350, description: 'drawn taxiway node' },
+    { id: 'T7', label: '', type: 'intersection', x: 1147, y: 339, description: 'drawn taxiway node' },
+    { id: 'T8', label: '', type: 'intersection', x: 1165, y: 320, description: 'drawn taxiway node' },
+    { id: 'T9', label: '', type: 'intersection', x: 1173, y: 300, description: 'drawn taxiway node' },
+    { id: 'T10', label: '', type: 'intersection', x: 62, y: 133, description: 'drawn taxiway node' },
+    { id: 'T11', label: '', type: 'intersection', x: 35, y: 190, description: 'drawn taxiway node' },
+    { id: 'T12', label: '', type: 'intersection', x: 30, y: 166, description: 'drawn taxiway node' },
+    { id: 'T13', label: '', type: 'intersection', x: 45, y: 137, description: 'drawn taxiway node' },
+    { id: 'T14', label: '', type: 'intersection', x: 267, y: 246, description: 'drawn taxiway node' },
+    { id: 'T15', label: '', type: 'intersection', x: 256, y: 257, description: 'drawn taxiway node' },
+    { id: 'T16', label: '', type: 'intersection', x: 273, y: 310, description: 'drawn taxiway node' },
+    { id: 'T17', label: '', type: 'intersection', x: 326, y: 350, description: 'drawn taxiway node' },
+    { id: 'T18', label: '', type: 'intersection', x: 262, y: 218, description: 'drawn taxiway node' },
+    { id: 'T19', label: '', type: 'intersection', x: 260, y: 201, description: 'drawn taxiway node' },
+    { id: 'T20', label: '', type: 'intersection', x: 277, y: 156, description: 'drawn taxiway node' },
+    { id: 'T21', label: '', type: 'intersection', x: 316, y: 113, description: 'drawn taxiway node' },
+    { id: 'T22', label: '', type: 'intersection', x: 508, y: 244, description: 'drawn taxiway node' },
+    { id: 'T23', label: '', type: 'intersection', x: 491, y: 258, description: 'drawn taxiway node' },
+    { id: 'T24', label: '', type: 'intersection', x: 473, y: 277, description: 'drawn taxiway node' },
+    { id: 'T25', label: '', type: 'intersection', x: 461, y: 304, description: 'drawn taxiway node' },
+    { id: 'T26', label: '', type: 'intersection', x: 454, y: 350, description: 'drawn taxiway node' },
+    { id: 'T27', label: '', type: 'intersection', x: 408, y: 393, description: 'drawn taxiway node' },
+    { id: 'T28', label: '', type: 'intersection', x: 457, y: 396, description: 'drawn taxiway node' },
+    { id: 'T29', label: '', type: 'intersection', x: 646, y: 398, description: 'drawn taxiway node' },
+    { id: 'T30', label: '', type: 'intersection', x: 540, y: 397, description: 'drawn taxiway node' },
+    { id: 'T31', label: '', type: 'intersection', x: 540, y: 350, description: 'drawn taxiway node' },
+    { id: 'T32', label: '', type: 'intersection', x: 26, y: 217, description: 'drawn taxiway node' },
+    { id: 'T33', label: '', type: 'intersection', x: 845, y: 293, description: 'drawn taxiway node' },
+    { id: 'T34', label: '', type: 'intersection', x: 931, y: 250, description: 'drawn taxiway node' },
+    { id: 'T35', label: '', type: 'intersection', x: 948, y: 215, description: 'drawn taxiway node' },
+    { id: 'T36', label: '', type: 'intersection', x: 1012, y: 261, description: 'drawn taxiway node' },
+    { id: 'T37', label: '', type: 'intersection', x: 1039, y: 291, description: 'drawn taxiway node' },
+    { id: 'T38', label: '', type: 'intersection', x: 1047, y: 306, description: 'drawn taxiway node' },
+    { id: 'T39', label: '', type: 'intersection', x: 1041, y: 350, description: 'drawn taxiway node' },
+    { id: 'T40', label: '', type: 'intersection', x: 1063, y: 350, description: 'drawn taxiway node' },
+    { id: 'T41', label: '', type: 'intersection', x: 651, y: 411, description: 'drawn taxiway node' },
+    { id: 'T42', label: '', type: 'intersection', x: 603, y: 517, description: 'drawn taxiway node' },
+    { id: 'T43', label: '', type: 'intersection', x: 606, y: 531, description: 'drawn taxiway node' },
+    { id: 'T44', label: '', type: 'intersection', x: 696, y: 588, description: 'drawn taxiway node' },
+    { id: 'T45', label: '', type: 'intersection', x: 715, y: 581, description: 'drawn taxiway node' },
+    { id: 'T46', label: '', type: 'intersection', x: 635, y: 762, description: 'drawn taxiway node' },
+    { id: 'T47', label: '', type: 'intersection', x: 611, y: 654, description: 'drawn taxiway node' },
+    { id: 'T48', label: '', type: 'intersection', x: 667, y: 683, description: 'drawn taxiway node' },
+    { id: 'T49', label: '', type: 'intersection', x: 687, y: 660, description: 'drawn taxiway node' },
+    { id: 'T50', label: '', type: 'intersection', x: 741, y: 685, description: 'drawn taxiway node' },
+    { id: 'T51', label: '', type: 'intersection', x: 621, y: 772, description: 'drawn taxiway node' },
+    { id: 'T52', label: '', type: 'intersection', x: 637, y: 779, description: 'drawn taxiway node' },
+    { id: 'T53', label: '', type: 'intersection', x: 564, y: 741, description: 'drawn taxiway node' },
+    { id: 'T54', label: '', type: 'intersection', x: 664, y: 350, description: 'drawn taxiway node' },
+    { id: 'T55', label: '', type: 'intersection', x: 681, y: 334, description: 'drawn taxiway node' },
+    { id: 'T56', label: '', type: 'intersection', x: 699, y: 350, description: 'drawn taxiway node' },
+    { id: 'T57', label: '', type: 'intersection', x: 675, y: 363, description: 'drawn taxiway node' },
+    { id: 'T58', label: '', type: 'intersection', x: 858, y: 256, description: 'drawn taxiway node' },
+    { id: 'T59', label: '', type: 'intersection', x: 916, y: 118, description: 'drawn taxiway node' },
+    { id: 'T60', label: '', type: 'intersection', x: 802, y: 350, description: 'drawn taxiway node' },
+    { id: 'T61', label: '', type: 'intersection', x: 827, y: 334, description: 'drawn taxiway node' },
+    { id: 'T62', label: '', type: 'intersection', x: 829, y: 350, description: 'drawn taxiway node' },
+    { id: 'T63', label: '', type: 'intersection', x: 810, y: 368, description: 'drawn taxiway node' },
+    { id: 'T64', label: '', type: 'intersection', x: 911, y: 295, description: 'drawn taxiway node' },
+    { id: 'T65', label: '', type: 'intersection', x: 923, y: 281, description: 'drawn taxiway node' },
+    { id: 'T66', label: '', type: 'intersection', x: 934, y: 293, description: 'drawn taxiway node' },
+    { id: 'T67', label: '', type: 'intersection', x: 916, y: 310, description: 'drawn taxiway node' },
+    { id: 'T68', label: '', type: 'intersection', x: 916, y: 350, description: 'drawn taxiway node' },
+    { id: 'T69', label: '', type: 'intersection', x: 633, y: 247, description: 'drawn taxiway node' },
+    { id: 'T70', label: '', type: 'intersection', x: 989, y: 163, description: 'drawn taxiway node' },
+    { id: 'T71', label: '', type: 'intersection', x: 978, y: 182, description: 'drawn taxiway node' },
+    { id: 'T72', label: '', type: 'intersection', x: 964, y: 184, description: 'drawn taxiway node' },
+    { id: 'T73', label: '', type: 'intersection', x: 1058, y: 293, description: 'drawn taxiway node' },
+    { id: 'T74', label: '', type: 'intersection', x: 1188, y: 286, description: 'drawn taxiway node' },
+    { id: 'T75', label: '', type: 'intersection', x: 1187, y: 260, description: 'drawn taxiway node' },
+    { id: 'T76', label: '', type: 'intersection', x: 1168, y: 241, description: 'drawn taxiway node' },
+    { id: 'T77', label: '', type: 'intersection', x: 1064, y: 415, description: 'drawn taxiway node' },
+    { id: 'T78', label: '', type: 'intersection', x: 1132, y: 415, description: 'drawn taxiway node' },
+    { id: 'T79', label: '', type: 'intersection', x: 1139, y: 428, description: 'drawn taxiway node' },
+    { id: 'T80', label: '', type: 'intersection', x: 1137, y: 443, description: 'drawn taxiway node' },
+    { id: 'T81', label: '', type: 'intersection', x: 1132, y: 465, description: 'drawn taxiway node' },
+    { id: 'T82', label: '', type: 'intersection', x: 1149, y: 437, description: 'drawn taxiway node' },
+    { id: 'T83', label: '', type: 'intersection', x: 1199, y: 435, description: 'drawn taxiway node' },
+    { id: 'X1', label: '', type: 'intersection', x: 62, y: 251, description: 'drawn taxiway node' },  ],
 
   edges: [
-
-    // ── RWY 07L/25R segments (top runway) ────────────────────────────────────
     { id: 'RWY1_SEG1', fromNodeId: 'RWY07L_THR', toNodeId: 'R1_W4',      lengthMeters: 1200, maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
     { id: 'RWY1_SEG2', fromNodeId: 'R1_W4',      toNodeId: 'R1_NS',       lengthMeters: 770,  maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
     { id: 'RWY1_SEG3', fromNodeId: 'R1_NS',      toNodeId: 'RWY25R_THR',  lengthMeters: 1600, maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
-
-    // ── RWY 07R/25L segments (bottom runway) ─────────────────────────────────
     { id: 'RWY2_SEG1', fromNodeId: 'RWY07R_THR', toNodeId: 'R2_W7',       lengthMeters: 800,  maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
     { id: 'RWY2_SEG2a', fromNodeId: 'R2_W7',     toNodeId: 'R2_W5',       lengthMeters: 740,  maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
     { id: 'RWY2_SEG2b', fromNodeId: 'R2_W5',     toNodeId: 'R2_W3',       lengthMeters: 360,  maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
     { id: 'RWY2_SEG2c', fromNodeId: 'R2_W3',     toNodeId: 'R2_E4',       lengthMeters: 1690, maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
     { id: 'RWY2_SEG3',  fromNodeId: 'R2_E4',     toNodeId: 'RWY25L_THR',  lengthMeters: 120,  maxSpeedKts: 130, type: 'runway', bidirectional: false, status: 'open', trafficLevel: 'low' },
 
-    // ── Holding connectors ────────────────────────────────────────────────────
-    { id: 'HOLD_07L', fromNodeId: 'H07L', toNodeId: 'RWY07L_THR', lengthMeters: 24, maxSpeedKts: 15, type: 'holding', bidirectional: false, status: 'open', trafficLevel: 'low' },
-    { id: 'HOLD_25R', fromNodeId: 'H25R', toNodeId: 'RWY25R_THR', lengthMeters: 42, maxSpeedKts: 15, type: 'holding', bidirectional: false, status: 'open', trafficLevel: 'low' },
-    { id: 'HOLD_07R', fromNodeId: 'H07R', toNodeId: 'R2_W7',       lengthMeters:  60, maxSpeedKts: 15, type: 'holding', bidirectional: false, status: 'open', trafficLevel: 'low' },
-    { id: 'HOLD_25L', fromNodeId: 'H25L', toNodeId: 'RWY25L_THR', lengthMeters: 43, maxSpeedKts: 15, type: 'holding', bidirectional: false, status: 'open', trafficLevel: 'low' },
-
-    // ── W11 lateral taxiway (below south runway) ──────────────────────────────
-    { id: 'W11_A', fromNodeId: 'W11_W',    toNodeId: 'W11_W7',   lengthMeters: 225, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_B', fromNodeId: 'W11_W7',   toNodeId: 'W11_W4',   lengthMeters: 91, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_C',  fromNodeId: 'W11_W4',  toNodeId: 'W7J',      lengthMeters:  19, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_C2', fromNodeId: 'W7J',     toNodeId: 'W5J',      lengthMeters:  65, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_C3', fromNodeId: 'W5J',     toNodeId: 'W11_W1',   lengthMeters:  43, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_D', fromNodeId: 'W11_W1',   toNodeId: 'W11_NS',   lengthMeters: 107, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_E', fromNodeId: 'W11_NS',   toNodeId: 'W3J',      lengthMeters:  80, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_E2',fromNodeId: 'W3J',      toNodeId: 'W11_E4',   lengthMeters:  39, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_F', fromNodeId: 'W11_E4',   toNodeId: 'W11_E_END',lengthMeters: 176, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W11_G', fromNodeId: 'W11_E_END',toNodeId: 'W11_EE',   lengthMeters: 190, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // W5 / W3 curved connectors from W11 up to the south runway
-    { id: 'W5_J_C', fromNodeId: 'W5J',  toNodeId: 'W5_C', lengthMeters: 56, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W5_C_R', fromNodeId: 'W5_C', toNodeId: 'R2_W5', lengthMeters: 61, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W3_J_C', fromNodeId: 'W3J',  toNodeId: 'W3_C', lengthMeters: 70, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W3_C_R', fromNodeId: 'W3_C', toNodeId: 'R2_W3', lengthMeters: 75, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // (Removed W11_RWY_W4 / W11_RWY_NS — the chart has NO central taxiway crossing the
-    //  infield to the top runway. 07L is reached via the W6 curve (west); 25R via the east.)
-
-    // W7 curve: 07R south-runway exit → W11 junction at x≈390
-    { id: 'W7_J_C', fromNodeId: 'W7J',  toNodeId: 'W7_C', lengthMeters: 62, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W7_C_H', fromNodeId: 'W7_C', toNodeId: 'H07R', lengthMeters: 80, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // W11 connections to holding points
-    // 07L approach via the leftmost W11 loop + W6 curve (replaces the old straight W11_W→H07L)
-    { id: 'W11_LOOP_E', fromNodeId: 'W11_W',    toNodeId: 'W11_LOOP', lengthMeters:   31, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W6_S1',      fromNodeId: 'W11_LOOP', toNodeId: 'W6_A',     lengthMeters:   85, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W6_S2',      fromNodeId: 'W6_A',     toNodeId: 'W6_B',     lengthMeters:   70, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W6_S3',      fromNodeId: 'W6_B',     toNodeId: 'W6_C',     lengthMeters:   49, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'W6_S4',      fromNodeId: 'W6_C',     toNodeId: 'H07L',     lengthMeters:   32, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    // 25L via TWY E4 (east end), 25R via the east taxiway crossing — both off W11_EE
-    { id: 'E4_TX',    fromNodeId: 'W11_EE',  toNodeId: 'E4_RC',  lengthMeters: 49, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'E4_H25L',  fromNodeId: 'E4_RC',   toNodeId: 'H25L',   lengthMeters: 37, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'E4_R2',    fromNodeId: 'H25L',    toNodeId: 'R2_E4',  lengthMeters: 25, maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'E25R_TX',  fromNodeId: 'W11_EE',  toNodeId: 'E25R_C', lengthMeters: 153, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'E25R_H',   fromNodeId: 'E25R_C',  toNodeId: 'H25R',   lengthMeters: 102, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // ── NS column (x=605) — the single feeder down from W11 into the apron ───
-    { id: 'NS_N_SEG', fromNodeId: 'W11_NS', toNodeId: 'NS_N', lengthMeters:  10, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'NS_VERT',  fromNodeId: 'NS_N',   toNodeId: 'NS_S', lengthMeters: 11, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'NS_S_M1',  fromNodeId: 'NS_S',   toNodeId: 'M1_P3', lengthMeters: 64, maxSpeedKts: 20, type: 'apron',   bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'M1_P3_N', fromNodeId: 'M1_P3', toNodeId: 'M1_N',  lengthMeters:  19, maxSpeedKts: 10, type: 'apron',   bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // ── E4 column (x=724) ────────────────────────────────────────────────────
-    { id: 'E4_N_SEG',   fromNodeId: 'W11_E4',  toNodeId: 'E4_N',     lengthMeters:  10, maxSpeedKts: 25, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'E4_INTL',    fromNodeId: 'E4_N',    toNodeId: 'INTL_APN', lengthMeters:  19, maxSpeedKts: 15, type: 'apron',   bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'INTL_E4_S',  fromNodeId: 'INTL_APN', toNodeId: 'E4_S',   lengthMeters: 10, maxSpeedKts: 15, type: 'apron',   bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // (Removed the upper/lower "lateral" rungs LAT_N / LAT_S — PARL TWY W11 is a
-    //  single taxiway; the lines below it on the chart are the APN TWY W15
-    //  parking apron, not parallel through-taxiways.)
-
-    // ── M1 apron taxiway spine ────────────────────────────────────────────────
-    { id: 'M1_N_P2', fromNodeId: 'M1_N',   toNodeId: 'M1_P2',  lengthMeters:  17, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'M1_P2_P1',fromNodeId: 'M1_P2',  toNodeId: 'M1_P1',  lengthMeters:  21, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'M1_P1_1', fromNodeId: 'M1_P1',  toNodeId: 'M1_1',   lengthMeters:  24, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'M1_12',  fromNodeId: 'M1_1',   toNodeId: 'M1_2',   lengthMeters:  39, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'M1_23',  fromNodeId: 'M1_2',   toNodeId: 'M1_3',   lengthMeters:  45, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'M1_3S',  fromNodeId: 'M1_3',   toNodeId: 'M1_S',   lengthMeters: 64, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // ── DOM PAX Terminal stand connections (to M1 spine) ──────────────────────
-    { id: 'DOM_S5_CONN', fromNodeId: 'DOM_S5', toNodeId: 'M1_N',   lengthMeters: 79, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'DOM_S4_CONN', fromNodeId: 'DOM_S4', toNodeId: 'M1_1',   lengthMeters: 70, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'DOM_S3_CONN', fromNodeId: 'DOM_S3', toNodeId: 'M1_2',   lengthMeters: 74, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'DOM_S2_CONN', fromNodeId: 'DOM_S2', toNodeId: 'M1_3',   lengthMeters: 78, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'DOM_S1_CONN', fromNodeId: 'DOM_S1', toNodeId: 'M1_S',   lengthMeters: 20, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // ── INTL PAX Terminal stand connections ───────────────────────────────────
-    { id: 'INTL_S1_CONN', fromNodeId: 'INTL_S1', toNodeId: 'INTL_APN', lengthMeters:  26, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'INTL_S2_CONN', fromNodeId: 'INTL_S2', toNodeId: 'INTL_APN', lengthMeters:  12, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'INTL_S3_CONN', fromNodeId: 'INTL_S3', toNodeId: 'INTL_APN', lengthMeters:  10, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'INTL_S4_CONN', fromNodeId: 'INTL_S4', toNodeId: 'INTL_APN', lengthMeters:  12, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // ── Parking position connections ──────────────────────────────────────────
-    { id: 'P1_CONN', fromNodeId: 'P1', toNodeId: 'M1_P1',  lengthMeters: 136, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'P2_CONN', fromNodeId: 'P2', toNodeId: 'M1_P2',  lengthMeters: 108, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'P3_CONN', fromNodeId: 'P3', toNodeId: 'M1_P3',  lengthMeters: 61, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'P4_CONN', fromNodeId: 'P4', toNodeId: 'M1_2',   lengthMeters: 71, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'P5_CONN', fromNodeId: 'P5', toNodeId: 'M1_3',   lengthMeters: 76, maxSpeedKts: 5, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-
-    // ── HS hot-spot connectors (wire the hot-spots into the taxiway network) ──
-    // West
-    { id: 'HS16_R2W7', fromNodeId: 'HS16', toNodeId: 'R2_W7', lengthMeters: 19,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS16_H07R', fromNodeId: 'HS16', toNodeId: 'H07R', lengthMeters: 77,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS15_W6A',  fromNodeId: 'HS15', toNodeId: 'W6_A', lengthMeters: 90,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    // DOM apron (on / beside the M1 spine)
-    { id: 'HS4_M1P3',  fromNodeId: 'HS4',  toNodeId: 'M1_P3', lengthMeters: 53, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS5_M1P1',  fromNodeId: 'HS5',  toNodeId: 'M1_P1', lengthMeters: 66, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS3_M1S',   fromNodeId: 'HS3',  toNodeId: 'M1_S',  lengthMeters: 21, maxSpeedKts: 10, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    // East interchange (E8 horizontal spine + E4/E2 verticals + links to W11 / south runway)
-    // TWY E8 horizontal spine (W11_EE feeds in via E4): HS11–HS12–HS9–HS10–HS14
-    { id: 'E4_HS9',    fromNodeId: 'W11_EE', toNodeId: 'HS9',  lengthMeters: 66,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS9_HS12',  fromNodeId: 'HS9',  toNodeId: 'HS12',  lengthMeters: 95,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS12_HS11', fromNodeId: 'HS12', toNodeId: 'HS11',  lengthMeters: 133, maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS9_HS10',  fromNodeId: 'HS9',  toNodeId: 'HS10',  lengthMeters: 105, maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS10_HS14', fromNodeId: 'HS10', toNodeId: 'HS14',  lengthMeters: 47,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    // verticals off E8: up toward the runways (HS7, HS13), down toward W11/E6 (HS17, HS6, HS8)
-    { id: 'HS12_HS7',  fromNodeId: 'HS12', toNodeId: 'HS7',   lengthMeters: 57,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS9_HS13',  fromNodeId: 'HS9',  toNodeId: 'HS13',  lengthMeters: 30,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS11_HS17', fromNodeId: 'HS11', toNodeId: 'HS17',  lengthMeters: 29,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS10_HS8',  fromNodeId: 'HS10', toNodeId: 'HS8',   lengthMeters: 48,  maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-    { id: 'HS6_W11EN', fromNodeId: 'HS6',  toNodeId: 'W11_E_END', lengthMeters: 21, maxSpeedKts: 15, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
-  ],
+    // ── DRAWN taxiway + connector edges ──
+    { id: 'DE1', fromNodeId: 'T1', toNodeId: 'T2', lengthMeters: 75, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE2', fromNodeId: 'T2', toNodeId: 'T3', lengthMeters: 96, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE3', fromNodeId: 'T3', toNodeId: 'T4', lengthMeters: 102, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE4', fromNodeId: 'T4', toNodeId: 'T5', lengthMeters: 85, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE5', fromNodeId: 'T5', toNodeId: 'T17', lengthMeters: 801, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE6', fromNodeId: 'T17', toNodeId: 'T26', lengthMeters: 384, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE7', fromNodeId: 'T26', toNodeId: 'T31', lengthMeters: 258, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE8', fromNodeId: 'T31', toNodeId: 'T54', lengthMeters: 372, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE9', fromNodeId: 'T54', toNodeId: 'T56', lengthMeters: 105, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE10', fromNodeId: 'T56', toNodeId: 'INTL_S2', lengthMeters: 75, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE11', fromNodeId: 'INTL_S2', toNodeId: 'T60', lengthMeters: 234, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE12', fromNodeId: 'T60', toNodeId: 'T62', lengthMeters: 81, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE13', fromNodeId: 'T62', toNodeId: 'HS6', lengthMeters: 258, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE14', fromNodeId: 'HS6', toNodeId: 'T68', lengthMeters: 4, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE15', fromNodeId: 'T68', toNodeId: 'T39', lengthMeters: 375, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE16', fromNodeId: 'T39', toNodeId: 'T40', lengthMeters: 66, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE17', fromNodeId: 'T40', toNodeId: 'T6', lengthMeters: 198, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE18', fromNodeId: 'T6', toNodeId: 'T7', lengthMeters: 63, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE19', fromNodeId: 'T7', toNodeId: 'T8', lengthMeters: 79, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE20', fromNodeId: 'T8', toNodeId: 'T9', lengthMeters: 65, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE21', fromNodeId: 'T10', toNodeId: 'H07L', lengthMeters: 54, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE22', fromNodeId: 'T11', toNodeId: 'T12', lengthMeters: 74, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE23', fromNodeId: 'T12', toNodeId: 'T13', lengthMeters: 98, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE24', fromNodeId: 'T13', toNodeId: 'T10', lengthMeters: 52, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE25', fromNodeId: 'RWY07R_THR', toNodeId: 'X1', lengthMeters: 54, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE26', fromNodeId: 'X1', toNodeId: 'T5', lengthMeters: 297, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE27', fromNodeId: 'T14', toNodeId: 'T15', lengthMeters: 47, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE28', fromNodeId: 'T15', toNodeId: 'H07R', lengthMeters: 107, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE29', fromNodeId: 'H07R', toNodeId: 'T16', lengthMeters: 63, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE30', fromNodeId: 'T16', toNodeId: 'T17', lengthMeters: 199, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE31', fromNodeId: 'T18', toNodeId: 'HS16', lengthMeters: 20, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE32', fromNodeId: 'HS16', toNodeId: 'T19', lengthMeters: 48, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE33', fromNodeId: 'T19', toNodeId: 'T20', lengthMeters: 144, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE34', fromNodeId: 'T20', toNodeId: 'T21', lengthMeters: 174, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE35', fromNodeId: 'T22', toNodeId: 'T23', lengthMeters: 66, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE36', fromNodeId: 'T23', toNodeId: 'T24', lengthMeters: 79, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE37', fromNodeId: 'T24', toNodeId: 'T25', lengthMeters: 89, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE38', fromNodeId: 'T25', toNodeId: 'T26', lengthMeters: 140, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE39', fromNodeId: 'T27', toNodeId: 'T28', lengthMeters: 147, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE40', fromNodeId: 'T28', toNodeId: 'T26', lengthMeters: 138, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE41', fromNodeId: 'T28', toNodeId: 'T30', lengthMeters: 249, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE42', fromNodeId: 'T30', toNodeId: 'T29', lengthMeters: 318, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE43', fromNodeId: 'T30', toNodeId: 'T31', lengthMeters: 141, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE44', fromNodeId: 'T1', toNodeId: 'T32', lengthMeters: 87, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE45', fromNodeId: 'T18', toNodeId: 'T14', lengthMeters: 85, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE46', fromNodeId: 'T33', toNodeId: 'T64', lengthMeters: 198, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE47', fromNodeId: 'T64', toNodeId: 'T66', lengthMeters: 69, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE48', fromNodeId: 'T66', toNodeId: 'HS12', lengthMeters: 36, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE49', fromNodeId: 'HS12', toNodeId: 'T37', lengthMeters: 283, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE50', fromNodeId: 'T37', toNodeId: 'HS9', lengthMeters: 27, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE51', fromNodeId: 'HS9', toNodeId: 'T38', lengthMeters: 28, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE52', fromNodeId: 'T38', toNodeId: 'T73', lengthMeters: 51, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE53', fromNodeId: 'T73', toNodeId: 'HS10', lengthMeters: 262, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE54', fromNodeId: 'HS10', toNodeId: 'T9', lengthMeters: 84, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE55', fromNodeId: 'T34', toNodeId: 'T35', lengthMeters: 117, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE56', fromNodeId: 'T35', toNodeId: 'T36', lengthMeters: 236, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE57', fromNodeId: 'T36', toNodeId: 'T37', lengthMeters: 121, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE58', fromNodeId: 'T38', toNodeId: 'T39', lengthMeters: 133, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE59', fromNodeId: 'T41', toNodeId: 'T42', lengthMeters: 349, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE60', fromNodeId: 'T42', toNodeId: 'T43', lengthMeters: 43, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE61', fromNodeId: 'T43', toNodeId: 'HS3', lengthMeters: 174, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE62', fromNodeId: 'HS3', toNodeId: 'P5', lengthMeters: 26, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE63', fromNodeId: 'P5', toNodeId: 'T44', lengthMeters: 121, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE64', fromNodeId: 'T44', toNodeId: 'T45', lengthMeters: 61, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE65', fromNodeId: 'T45', toNodeId: 'T49', lengthMeters: 251, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE66', fromNodeId: 'T49', toNodeId: 'T48', lengthMeters: 91, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE67', fromNodeId: 'T48', toNodeId: 'T46', lengthMeters: 256, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE68', fromNodeId: 'T47', toNodeId: 'T48', lengthMeters: 189, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE69', fromNodeId: 'T49', toNodeId: 'T50', lengthMeters: 179, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE70', fromNodeId: 'T46', toNodeId: 'T51', lengthMeters: 52, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE71', fromNodeId: 'T51', toNodeId: 'T52', lengthMeters: 52, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE72', fromNodeId: 'T52', toNodeId: 'T46', lengthMeters: 51, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE73', fromNodeId: 'T51', toNodeId: 'T53', lengthMeters: 195, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE74', fromNodeId: 'T54', toNodeId: 'T55', lengthMeters: 70, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE75', fromNodeId: 'T55', toNodeId: 'T56', lengthMeters: 72, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE76', fromNodeId: 'T56', toNodeId: 'T57', lengthMeters: 82, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE77', fromNodeId: 'T57', toNodeId: 'T54', lengthMeters: 51, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE78', fromNodeId: 'T45', toNodeId: 'P1', lengthMeters: 443, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE79', fromNodeId: 'P1', toNodeId: 'T63', lengthMeters: 258, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE80', fromNodeId: 'T63', toNodeId: 'T62', lengthMeters: 79, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE81', fromNodeId: 'T62', toNodeId: 'T61', lengthMeters: 48, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE82', fromNodeId: 'T61', toNodeId: 'HS17', lengthMeters: 36, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE83', fromNodeId: 'HS17', toNodeId: 'T33', lengthMeters: 128, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE84', fromNodeId: 'T33', toNodeId: 'T58', lengthMeters: 118, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE85', fromNodeId: 'T58', toNodeId: 'T59', lengthMeters: 449, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE86', fromNodeId: 'T60', toNodeId: 'T61', lengthMeters: 89, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE87', fromNodeId: 'T63', toNodeId: 'T60', lengthMeters: 59, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE88', fromNodeId: 'T64', toNodeId: 'T65', lengthMeters: 55, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE89', fromNodeId: 'T65', toNodeId: 'T66', lengthMeters: 49, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE90', fromNodeId: 'T66', toNodeId: 'T67', lengthMeters: 74, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE91', fromNodeId: 'T67', toNodeId: 'T64', lengthMeters: 47, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE92', fromNodeId: 'T67', toNodeId: 'T68', lengthMeters: 120, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE93', fromNodeId: 'T65', toNodeId: 'T34', lengthMeters: 96, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE94', fromNodeId: 'T55', toNodeId: 'T69', lengthMeters: 298, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE95', fromNodeId: 'T35', toNodeId: 'T72', lengthMeters: 105, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE96', fromNodeId: 'T72', toNodeId: 'H25R', lengthMeters: 195, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE97', fromNodeId: 'H25R', toNodeId: 'T70', lengthMeters: 136, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE98', fromNodeId: 'T70', toNodeId: 'T71', lengthMeters: 66, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE99', fromNodeId: 'T71', toNodeId: 'T72', lengthMeters: 42, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE100', fromNodeId: 'T9', toNodeId: 'T74', lengthMeters: 62, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE101', fromNodeId: 'T74', toNodeId: 'T75', lengthMeters: 78, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE102', fromNodeId: 'T75', toNodeId: 'T76', lengthMeters: 81, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE103', fromNodeId: 'T77', toNodeId: 'T78', lengthMeters: 204, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE104', fromNodeId: 'T78', toNodeId: 'T79', lengthMeters: 44, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE105', fromNodeId: 'T79', toNodeId: 'T80', lengthMeters: 45, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE106', fromNodeId: 'T80', toNodeId: 'T81', lengthMeters: 68, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE107', fromNodeId: 'T79', toNodeId: 'T82', lengthMeters: 40, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE108', fromNodeId: 'T82', toNodeId: 'T83', lengthMeters: 150, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE109', fromNodeId: 'HS15', toNodeId: 'X1', lengthMeters: 146, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE110', fromNodeId: 'X1', toNodeId: 'T1', lengthMeters: 115, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE111', fromNodeId: 'HS4', toNodeId: 'T56', lengthMeters: 45, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE112', fromNodeId: 'HS5', toNodeId: 'T41', lengthMeters: 198, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE113', fromNodeId: 'HS11', toNodeId: 'T33', lengthMeters: 100, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE114', fromNodeId: 'HS14', toNodeId: 'T9', lengthMeters: 62, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE115', fromNodeId: 'HS7', toNodeId: 'T34', lengthMeters: 48, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE116', fromNodeId: 'HS13', toNodeId: 'T37', lengthMeters: 66, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE117', fromNodeId: 'HS8', toNodeId: 'T7', lengthMeters: 28, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE118', fromNodeId: 'DOM_S5', toNodeId: 'P3', lengthMeters: 62, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE119', fromNodeId: 'P3', toNodeId: 'HS4', lengthMeters: 112, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE120', fromNodeId: 'DOM_S4', toNodeId: 'T41', lengthMeters: 234, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE121', fromNodeId: 'DOM_S3', toNodeId: 'T43', lengthMeters: 237, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE122', fromNodeId: 'DOM_S2', toNodeId: 'P5', lengthMeters: 26, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE123', fromNodeId: 'DOM_S1', toNodeId: 'T44', lengthMeters: 102, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE124', fromNodeId: 'P2', toNodeId: 'T63', lengthMeters: 257, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE125', fromNodeId: 'P4', toNodeId: 'T44', lengthMeters: 211, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE126', fromNodeId: 'INTL_S1', toNodeId: 'T56', lengthMeters: 86, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE127', fromNodeId: 'INTL_S3', toNodeId: 'T56', lengthMeters: 75, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE128', fromNodeId: 'INTL_S4', toNodeId: 'T56', lengthMeters: 104, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE129', fromNodeId: 'RWY07L_THR', toNodeId: 'H07L', lengthMeters: 52, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE130', fromNodeId: 'RWY25R_THR', toNodeId: 'T70', lengthMeters: 205, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE131', fromNodeId: 'RWY25L_THR', toNodeId: 'T76', lengthMeters: 116, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE132', fromNodeId: 'H25L', toNodeId: 'T73', lengthMeters: 153, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE133', fromNodeId: 'T29', toNodeId: 'T41', lengthMeters: 42, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },
+    { id: 'DE134', fromNodeId: 'T32', toNodeId: 'T11', lengthMeters: 85, maxSpeedKts: 20, type: 'taxiway', bidirectional: true, status: 'open', trafficLevel: 'low' },  ],
 };
 
 export function getNode(id: string) {
@@ -280,3 +315,10 @@ export const START_NODES = airportGraph.nodes.filter(n =>
 );
 
 export const DESTINATION_NODES = START_NODES;
+
+// Background traffic taxis realistic gate ↔ runway routes across the full
+// network. Ramp ends are the terminal stands / parking; runway ends are the
+// holding points (runway entrances) — both are fully wired into the taxiways,
+// so any ramp↔holding pair is routable in either direction.
+export const RAMP_NODES = airportGraph.nodes.filter(n => n.type === 'stand');
+export const HOLDING_NODES = airportGraph.nodes.filter(n => n.type === 'holding_point');

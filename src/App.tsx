@@ -40,6 +40,8 @@ export default function App() {
   const [showGuide, setShowGuide] = useState(false);
   const [showPinkOverlay, setShowPinkOverlay] = useState(false);
   const [pinkOpacity, setPinkOpacity] = useState(0.45);
+  const [showPaths, setShowPaths] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
   const [autoIncidents, setAutoIncidents] = useState(false);
   const rafRef = useRef<number | null>(null);
   const lastTimeRef = useRef<number | null>(null);
@@ -173,6 +175,24 @@ export default function App() {
         {/* Pink overlay toggle (development calibration tool) */}
         <div className="ml-auto flex items-center gap-2">
           <button
+            onClick={() => setShowGrid(v => !v)}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
+              showGrid ? 'bg-red-500 hover:bg-red-400 text-black' : 'bg-gray-700 hover:bg-gray-600 text-white'
+            }`}
+            title="Show x,y coordinate grid"
+          >
+            Grid
+          </button>
+          <button
+            onClick={() => setShowPaths(v => !v)}
+            className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
+              showPaths ? 'bg-cyan-500 hover:bg-cyan-400 text-black' : 'bg-gray-700 hover:bg-gray-600 text-white'
+            }`}
+            title="Glow every routable taxiway/apron edge + its id"
+          >
+            Paths
+          </button>
+          <button
             onClick={() => setShowPinkOverlay(v => !v)}
             className={`flex items-center gap-1.5 text-xs font-semibold px-3 py-1.5 rounded-lg transition ${
               showPinkOverlay ? 'bg-pink-600 hover:bg-pink-500' : 'bg-gray-700 hover:bg-gray-600'
@@ -205,7 +225,7 @@ export default function App() {
       <div className="flex flex-1 gap-3 p-3 overflow-hidden min-h-0">
         {/* Bản đồ sân bay */}
         <div className="flex-1 min-w-0 min-h-0">
-          <AirportMap state={simState} showPinkOverlay={showPinkOverlay} pinkOpacity={pinkOpacity} />
+          <AirportMap state={simState} showPinkOverlay={showPinkOverlay} pinkOpacity={pinkOpacity} showPaths={showPaths} showGrid={showGrid} />
         </div>
 
         {/* Thanh bên phải */}

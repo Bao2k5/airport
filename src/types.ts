@@ -76,6 +76,7 @@ export interface Aircraft {
   status: AircraftStatus;
   assignedRoute: string[]; // ordered node IDs
   routeEdgeIndex: number;  // which edge in the route we're currently traversing
+  heldSeconds?: number;    // background traffic: how long it has been blocked (for deadlock breaking)
 }
 
 export interface SimulationConfig {
@@ -94,6 +95,9 @@ export interface SimulationConfig {
 
 export interface SimulationState {
   aircraft: Aircraft | null;
+  // Visual-only background traffic that roams hot-spot to hot-spot. Driven by
+  // config.trafficLevel; does not affect routing, lights or incidents.
+  trafficAircraft: Aircraft[];
   config: SimulationConfig;
   isRunning: boolean;
   isPaused: boolean;

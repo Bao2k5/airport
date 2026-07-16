@@ -1,9 +1,11 @@
 // SVG airport map — aeronautical chart style matching TSN reference.
 
+import { type JSX } from 'react';
 import { airportGraph, SVG_WIDTH, SVG_HEIGHT } from '../data/airportGraph';
 import { getAircraftSpec } from '../data/aircraftTypes';
+import AirportLighting from './AirportLighting';
 import { routeToEdges } from '../simulation/pathfinding';
-import type { SimulationState } from '../types';
+import type { Aircraft, SimulationState } from '../types';
 
 // Reference image calibration: ref(0,0)→SVG(-192,-665), ref(2048,1430)→SVG(1308,1417)
 const PINK_X = -192, PINK_Y = -665, PINK_W = 1500, PINK_H = 2082;
@@ -13,6 +15,8 @@ interface Props {
   onNodeClick?: (nodeId: string) => void;
   showPinkOverlay?: boolean;
   pinkOpacity?: number;
+  showPaths?: boolean;
+  showGrid?: boolean;
 }
 
 const STAND_HEADINGS: Record<string, number> = {
@@ -31,7 +35,7 @@ const EDGE_STYLES: Record<string, { stroke: string; width: number }> = {
   holding: { stroke: ASPHALT, width: 0  },
 };
 
-export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOpacity = 0.45 }: Props) {
+export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOpacity = 0.45, showPaths, showGrid }: Props) {
   const { aircraft, lightStates } = state;
 
   const aircraftPos = getAircraftPosition(state);
@@ -41,16 +45,23 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
     state.config.destinationNodeId,
   ]);
 
-  const isNight = state.config.timeOfDay === 'night';
+  const isNight     = state.config.timeOfDay === 'night';
+  const isAfternoon = state.config.timeOfDay === 'afternoon';
   const isFog = state.config.weather === 'fog';
   const isRain = state.config.weather === 'rain';
   const isThunderstorm = state.config.weather === 'thunderstorm';
 
   return (
     <div className="relative w-full h-full rounded-xl overflow-hidden border border-[#bbb]"
-      style={{ background: BG_OUTER }}>
-      {isNight && (
-        <div className="absolute inset-0 bg-indigo-950/50 pointer-events-none z-10" />
+      style={{ background: isNight ? '#0a0e18' : isAfternoon ? '#dfc98a' : BG_OUTER }}>
+      {isAfternoon && (
+        <div
+          className="absolute inset-0 pointer-events-none z-10"
+          style={{
+            background:
+              'linear-gradient(125deg, rgba(255,145,30,0.17) 0%, rgba(255,190,70,0.09) 50%, rgba(255,110,20,0.14) 100%)',
+          }}
+        />
       )}
       {isFog && (
         <>
@@ -100,13 +111,6 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
-          <filter id="glow-red" x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="2" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
         </defs>
 
         <style>{`
@@ -115,11 +119,6 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
             50%       { opacity: 0.25; }
           }
           .guidance-dot { animation: guidance-pulse 1.4s ease-in-out infinite; }
-          @keyframes rwy-flash {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.3; }
-          }
-          .rwy-edge-light { animation: rwy-flash 1.2s ease-in-out infinite; }
           @keyframes storm-flash {
             0%, 92%, 100% { opacity: 0; }
             94%           { opacity: 0.35; }
@@ -169,6 +168,11 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
         {/* ── Layer 1: reference image base — 1309×875 at SVG 1200×860 = perfect 1:1 CMP mapping */}
         <image href="/ref_full.png" x={0} y={0} width={1200} height={860} preserveAspectRatio="none" />
 
+        {/* Đêm: phủ navy rất tối lên chart để làm mờ pavement — đèn vẽ TRÊN lớp này */}
+        {isNight && (
+          <rect x={0} y={0} width={SVG_WIDTH} height={SVG_HEIGHT} fill="#0a0e18" fillOpacity={0.92} />
+        )}
+
         {/* ── Pink path overlay (allowed_paths.jpg, toggled via showPinkOverlay prop) ── */}
         {showPinkOverlay && (
           <image
@@ -179,9 +183,8 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
           />
         )}
 
-        {/* Runway edge lights */}
-        <RunwayEdgeLights y={73}  xStart={22}  xEnd={1118} animate={isNight} />
-        <RunwayEdgeLights y={156} xStart={275} xEnd={1175} animate={isNight} />
+        {/* ── Lớp đèn sân bay ban đêm (tĩnh, có glow) ────────────────────── */}
+        {isNight && <AirportLighting />}
 
         {/* ── Layer 2: planned route preview (remaining path, dashed blue) ── */}
         {aircraft && aircraft.status !== 'arrived' && aircraft.assignedRoute.length > 1 && (
@@ -218,10 +221,33 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
           if (lightState === 'green') { stroke = '#22c55e'; strokeWidth = Math.max(strokeWidth, 4); }
           else if (lightState === 'red') { stroke = '#ef4444'; strokeWidth = Math.max(strokeWidth, 3); }
 
+          // On the edge the aircraft is currently traversing, the lit portion behind
+          // its tail must go dark immediately rather than staying green until the
+          // whole edge falls behind — so split the highlight at the aircraft's
+          // position along this edge (0 = fromNode, 1 = toNode).
+          const aircraftT =
+            lightState === 'green' && aircraft && aircraft.currentEdgeId === edge.id
+              ? (aircraft.assignedRoute[aircraft.routeEdgeIndex] === edge.fromNodeId
+                  ? aircraft.progressOnEdge
+                  : 1 - aircraft.progressOnEdge)
+              : undefined;
+          const splitX = aircraftT !== undefined ? fromNode.x + (toNode.x - fromNode.x) * aircraftT : null;
+          const splitY = aircraftT !== undefined ? fromNode.y + (toNode.y - fromNode.y) * aircraftT : null;
+
           return (
             <g key={edge.id}>
+              {splitX !== null && splitY !== null && (
+                <line
+                  x1={fromNode.x} y1={fromNode.y}
+                  x2={splitX}     y2={splitY}
+                  stroke={style.stroke}
+                  strokeWidth={style.width}
+                  strokeLinecap="round"
+                  opacity={edge.status === 'closed' ? 0.3 : 1}
+                />
+              )}
               <line
-                x1={fromNode.x} y1={fromNode.y}
+                x1={splitX ?? fromNode.x} y1={splitY ?? fromNode.y}
                 x2={toNode.x}   y2={toNode.y}
                 stroke={stroke}
                 strokeWidth={strokeWidth}
@@ -232,6 +258,7 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
                 <GuidanceLights
                   x1={fromNode.x} y1={fromNode.y}
                   x2={toNode.x}   y2={toNode.y}
+                  aircraftT={aircraftT}
                 />
               )}
               {lightState === 'red' && (
@@ -249,6 +276,12 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
             </g>
           );
         })}
+
+        {/* ── Debug: glow every taxi/apron/holding edge + its id, to vet the network ── */}
+        {showPaths && <AllowedPathsOverlay />}
+
+        {/* ── Debug: coordinate grid (read x,y to guide edits) ── */}
+        {showGrid && <CoordinateGrid />}
 
         {/* ── Layer 6: visual-only E-series / NS-series taxiway lines ──── */}
         <ExtraTaxiwayLines />
@@ -317,6 +350,13 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
           );
         })}
 
+        {/* ── Layer 8.5: background traffic (visual-only, grey) ──────────── */}
+        {state.trafficAircraft.map(ac => {
+          const pos = getPositionForAircraft(ac);
+          if (!pos) return null;
+          return <BackgroundAircraftIcon key={ac.id} x={pos.x} y={pos.y} heading={pos.heading} />;
+        })}
+
         {/* ── Layer 9: active aircraft ───────────────────────────────────── */}
         {aircraft && aircraftPos && (
           <AircraftIcon
@@ -348,25 +388,45 @@ function RoutePlanLine({ route }: { route: string[] }) {
   return (
     <>
       {/* dark halo for contrast on any background */}
-      <path d={d} stroke="#0f172a" strokeWidth={9} fill="none" opacity={0.55}
+      <path d={d} stroke="#0f172a" strokeWidth={5} fill="none" opacity={0.4}
         strokeLinecap="round" strokeLinejoin="round" />
-      {/* bright blue dashed route line */}
-      <path d={d} stroke="#38bdf8" strokeWidth={4.5} fill="none" opacity={0.9}
-        strokeDasharray="14,8" strokeLinecap="round" strokeLinejoin="round" />
+      {/* mảnh & dịu hơn đèn để không át bản đồ */}
+      <path d={d} stroke="#38bdf8" strokeWidth={2.2} fill="none" opacity={0.6}
+        strokeDasharray="10,7" strokeLinecap="round" strokeLinejoin="round" />
     </>
   );
 }
 
-// ── Runway marking components ─────────────────────────────────────────────────
-
-function RunwayEdgeLights(_props: { y: number; xStart?: number; xEnd?: number; animate: boolean }) {
-  return null;
-}
-
 // ── Taxiway marking components ────────────────────────────────────────────────
 
-function GuidanceLights(_props: { x1: number; y1: number; x2: number; y2: number }) {
-  return null;
+function GuidanceLights({
+  x1, y1, x2, y2, aircraftT,
+}: {
+  x1: number; y1: number; x2: number; y2: number;
+  // Aircraft's position along this edge, 0 (=x1,y1) to 1 (=x2,y2). When set, this is
+  // the edge the aircraft is currently on — dots behind it (already passed) go dark
+  // immediately instead of staying lit until the whole edge falls behind.
+  aircraftT?: number;
+}) {
+  const dx = x2 - x1, dy = y2 - y1;
+  const len = Math.sqrt(dx * dx + dy * dy) || 1;
+  const spacing = 11;
+  const count   = Math.max(1, Math.floor(len / spacing));
+  const dots: JSX.Element[] = [];
+  for (let i = 1; i < count; i++) {
+    const t = i / count;
+    if (aircraftT !== undefined && t < aircraftT) continue; // passed by the tail — off
+    dots.push(
+      <circle
+        key={i}
+        cx={x1 + dx * t} cy={y1 + dy * t}
+        r={2.2} fill="#22c55e"
+        className="guidance-dot"
+        filter="url(#glow-green)"
+      />,
+    );
+  }
+  return <g>{dots}</g>;
 }
 
 function StopBar({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
@@ -413,6 +473,18 @@ function AircraftIcon({ x, y, heading, scale = 1 }: { x: number; y: number; head
   );
 }
 
+// Background traffic: blue with a dark outline — visible on the light chart yet
+// clearly distinct from the amber active aircraft.
+function BackgroundAircraftIcon({ x, y, heading }: { x: number; y: number; heading: number }) {
+  return (
+    <g transform={`translate(${x},${y}) rotate(${heading}) scale(0.9)`} opacity={0.95}>
+      <ellipse cx={0} cy={0} rx={3} ry={12} fill="#2563eb" stroke="#0b1220" strokeWidth={1.3} />
+      <polygon points="0,-1 13,6 7,8 0,5 -7,8 -13,6" fill="#60a5fa" stroke="#0b1220" strokeWidth={1.3} />
+      <polygon points="0,9 4,12 0,11 -4,12" fill="#2563eb" stroke="#0b1220" strokeWidth={1.3} />
+    </g>
+  );
+}
+
 // ── Labels ────────────────────────────────────────────────────────────────────
 
 function TaxiwayLabels() {
@@ -439,6 +511,65 @@ function ExtraTaxiwayLines() {
   return null;
 }
 
+// ── Debug: coordinate grid so paths can be specified by (x,y) ─────────────────
+function CoordinateGrid() {
+  const lines = [];
+  for (let x = 0; x <= SVG_WIDTH; x += 50) {
+    const bold = x % 100 === 0;
+    lines.push(<line key={`gx${x}`} x1={x} y1={0} x2={x} y2={SVG_HEIGHT}
+      stroke={bold ? '#dc2626' : '#f8a8a8'} strokeWidth={bold ? 0.5 : 0.25} opacity={0.55} />);
+  }
+  for (let y = 0; y <= SVG_HEIGHT; y += 50) {
+    const bold = y % 100 === 0;
+    lines.push(<line key={`gy${y}`} x1={0} y1={y} x2={SVG_WIDTH} y2={y}
+      stroke={bold ? '#dc2626' : '#f8a8a8'} strokeWidth={bold ? 0.5 : 0.25} opacity={0.55} />);
+  }
+  const labels = [];
+  for (let x = 0; x <= SVG_WIDTH; x += 100) {
+    for (let y = 100; y <= SVG_HEIGHT; y += 100) {
+      labels.push(
+        <text key={`gl${x}-${y}`} x={x + 1} y={y - 1} fontSize={5} fontWeight={800}
+          fill="#b91c1c" opacity={0.9}>{x},{y}</text>,
+      );
+    }
+  }
+  return <g>{lines}{labels}</g>;
+}
+
+// ── Debug overlay: glow every routable (non-runway) edge + label its id ───────
+// Use this to vet the graph and decide which edges to delete.
+function AllowedPathsOverlay() {
+  return (
+    <g>
+      {airportGraph.edges.map(edge => {
+        if (edge.type === 'runway') return null;
+        const f = airportGraph.nodes.find(n => n.id === edge.fromNodeId);
+        const t = airportGraph.nodes.find(n => n.id === edge.toNodeId);
+        if (!f || !t) return null;
+        const mx = (f.x + t.x) / 2, my = (f.y + t.y) / 2;
+        return (
+          <g key={`path-${edge.id}`}>
+            <line
+              x1={f.x} y1={f.y} x2={t.x} y2={t.y}
+              stroke="#00e5ff" strokeWidth={2.5} opacity={0.9}
+              strokeLinecap="round" filter="url(#glow-green)"
+            />
+            <text
+              x={mx} y={my - 1} textAnchor="middle" fontSize={4.2} fontWeight={700}
+              fill="#0b3d4d" stroke="#e0ffff" strokeWidth={0.5} paintOrder="stroke"
+            >
+              {edge.id}
+            </text>
+          </g>
+        );
+      })}
+      {airportGraph.nodes.map(n => (
+        <circle key={`pn-${n.id}`} cx={n.x} cy={n.y} r={1.6} fill="#ff1493" stroke="#fff" strokeWidth={0.4} />
+      ))}
+    </g>
+  );
+}
+
 function CompassRose(_props: { x: number; y: number }) {
   return null;
 }
@@ -449,7 +580,10 @@ function MapLegend() {
 
 // ── Helper: interpolate aircraft position along its route ─────────────────────
 function getAircraftPosition(state: SimulationState) {
-  const { aircraft } = state;
+  return getPositionForAircraft(state.aircraft);
+}
+
+function getPositionForAircraft(aircraft: Aircraft | null) {
   if (!aircraft) return null;
 
   const routeEdgeIds = routeToEdges(aircraft.assignedRoute, airportGraph.edges);
