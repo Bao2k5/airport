@@ -7,8 +7,6 @@ import { getAircraftSpec } from '../data/aircraftTypes';
 import { findPath, routeToEdges, estimateTravelTimeSeconds } from './pathfinding';
 
 const KNOTS_TO_MS = 0.5144;
-// How many edges ahead to light green
-const GREEN_LIGHT_LOOKAHEAD = 4;
 
 /** Apply weather speed penalty (fraction of max speed to use) */
 export function weatherSpeedFactor(config: SimulationConfig): number {
@@ -593,13 +591,12 @@ export function computeLightStates(
     const currentEdgeRouteIdx = aircraft.routeEdgeIndex;
 
     if (idxInRoute < currentEdgeRouteIdx) {
-      // Behind aircraft — off
+      // Behind the aircraft — off (already passed).
       lights[edge.id] = 'off';
-    } else if (idxInRoute >= currentEdgeRouteIdx && idxInRoute < currentEdgeRouteIdx + GREEN_LIGHT_LOOKAHEAD) {
-      // Ahead within lookahead window — green
-      lights[edge.id] = 'green';
     } else {
-      lights[edge.id] = 'off';
+      // Current edge or anywhere ahead on the route — green. The whole remaining
+      // path is lit end-to-end; the trail turns off as the aircraft passes over it.
+      lights[edge.id] = 'green';
     }
   }
 

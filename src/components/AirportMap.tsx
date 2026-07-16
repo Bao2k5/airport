@@ -104,6 +104,14 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+          {/* Soft green bead for the discrete guidance (lead-on) lights: bright centre
+              fading out to a transparent halo — reads as a glowing lamp, not a band. */}
+          <radialGradient id="lead-green">
+            <stop offset="0%"   stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="28%"  stopColor="#86efac" stopOpacity="1" />
+            <stop offset="60%"  stopColor="#22c55e" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#15a34a" stopOpacity="0" />
+          </radialGradient>
           <filter id="glow-aircraft" x="-50%" y="-50%" width="200%" height="200%">
             <feGaussianBlur stdDeviation="4" result="coloredBlur" />
             <feMerge>
@@ -115,10 +123,10 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
 
         <style>{`
           @keyframes guidance-pulse {
-            0%, 100% { opacity: 0.95; }
-            50%       { opacity: 0.25; }
+            0%, 100% { opacity: 1; }
+            50%       { opacity: 0.78; }
           }
-          .guidance-dot { animation: guidance-pulse 1.4s ease-in-out infinite; }
+          .guidance-dot { animation: guidance-pulse 1.8s ease-in-out infinite; }
           @keyframes storm-flash {
             0%, 92%, 100% { opacity: 0; }
             94%           { opacity: 0.35; }
@@ -218,8 +226,10 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
 
           let stroke = style.stroke;
           let strokeWidth = style.width;
-          if (lightState === 'green') { stroke = '#22c55e'; strokeWidth = Math.max(strokeWidth, 4); }
-          else if (lightState === 'red') { stroke = '#ef4444'; strokeWidth = Math.max(strokeWidth, 3); }
+          // Green route is drawn as individual centreline lights (GuidanceLights below),
+          // NOT a solid green band — so keep the base pavement stroke. Only red (stop)
+          // paints the edge line itself.
+          if (lightState === 'red') { stroke = '#ef4444'; strokeWidth = Math.max(strokeWidth, 3); }
 
           // On the edge the aircraft is currently traversing, the portion it has
           // ALREADY PASSED must go dark immediately (rather than staying green until
@@ -421,22 +431,23 @@ function GuidanceLights({
 }) {
   const dx = x2 - x1, dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  const spacing = 11;
-  const count   = Math.max(1, Math.floor(len / spacing));
+  const spacing = 16;                              // gap between lights (px)
+  const count   = Math.max(1, Math.round(len / spacing));
   const dots: JSX.Element[] = [];
   for (let i = 1; i < count; i++) {
     const t = i / count;
-    // Skip dots the aircraft has already passed (direction-aware): forward → dots
-    // before it (t < aircraftT); reverse → dots after it (t > aircraftT).
+    // Skip lights the aircraft has already passed (direction-aware): forward → lights
+    // before it (t < aircraftT); reverse → lights after it (t > aircraftT).
     if (aircraftT !== undefined && (aircraftForward ? t < aircraftT : t > aircraftT)) continue;
+    const cx = x1 + dx * t, cy = y1 + dy * t;
+    // Each light = bright glowing halo (gradient) + a solid vivid-green core → a big,
+    // punchy discrete lamp rather than a continuous stripe.
     dots.push(
-      <circle
-        key={i}
-        cx={x1 + dx * t} cy={y1 + dy * t}
-        r={2.2} fill="#22c55e"
-        className="guidance-dot"
-        filter="url(#glow-green)"
-      />,
+      <g key={i} className="guidance-dot" filter="url(#glow-green)">
+        <circle cx={cx} cy={cy} r={6.5} fill="url(#lead-green)" />
+        <circle cx={cx} cy={cy} r={3}   fill="#22c55e" />
+        <circle cx={cx} cy={cy} r={1.3} fill="#f0fff6" />
+      </g>,
     );
   }
   return <g>{dots}</g>;
