@@ -221,25 +221,31 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
           if (lightState === 'green') { stroke = '#22c55e'; strokeWidth = Math.max(strokeWidth, 4); }
           else if (lightState === 'red') { stroke = '#ef4444'; strokeWidth = Math.max(strokeWidth, 3); }
 
-          // On the edge the aircraft is currently traversing, the lit portion behind
-          // its tail must go dark immediately rather than staying green until the
-          // whole edge falls behind — so split the highlight at the aircraft's
-          // position along this edge (0 = fromNode, 1 = toNode).
-          const aircraftT =
-            lightState === 'green' && aircraft && aircraft.currentEdgeId === edge.id
-              ? (aircraft.assignedRoute[aircraft.routeEdgeIndex] === edge.fromNodeId
-                  ? aircraft.progressOnEdge
-                  : 1 - aircraft.progressOnEdge)
-              : undefined;
+          // On the edge the aircraft is currently traversing, the portion it has
+          // ALREADY PASSED must go dark immediately (rather than staying green until
+          // the whole edge falls behind) — so split the highlight at the aircraft's
+          // position. This is direction-aware: the route may traverse an edge either
+          // fromNode→toNode or toNode→fromNode, and the "passed" side is whichever end
+          // the aircraft came from. `aircraftT` is measured from fromNode (0=fromNode,
+          // 1=toNode) regardless of travel direction.
+          const onThisEdge = lightState === 'green' && aircraft && aircraft.currentEdgeId === edge.id;
+          const isForward = !!onThisEdge && aircraft!.assignedRoute[aircraft!.routeEdgeIndex] === edge.fromNodeId;
+          const aircraftT = onThisEdge
+            ? (isForward ? aircraft!.progressOnEdge : 1 - aircraft!.progressOnEdge)
+            : undefined;
           const splitX = aircraftT !== undefined ? fromNode.x + (toNode.x - fromNode.x) * aircraftT : null;
           const splitY = aircraftT !== undefined ? fromNode.y + (toNode.y - fromNode.y) * aircraftT : null;
+          // Entry node = where the aircraft came from (its side is the dark, passed
+          // segment); exit node = where it's heading (its side stays green).
+          const entryNode = isForward ? fromNode : toNode;
+          const exitNode  = isForward ? toNode : fromNode;
 
           return (
             <g key={edge.id}>
               {splitX !== null && splitY !== null && (
                 <line
-                  x1={fromNode.x} y1={fromNode.y}
-                  x2={splitX}     y2={splitY}
+                  x1={entryNode.x} y1={entryNode.y}
+                  x2={splitX}      y2={splitY}
                   stroke={style.stroke}
                   strokeWidth={style.width}
                   strokeLinecap="round"
@@ -248,7 +254,8 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
               )}
               <line
                 x1={splitX ?? fromNode.x} y1={splitY ?? fromNode.y}
-                x2={toNode.x}   y2={toNode.y}
+                x2={splitX !== null ? exitNode.x : toNode.x}
+                y2={splitY !== null ? exitNode.y : toNode.y}
                 stroke={stroke}
                 strokeWidth={strokeWidth}
                 strokeLinecap="round"
@@ -259,6 +266,7 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
                   x1={fromNode.x} y1={fromNode.y}
                   x2={toNode.x}   y2={toNode.y}
                   aircraftT={aircraftT}
+                  aircraftForward={isForward}
                 />
               )}
               {lightState === 'red' && (
@@ -400,13 +408,16 @@ function RoutePlanLine({ route }: { route: string[] }) {
 // ── Taxiway marking components ────────────────────────────────────────────────
 
 function GuidanceLights({
-  x1, y1, x2, y2, aircraftT,
+  x1, y1, x2, y2, aircraftT, aircraftForward,
 }: {
   x1: number; y1: number; x2: number; y2: number;
   // Aircraft's position along this edge, 0 (=x1,y1) to 1 (=x2,y2). When set, this is
   // the edge the aircraft is currently on — dots behind it (already passed) go dark
   // immediately instead of staying lit until the whole edge falls behind.
   aircraftT?: number;
+  // Travel direction along this edge: true = fromNode→toNode (forward), false =
+  // toNode→fromNode (reverse). Determines which side of `aircraftT` is "passed".
+  aircraftForward?: boolean;
 }) {
   const dx = x2 - x1, dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
@@ -415,7 +426,9 @@ function GuidanceLights({
   const dots: JSX.Element[] = [];
   for (let i = 1; i < count; i++) {
     const t = i / count;
-    if (aircraftT !== undefined && t < aircraftT) continue; // passed by the tail — off
+    // Skip dots the aircraft has already passed (direction-aware): forward → dots
+    // before it (t < aircraftT); reverse → dots after it (t > aircraftT).
+    if (aircraftT !== undefined && (aircraftForward ? t < aircraftT : t > aircraftT)) continue;
     dots.push(
       <circle
         key={i}
