@@ -317,10 +317,18 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
           // fromNode→toNode or toNode→fromNode, and the "passed" side is whichever end
           // the aircraft came from. `aircraftT` is measured from fromNode (0=fromNode,
           // 1=toNode) regardless of travel direction.
-          const onThisEdge = lightState === 'green' && aircraft && aircraft.currentEdgeId === edge.id;
-          const isForward = !!onThisEdge && aircraft!.assignedRoute[aircraft!.routeEdgeIndex] === edge.fromNodeId;
-          const aircraftT = onThisEdge
-            ? (isForward ? aircraft!.progressOnEdge : 1 - aircraft!.progressOnEdge)
+          const activeAircraftList = [
+            ...(aircraft ? [aircraft] : []),
+            ...(state.scenarioAircraft ?? []),
+          ];
+
+          const acOnThisEdge = lightState === 'green'
+            ? activeAircraftList.find(a => a.currentEdgeId === edge.id && a.status !== 'arrived' && a.status !== 'departed')
+            : undefined;
+
+          const isForward = !!acOnThisEdge && acOnThisEdge.assignedRoute[acOnThisEdge.routeEdgeIndex] === edge.fromNodeId;
+          const aircraftT = acOnThisEdge
+            ? (isForward ? acOnThisEdge.progressOnEdge : 1 - acOnThisEdge.progressOnEdge)
             : undefined;
           const splitX = aircraftT !== undefined ? fromNode.x + (toNode.x - fromNode.x) * aircraftT : null;
           const splitY = aircraftT !== undefined ? fromNode.y + (toNode.y - fromNode.y) * aircraftT : null;

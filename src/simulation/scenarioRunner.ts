@@ -38,6 +38,39 @@ function getBlockedEdgeIds(config: SimulationConfig): Set<string> {
   return blocked;
 }
 
+function computeScenarioLightStates(
+  scenarioAircraft: ScenarioAircraft[],
+  blockedEdgeIds: Set<string>
+): Record<string, 'green' | 'red' | 'off'> {
+  const lights: Record<string, 'green' | 'red' | 'off'> = {};
+
+  for (const edge of airportGraph.edges) {
+    if (blockedEdgeIds.has(edge.id)) {
+      lights[edge.id] = 'red';
+    }
+  }
+
+  for (const ac of scenarioAircraft) {
+    if (ac.status === 'arrived' || ac.status === 'departed') continue;
+
+    const routeEdges = routeToEdges(ac.assignedRoute, airportGraph.edges) ?? [];
+    const remainingEdges = routeEdges.slice(ac.routeEdgeIndex);
+
+    for (let i = 0; i < remainingEdges.length; i++) {
+      const edgeId = remainingEdges[i];
+      if (lights[edgeId] === 'red') continue;
+
+      if (i === 0 && ac.holdReason === 'stop-bar') {
+        lights[edgeId] = 'red';
+      } else {
+        lights[edgeId] = 'green';
+      }
+    }
+  }
+
+  return lights;
+}
+
 export function startScenario(scenarioId: string): SimulationState {
   const def = PRESET_SCENARIO_DEFS[scenarioId];
   if (!def) {
@@ -63,6 +96,8 @@ export function startScenario(scenarioId: string): SimulationState {
     weather,
   };
 
+  const blockedEdgeIds = getBlockedEdgeIds(config);
+
   return {
     aircraft: null,
     trafficAircraft: [],
@@ -73,8 +108,8 @@ export function startScenario(scenarioId: string): SimulationState {
     elapsedSeconds: 0,
     etaSeconds: null,
     warningMessage: null,
-    lightStates: {},
-    blockedEdgeIds: getBlockedEdgeIds(config),
+    lightStates: computeScenarioLightStates(aircraft, blockedEdgeIds),
+    blockedEdgeIds,
     scenario: scenarioState,
     scenarioAircraft: aircraft,
   };
@@ -193,6 +228,8 @@ export function scenarioTick(state: SimulationState, dt: number): SimulationStat
       nextState.scenario.completed = true;
     }
   }
+
+  nextState.lightStates = computeScenarioLightStates(nextState.scenarioAircraft ?? [], nextState.blockedEdgeIds);
 
   return nextState;
 }
