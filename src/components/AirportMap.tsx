@@ -475,15 +475,15 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
         {state.scenarioAircraft?.map((ac: any) => {
           const pos = getPositionForAircraft(ac);
           if (!pos) return null;
-          const isEmergency = ac.role === 'emergency';
+          const colors = getScenarioAircraftColor(ac);
           return (
             <g key={ac.id}>
-              <AircraftIcon x={pos.x} y={pos.y} heading={pos.heading} scale={1} />
+              <AircraftIcon x={pos.x} y={pos.y} heading={pos.heading} scale={1} fill={colors.fill} stroke={colors.stroke} />
               <text
                 x={pos.x} y={pos.y - 12}
-                textAnchor="middle" fontSize={6} fontWeight={800}
-                fill={isEmergency ? "#ef4444" : "#f59e0b"}
-                stroke="#000000" strokeWidth={0.5} paintOrder="stroke"
+                textAnchor="middle" fontSize={6.5} fontWeight={800}
+                fill={colors.labelColor}
+                stroke="#000000" strokeWidth={0.6} paintOrder="stroke"
               >
                 {ac.callsign} {ac.scenarioLabel ? `(${ac.scenarioLabel})` : ''}
               </text>
@@ -614,12 +614,35 @@ function ParkedAircraft(_props: { x: number; y: number; heading: number }) {
   return null;
 }
 
-function AircraftIcon({ x, y, heading, scale = 1 }: { x: number; y: number; heading: number; scale?: number }) {
+function getScenarioAircraftColor(ac: any): { fill: string; stroke: string; labelColor: string } {
+  if (ac.radioFailure) {
+    return { fill: '#a855f7', stroke: '#c084fc', labelColor: '#c084fc' };
+  }
+  if (ac.role === 'emergency' || ac.scenarioLabel === 'KHẨN NGUY') {
+    return { fill: '#ef4444', stroke: '#b91c1c', labelColor: '#ef4444' };
+  }
+  if (ac.role === 'pushback' || ac.scenarioLabel === 'PUSHBACK') {
+    return { fill: '#9333ea', stroke: '#6b21a8', labelColor: '#c084fc' };
+  }
+  if (ac.role === 'arriving') {
+    return { fill: '#3b82f6', stroke: '#1d4ed8', labelColor: '#60a5fa' };
+  }
+  if (ac.role === 'departing') {
+    return { fill: '#f97316', stroke: '#c2410c', labelColor: '#fb923c' };
+  }
+  return { fill: '#f59e0b', stroke: '#b45309', labelColor: '#fbbf24' };
+}
+
+function AircraftIcon({
+  x, y, heading, scale = 1, fill = '#f59e0b', stroke = '#1e293b',
+}: {
+  x: number; y: number; heading: number; scale?: number; fill?: string; stroke?: string;
+}) {
   return (
     <g transform={`translate(${x},${y}) rotate(${heading}) scale(${scale})`} filter="url(#glow-aircraft)">
-      <ellipse cx={0} cy={0} rx={3} ry={12} fill="#f59e0b" stroke="#1e293b" strokeWidth={1.2} />
-      <polygon points="0,-1 13,6 7,8 0,5 -7,8 -13,6" fill="#fbbf24" stroke="#1e293b" strokeWidth={1.2} />
-      <polygon points="0,9 4,12 0,11 -4,12" fill="#f59e0b" stroke="#1e293b" strokeWidth={1.2} />
+      <ellipse cx={0} cy={0} rx={3} ry={12} fill={fill} stroke={stroke} strokeWidth={1.2} />
+      <polygon points="0,-1 13,6 7,8 0,5 -7,8 -13,6" fill={fill} stroke={stroke} strokeWidth={1.2} />
+      <polygon points="0,9 4,12 0,11 -4,12" fill={fill} stroke={stroke} strokeWidth={1.2} />
     </g>
   );
 }
