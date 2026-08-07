@@ -18,7 +18,7 @@ import {
 import type { SimulationConfig, SimulationState } from './types';
 
 import PresetScenariosPanel from './components/PresetScenariosPanel';
-import { PRESET_SCENARIO_DEFS } from './data/presetScenarios';
+import { startScenario, scenarioTick } from './simulation/scenarioRunner';
 
 const DEFAULT_CONFIG: SimulationConfig = {
   startNodeId:       'HS3',
@@ -71,6 +71,9 @@ export default function App() {
 
       setSimState(prev => {
         if (!prev.isRunning || prev.isPaused) return prev;
+        if (prev.scenario) {
+          return scenarioTick(prev, simDt);
+        }
         return simulationTick(prev, simDt);
       });
 
@@ -285,12 +288,7 @@ export default function App() {
               <PresetScenariosPanel
                 activeScenarioId={simState.scenario?.id}
                 onStartScenario={(scId) => {
-                  const def = PRESET_SCENARIO_DEFS[scId];
-                  if (def) {
-                    handleConfigChange({ autoReroute: true });
-                    handleAcceptRoute();
-                    handleStart();
-                  }
+                  setSimState(startScenario(scId));
                 }}
                 onExitScenario={() => {
                   handleReset();

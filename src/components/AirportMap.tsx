@@ -464,6 +464,25 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
           />
         )}
 
+        {state.scenarioAircraft?.map((ac: any) => {
+          const pos = getPositionForAircraft(ac);
+          if (!pos) return null;
+          const isEmergency = ac.role === 'emergency';
+          return (
+            <g key={ac.id}>
+              <AircraftIcon x={pos.x} y={pos.y} heading={pos.heading} scale={1} />
+              <text
+                x={pos.x} y={pos.y - 12}
+                textAnchor="middle" fontSize={6} fontWeight={800}
+                fill={isEmergency ? "#ef4444" : "#f59e0b"}
+                stroke="#000000" strokeWidth={0.5} paintOrder="stroke"
+              >
+                {ac.callsign} {ac.scenarioLabel ? `(${ac.scenarioLabel})` : ''}
+              </text>
+            </g>
+          );
+        })}
+
         {/* ── Layer 10: compass rose + chart border ─────────────────────── */}
         <CompassRose x={1148} y={28} />
 
