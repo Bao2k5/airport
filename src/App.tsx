@@ -286,7 +286,7 @@ export default function App() {
           ) : (
             <>
               <PresetScenariosPanel
-                activeScenarioId={simState.scenario?.id}
+                state={simState}
                 onStartScenario={(scId) => {
                   setSimState(startScenario(scId));
                 }}
