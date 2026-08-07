@@ -109,4 +109,6 @@ export interface SimulationState {
   lightStates: Record<string, 'green' | 'red' | 'off'>;
   // Edges blocked due to incidents
   blockedEdgeIds: Set<string>;
+  scenario?: any;
+  scenarioAircraft?: any[];
 }

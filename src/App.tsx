@@ -17,6 +17,9 @@ import {
 } from './simulation/simulator';
 import type { SimulationConfig, SimulationState } from './types';
 
+import PresetScenariosPanel from './components/PresetScenariosPanel';
+import { PRESET_SCENARIO_DEFS } from './data/presetScenarios';
+
 const DEFAULT_CONFIG: SimulationConfig = {
   startNodeId:       'HS3',
   destinationNodeId: 'RWY07L_THR',
@@ -37,6 +40,7 @@ const TIME_SCALE = 8;
 export default function App() {
   const [config, setConfig] = useState<SimulationConfig>(DEFAULT_CONFIG);
   const [simState, setSimState] = useState<SimulationState>(() => initSimulation(DEFAULT_CONFIG));
+  const [activeTab, setActiveTab] = useState<'control' | 'scenarios'>('control');
   const [showGuide, setShowGuide] = useState(false);
   const [showPinkOverlay, setShowPinkOverlay] = useState(false);
   const [pinkOpacity, setPinkOpacity] = useState(0.45);
@@ -230,25 +234,72 @@ export default function App() {
 
         {/* Thanh bên phải */}
         <div className="w-80 flex-shrink-0 flex flex-col gap-3 overflow-y-auto">
-          <ControlPanel
-            config={config}
-            onConfigChange={handleConfigChange}
-            onAcceptRoute={handleAcceptRoute}
-            onStart={handleStart}
-            onPause={handlePause}
-            onReset={handleReset}
-            routeStatus={simState.routeStatus}
-            isRunning={simState.isRunning}
-            isPaused={simState.isPaused}
-            canStart={!!simState.aircraft}
-            blockedCount={simState.blockedEdgeIds.size}
-            autoIncidents={autoIncidents}
-            onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
-            onTriggerIncident={handleTriggerIncident}
-            onClearIncidents={handleClearIncidents}
-          />
-          <StatusPanel state={simState} />
-          <ScenarioPanel state={simState} />
+          {/* Tab Switcher */}
+          <div className="flex bg-[#111620] p-1 rounded-xl border border-[#1e2838]">
+            <button
+              onClick={() => setActiveTab('control')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                activeTab === 'control'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Điều khiển
+            </button>
+            <button
+              onClick={() => setActiveTab('scenarios')}
+              className={`flex-1 py-1.5 text-xs font-bold rounded-lg transition ${
+                activeTab === 'scenarios'
+                  ? 'bg-blue-600 text-white shadow'
+                  : 'text-gray-400 hover:text-white'
+              }`}
+            >
+              Kịch bản mẫu
+            </button>
+          </div>
+
+          {activeTab === 'control' ? (
+            <>
+              <ControlPanel
+                config={config}
+                onConfigChange={handleConfigChange}
+                onAcceptRoute={handleAcceptRoute}
+                onStart={handleStart}
+                onPause={handlePause}
+                onReset={handleReset}
+                routeStatus={simState.routeStatus}
+                isRunning={simState.isRunning}
+                isPaused={simState.isPaused}
+                canStart={!!simState.aircraft}
+                blockedCount={simState.blockedEdgeIds.size}
+                autoIncidents={autoIncidents}
+                onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
+                onTriggerIncident={handleTriggerIncident}
+                onClearIncidents={handleClearIncidents}
+              />
+              <StatusPanel state={simState} />
+              <ScenarioPanel state={simState} />
+            </>
+          ) : (
+            <>
+              <PresetScenariosPanel
+                activeScenarioId={simState.scenario?.id}
+                onStartScenario={(scId) => {
+                  const def = PRESET_SCENARIO_DEFS[scId];
+                  if (def) {
+                    handleConfigChange({ autoReroute: true });
+                    handleAcceptRoute();
+                    handleStart();
+                  }
+                }}
+                onExitScenario={() => {
+                  handleReset();
+                  setActiveTab('control');
+                }}
+              />
+              <StatusPanel state={simState} />
+            </>
+          )}
         </div>
       </div>
 
