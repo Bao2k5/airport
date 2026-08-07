@@ -52,6 +52,8 @@ function computeScenarioLightStates(
 
   for (const ac of scenarioAircraft) {
     if (ac.status === 'arrived' || ac.status === 'departed') continue;
+    // Chỉ bật đèn xanh dẫn đường cho các tàu bay ĐANG THỰC SỰ LĂN BÁNH (taxiing)
+    if (ac.status !== 'taxiing') continue;
 
     const routeEdges = routeToEdges(ac.assignedRoute, airportGraph.edges) ?? [];
     const remainingEdges = routeEdges.slice(ac.routeEdgeIndex);
