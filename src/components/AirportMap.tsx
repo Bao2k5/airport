@@ -473,6 +473,15 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
         )}
 
         {state.scenarioAircraft?.map((ac: any) => {
+          // Ẩn máy bay chưa tới giờ xuất phát (releaseAtSeconds)
+          if (ac.releaseAtSeconds !== undefined && state.elapsedSeconds < ac.releaseAtSeconds) {
+            return null;
+          }
+          // Ẩn máy bay đã cất cánh (departed) hoặc đã tới bến (arrived)
+          if (ac.status === 'departed' || ac.status === 'arrived') {
+            return null;
+          }
+
           const pos = getPositionForAircraft(ac);
           if (!pos) return null;
           const colors = getScenarioAircraftColor(ac);
