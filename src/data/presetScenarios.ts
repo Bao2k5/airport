@@ -206,11 +206,13 @@ export const PRESET_SCENARIO_DEFS: Record<string, PresetScenarioDef> = {
                 atSeconds: 60,
                 apply: (state: any) => {
                   state.blockedEdgeIds.add(closureEdge);
-                  state.events.push({
-                    atSeconds: state.elapsedSeconds,
-                    message: `Đường lăn ${closureEdge} bị đóng đột xuất (FOD/phương tiện hỏng) — đang tính lại lộ trình cho các tàu bay liên quan.`,
-                    severity: 'critical',
-                  });
+                  if (state.scenario) {
+                    state.scenario.events.push({
+                      atSeconds: state.elapsedSeconds,
+                      message: `Đường lăn ${closureEdge} bị đóng đột xuất (FOD/phương tiện hỏng) — đang tính lại lộ trình cho các tàu bay liên quan.`,
+                      severity: 'critical',
+                    });
+                  }
                   return state;
                 },
               },
@@ -307,11 +309,13 @@ export const PRESET_SCENARIO_DEFS: Record<string, PresetScenarioDef> = {
               state.scenarioAircraft = state.scenarioAircraft.map((ac: any) =>
                 ac.id === 'S1' ? { ...ac, radioFailure: true, scenarioLabel: 'MẤT LIÊN LẠC' } : ac
               );
-              state.events.push({
-                atSeconds: state.elapsedSeconds,
-                message: 'VN901 mất liên lạc vô tuyến với Ground — FtG tiếp tục dẫn đường bằng đèn theo lộ trình đã cấp, không cần thoại.',
-                severity: 'warning',
-              });
+              if (state.scenario) {
+                state.scenario.events.push({
+                  atSeconds: state.elapsedSeconds,
+                  message: 'VN901 mất liên lạc vô tuyến với Ground — FtG tiếp tục dẫn đường bằng đèn theo lộ trình đã cấp, không cần thoại.',
+                  severity: 'warning',
+                });
+              }
               return state;
             },
           },
@@ -367,11 +371,13 @@ export const PRESET_SCENARIO_DEFS: Record<string, PresetScenarioDef> = {
                 }
                 return ac;
               });
-              state.events.push({
-                atSeconds: state.elapsedSeconds,
-                message: 'Chuyển đường CHC đang khai thác — tính lại lộ trình cho 3 tàu bay cùng lúc.',
-                severity: 'critical',
-              });
+              if (state.scenario) {
+                state.scenario.events.push({
+                  atSeconds: state.elapsedSeconds,
+                  message: 'Chuyển đường CHC đang khai thác — tính lại lộ trình cho 3 tàu bay cùng lúc.',
+                  severity: 'critical',
+                });
+              }
               return state;
             },
           },
