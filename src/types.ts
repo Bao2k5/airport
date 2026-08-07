@@ -23,7 +23,8 @@ export type AircraftStatus =
   | 'taxiing'
   | 'holding'
   | 'stopped'
-  | 'arrived';
+  | 'arrived'
+  | 'departed';
 
 export type WeatherCondition = 'clear' | 'rain' | 'fog' | 'thunderstorm';
 

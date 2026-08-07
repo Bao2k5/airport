@@ -24,6 +24,7 @@ export interface ScenarioAircraft {
   radioFailure?: boolean;
   deviated?: boolean;
   holdReason?: 'stop-bar' | 'separation' | 'deviation';
+  heldSeconds?: number;
 }
 
 export interface ScenarioEvent {
