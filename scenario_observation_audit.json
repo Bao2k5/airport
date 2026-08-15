@@ -1,0 +1,290 @@
+[
+  {
+    "scenarioId": "emergency_priority",
+    "scenarioTitle": "Kịch bản 1 — Tàu bay khẩn nguy được ưu tiên tuyệt đối",
+    "observationId": "obs_1_1",
+    "text": "VN9999 (KHẨN NGUY) luôn có priority cao nhất và không bị giữ lại bởi máy bay thường.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 0.5,
+    "evidence": "VN9999 / priority=0 / status=taxiing / không bị giữ",
+    "relatedAircraft": [
+      "VN9999"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "emergency_priority",
+    "scenarioTitle": "Kịch bản 1 — Tàu bay khẩn nguy được ưu tiên tuyệt đối",
+    "observationId": "obs_1_2",
+    "text": "Các tàu bay cắt ngang hành lang ưu tiên chuyển sang HOLDING trước Stop Bar.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 3,
+    "evidence": "VJ201, QH202, SQ203, VU204 / status=holding / holdReason=stop-bar",
+    "relatedAircraft": [
+      "VJ201",
+      "QH202",
+      "VU204"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "emergency_priority",
+    "scenarioTitle": "Kịch bản 1 — Tàu bay khẩn nguy được ưu tiên tuyệt đối",
+    "observationId": "obs_1_3",
+    "text": "Bảng đội bay hiển thị VN9999 đang LĂN BÁNH trong khi các tàu bay khác chuyển sang GIỮ NGUYÊN.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 3,
+    "evidence": "VN9999=taxiing & Tàu bay khác=holding",
+    "relatedAircraft": [
+      "VN9999",
+      "VJ201"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "lvc_intersection_conflict",
+    "scenarioTitle": "Kịch bản 2 — Hai tàu bay cùng tiến vào một nút giao trong LVC",
+    "observationId": "obs_2_1",
+    "text": "VN301 và TG302 đi vào cùng vùng giao lộ từ hai hướng khác nhau.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 1.5,
+    "evidence": "VN301 từ DOM_S3 & TG302 từ INTL_S3",
+    "relatedAircraft": [
+      "VN301",
+      "TG302"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "lvc_intersection_conflict",
+    "scenarioTitle": "Kịch bản 2 — Hai tàu bay cùng tiến vào một nút giao trong LVC",
+    "observationId": "obs_2_2",
+    "text": "TG302 chuyển sang HOLDING trước Stop Bar (speed=0) nhường đường cho VN301.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 4,
+    "evidence": "TG302 / status=holding / holdReason=stop-bar / speed=0kts",
+    "relatedAircraft": [
+      "TG302"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "lvc_intersection_conflict",
+    "scenarioTitle": "Kịch bản 2 — Hai tàu bay cùng tiến vào một nút giao trong LVC",
+    "observationId": "obs_2_3",
+    "text": "Sau khi VN301 đi qua giao lộ, TG302 chuyển lại TAXIING và tiếp tục lăn bánh an toàn.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 12,
+    "evidence": "TG302 / status=taxiing / speed=30kts / không va chạm",
+    "relatedAircraft": [
+      "VN301",
+      "TG302"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "taxiway_closure",
+    "scenarioTitle": "Kịch bản 3 — Đường lăn bị đóng đột xuất",
+    "observationId": "obs_3_1",
+    "text": "4 tàu bay ban đầu cùng hoạt động và có đoạn đường lăn dự kiến đi qua.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 0.5,
+    "evidence": "Đội bay 4 chiếc: VN401, VJ402, QH403, VU404",
+    "relatedAircraft": [
+      "VN401",
+      "VJ402",
+      "QH403",
+      "VU404"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "taxiway_closure",
+    "scenarioTitle": "Kịch bản 3 — Đường lăn bị đóng đột xuất",
+    "observationId": "obs_3_2",
+    "text": "Đường lăn bị đóng thật trong hệ thống và được ghi nhận rõ trong nhật ký sự kiện.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 5,
+    "evidence": "Đoạn bị đóng: E_W11_LOOP_11",
+    "relatedAircraft": [],
+    "relatedEdgeIds": [
+      "E_W11_LOOP_11"
+    ]
+  },
+  {
+    "scenarioId": "taxiway_closure",
+    "scenarioTitle": "Kịch bản 3 — Đường lăn bị đóng đột xuất",
+    "observationId": "obs_3_3",
+    "text": "Các tàu bay bị ảnh hưởng tự động đổi tuyến vòng qua Dijkstra, tuyến mới không chứa đoạn bị đóng.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 6,
+    "evidence": "Toàn bộ tuyến mới né đoạn E_W11_LOOP_11",
+    "relatedAircraft": [],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "peak_hour_lvc",
+    "scenarioTitle": "Kịch bản 4 — Giờ cao điểm kết hợp LVC",
+    "observationId": "obs_4_1",
+    "text": "Đủ 12 tàu bay cùng hoạt động với các vai trò phân định: XANH (đến), VÀNG (đi), TÍM (pushback).",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 0.5,
+    "evidence": "12 tàu bay: 5 đến, 5 đi, 2 pushback",
+    "relatedAircraft": [],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "peak_hour_lvc",
+    "scenarioTitle": "Kịch bản 4 — Giờ cao điểm kết hợp LVC",
+    "observationId": "obs_4_2",
+    "text": "Tại các nút giao đông đúc, khoảng cách an toàn được duy trì, không tàu bay nào chiếm trùng vị trí.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 3,
+    "evidence": "Duy trì khoảng cách an toàn, không trùng vị trí",
+    "relatedAircraft": [],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "peak_hour_lvc",
+    "scenarioTitle": "Kịch bản 4 — Giờ cao điểm kết hợp LVC",
+    "observationId": "obs_4_3",
+    "text": "Bảng đội bay hiển thị trạng thái phối hợp nhịp nhàng giữa LĂN BÁNH, GIỮ NGUYÊN và CHỜ LĂN.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 0.5,
+    "evidence": "Đội bay phối hợp: taxiing, waiting, holding",
+    "relatedAircraft": [],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "wrong_route_deviation",
+    "scenarioTitle": "Kịch bản 5 — Tàu bay taxi sai tuyến trong LVC",
+    "observationId": "obs_5_1",
+    "text": "VJ801 ban đầu lăn bình thường, sau đó đi lệch khỏi lộ trình được cấp.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 1.5,
+    "evidence": "VJ801 đang lăn từ DOM_S3",
+    "relatedAircraft": [
+      "VJ801"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "wrong_route_deviation",
+    "scenarioTitle": "Kịch bản 5 — Tàu bay taxi sai tuyến trong LVC",
+    "observationId": "obs_5_2",
+    "text": "Hệ thống phát hiện sai lệch (deviated=true), hiển thị cảnh báo đỏ và dừng tàu bay (DỪNG LẠI).",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 4,
+    "evidence": "VJ801 / deviated=true / status=holding / holdReason=deviation",
+    "relatedAircraft": [
+      "VJ801"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "wrong_route_deviation",
+    "scenarioTitle": "Kịch bản 5 — Tàu bay taxi sai tuyến trong LVC",
+    "observationId": "obs_5_3",
+    "text": "Hệ thống tự động cấp lại lộ trình an toàn mới qua Dijkstra và VJ801 tiếp tục lăn bánh đến đích.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 10,
+    "evidence": "VJ801 / deviated=false / status=taxiing / route đã cấp lại",
+    "relatedAircraft": [
+      "VJ801"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "radio_failure",
+    "scenarioTitle": "Kịch bản 6 — Mất liên lạc vô tuyến (Radio Failure)",
+    "observationId": "obs_6_1",
+    "text": "QH901 chuyển sang trạng thái MẤT LIÊN LẠC (radioFailure=true).",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 4,
+    "evidence": "QH901 / radioFailure=true / label=MẤT LIÊN LẠC",
+    "relatedAircraft": [
+      "QH901"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "radio_failure",
+    "scenarioTitle": "Kịch bản 6 — Mất liên lạc vô tuyến (Radio Failure)",
+    "observationId": "obs_6_2",
+    "text": "QH901 vẫn tiếp tục lăn theo đèn xanh dẫn đường FtG đến đích mà không cần huấn lệnh thoại mới.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 4,
+    "evidence": "QH901 / status=taxiing / dẫn đường qua FtG đến H25R",
+    "relatedAircraft": [
+      "QH901"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "radio_failure",
+    "scenarioTitle": "Kịch bản 6 — Mất liên lạc vô tuyến (Radio Failure)",
+    "observationId": "obs_6_3",
+    "text": "Tàu bay khác (VN902) vẫn tiếp tục vận hành song song theo quy trình thoại thông thường.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 0.5,
+    "evidence": "VN902 / radioFailure=false / status=taxiing",
+    "relatedAircraft": [
+      "VN902"
+    ],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "runway_change",
+    "scenarioTitle": "Kịch bản 7 — Chuyển đổi đường cất hạ cánh đang khai thác",
+    "observationId": "obs_7_1",
+    "text": "Ban đầu các tàu bay được phân bổ hướng về hai đầu đường băng khác nhau.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 0.5,
+    "evidence": "6 tàu bay hướng về hai đầu 07 và 25",
+    "relatedAircraft": [],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "runway_change",
+    "scenarioTitle": "Kịch bản 7 — Chuyển đổi đường cất hạ cánh đang khai thác",
+    "observationId": "obs_7_2",
+    "text": "Hệ thống kích hoạt chuyển đổi đường cất hạ cánh đang khai thác và ghi nhận trong nhật ký.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 5,
+    "evidence": "Chuyển đường CHC sang Runway 25 lúc 5.0s",
+    "relatedAircraft": [],
+    "relatedEdgeIds": []
+  },
+  {
+    "scenarioId": "runway_change",
+    "scenarioTitle": "Kịch bản 7 — Chuyển đổi đường cất hạ cánh đang khai thác",
+    "observationId": "obs_7_3",
+    "text": "Tất cả tàu bay bị ảnh hưởng tự động đổi tuyến mới sang đầu đường băng mới qua Dijkstra.",
+    "required": true,
+    "status": "pass",
+    "checkedAtSeconds": 5,
+    "evidence": "3 tàu bay đã chuyển đích sang Runway 25",
+    "relatedAircraft": [],
+    "relatedEdgeIds": []
+  }
+]

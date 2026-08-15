@@ -1,0 +1,1285 @@
+{
+  "keepCount": 5,
+  "unknownCount": 137,
+  "total": 142,
+  "details": [
+    {
+      "id": "RWY1_SEG1",
+      "fromNodeId": "RWY07L_THR",
+      "toNodeId": "R1_W4",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (R1_W4) CHƯA xác định (Từ: RWY07L_THR)."
+    },
+    {
+      "id": "RWY1_SEG2",
+      "fromNodeId": "R1_W4",
+      "toNodeId": "R1_NS",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (R1_W4) CHƯA xác định (Đến: R1_NS)."
+    },
+    {
+      "id": "RWY1_SEG3",
+      "fromNodeId": "R1_NS",
+      "toNodeId": "RWY25R_THR",
+      "fromIdentified": true,
+      "toIdentified": true,
+      "status": "KEEP",
+      "reason": "Cả 2 endpoint (R1_NS, RWY25R_THR) đều đã xác định."
+    },
+    {
+      "id": "RWY2_SEG1",
+      "fromNodeId": "RWY07R_THR",
+      "toNodeId": "R2_W7",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (R2_W7) CHƯA xác định (Từ: RWY07R_THR)."
+    },
+    {
+      "id": "RWY2_SEG2a",
+      "fromNodeId": "R2_W7",
+      "toNodeId": "R2_W5",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (R2_W7, R2_W5) CHƯA xác định."
+    },
+    {
+      "id": "RWY2_SEG2b",
+      "fromNodeId": "R2_W5",
+      "toNodeId": "R2_W3",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (R2_W5) CHƯA xác định (Đến: R2_W3)."
+    },
+    {
+      "id": "RWY2_SEG2c",
+      "fromNodeId": "R2_W3",
+      "toNodeId": "R2_E4",
+      "fromIdentified": true,
+      "toIdentified": true,
+      "status": "KEEP",
+      "reason": "Cả 2 endpoint (R2_W3, R2_E4) đều đã xác định."
+    },
+    {
+      "id": "RWY2_SEG3",
+      "fromNodeId": "R2_E4",
+      "toNodeId": "RWY25L_THR",
+      "fromIdentified": true,
+      "toIdentified": true,
+      "status": "KEEP",
+      "reason": "Cả 2 endpoint (R2_E4, RWY25L_THR) đều đã xác định."
+    },
+    {
+      "id": "DE1",
+      "fromNodeId": "T1",
+      "toNodeId": "T2",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T1, T2) CHƯA xác định."
+    },
+    {
+      "id": "DE2",
+      "fromNodeId": "T2",
+      "toNodeId": "T3",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T2, T3) CHƯA xác định."
+    },
+    {
+      "id": "DE3",
+      "fromNodeId": "T3",
+      "toNodeId": "T4",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T3, T4) CHƯA xác định."
+    },
+    {
+      "id": "DE4",
+      "fromNodeId": "T4",
+      "toNodeId": "T5",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T4, T5) CHƯA xác định."
+    },
+    {
+      "id": "DE5",
+      "fromNodeId": "T5",
+      "toNodeId": "T17",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T5, T17) CHƯA xác định."
+    },
+    {
+      "id": "DE6",
+      "fromNodeId": "T17",
+      "toNodeId": "T26",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T17, T26) CHƯA xác định."
+    },
+    {
+      "id": "DE7",
+      "fromNodeId": "T26",
+      "toNodeId": "T31",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T26, T31) CHƯA xác định."
+    },
+    {
+      "id": "DE8",
+      "fromNodeId": "T31",
+      "toNodeId": "T54",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T31, T54) CHƯA xác định."
+    },
+    {
+      "id": "DE9",
+      "fromNodeId": "T54",
+      "toNodeId": "T56",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T54, T56) CHƯA xác định."
+    },
+    {
+      "id": "DE10",
+      "fromNodeId": "T56",
+      "toNodeId": "INTL_S2",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T56, INTL_S2) CHƯA xác định."
+    },
+    {
+      "id": "DE11",
+      "fromNodeId": "INTL_S2",
+      "toNodeId": "T60",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (INTL_S2) CHƯA xác định (Đến: T60)."
+    },
+    {
+      "id": "DE12",
+      "fromNodeId": "T60",
+      "toNodeId": "T62",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T62) CHƯA xác định (Từ: T60)."
+    },
+    {
+      "id": "DE13",
+      "fromNodeId": "T62",
+      "toNodeId": "HS6",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T62, HS6) CHƯA xác định."
+    },
+    {
+      "id": "DE14",
+      "fromNodeId": "HS6",
+      "toNodeId": "T68",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (HS6) CHƯA xác định (Đến: T68)."
+    },
+    {
+      "id": "DE15",
+      "fromNodeId": "T68",
+      "toNodeId": "T39",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T39) CHƯA xác định (Từ: T68)."
+    },
+    {
+      "id": "DE16",
+      "fromNodeId": "T39",
+      "toNodeId": "T40",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T39, T40) CHƯA xác định."
+    },
+    {
+      "id": "DE17",
+      "fromNodeId": "T40",
+      "toNodeId": "T6",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T40, T6) CHƯA xác định."
+    },
+    {
+      "id": "DE18",
+      "fromNodeId": "T6",
+      "toNodeId": "T7",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T6, T7) CHƯA xác định."
+    },
+    {
+      "id": "DE19",
+      "fromNodeId": "T7",
+      "toNodeId": "T8",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T7, T8) CHƯA xác định."
+    },
+    {
+      "id": "DE20",
+      "fromNodeId": "T8",
+      "toNodeId": "T9",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T8, T9) CHƯA xác định."
+    },
+    {
+      "id": "DE21",
+      "fromNodeId": "T10",
+      "toNodeId": "H07L",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (T10) CHƯA xác định (Đến: H07L)."
+    },
+    {
+      "id": "DE22",
+      "fromNodeId": "T11",
+      "toNodeId": "T12",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T11, T12) CHƯA xác định."
+    },
+    {
+      "id": "DE23",
+      "fromNodeId": "T12",
+      "toNodeId": "T13",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T12, T13) CHƯA xác định."
+    },
+    {
+      "id": "DE24",
+      "fromNodeId": "T13",
+      "toNodeId": "T10",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T13, T10) CHƯA xác định."
+    },
+    {
+      "id": "DE25",
+      "fromNodeId": "RWY07R_THR",
+      "toNodeId": "X1",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (X1) CHƯA xác định (Từ: RWY07R_THR)."
+    },
+    {
+      "id": "DE26",
+      "fromNodeId": "X1",
+      "toNodeId": "T5",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (X1, T5) CHƯA xác định."
+    },
+    {
+      "id": "DE27",
+      "fromNodeId": "T14",
+      "toNodeId": "T15",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T14, T15) CHƯA xác định."
+    },
+    {
+      "id": "DE28",
+      "fromNodeId": "T15",
+      "toNodeId": "H07R",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (T15) CHƯA xác định (Đến: H07R)."
+    },
+    {
+      "id": "DE29",
+      "fromNodeId": "H07R",
+      "toNodeId": "T16",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T16) CHƯA xác định (Từ: H07R)."
+    },
+    {
+      "id": "DE30",
+      "fromNodeId": "T16",
+      "toNodeId": "T17",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T16, T17) CHƯA xác định."
+    },
+    {
+      "id": "DE31",
+      "fromNodeId": "T18",
+      "toNodeId": "HS16",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T18, HS16) CHƯA xác định."
+    },
+    {
+      "id": "DE32",
+      "fromNodeId": "HS16",
+      "toNodeId": "T19",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS16, T19) CHƯA xác định."
+    },
+    {
+      "id": "DE33",
+      "fromNodeId": "T19",
+      "toNodeId": "T20",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T19, T20) CHƯA xác định."
+    },
+    {
+      "id": "DE34",
+      "fromNodeId": "T20",
+      "toNodeId": "T21",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T20, T21) CHƯA xác định."
+    },
+    {
+      "id": "DE35",
+      "fromNodeId": "T22",
+      "toNodeId": "T23",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T22, T23) CHƯA xác định."
+    },
+    {
+      "id": "DE36",
+      "fromNodeId": "T23",
+      "toNodeId": "T24",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T23, T24) CHƯA xác định."
+    },
+    {
+      "id": "DE37",
+      "fromNodeId": "T24",
+      "toNodeId": "T25",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T24, T25) CHƯA xác định."
+    },
+    {
+      "id": "DE38",
+      "fromNodeId": "T25",
+      "toNodeId": "T26",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T25, T26) CHƯA xác định."
+    },
+    {
+      "id": "DE39",
+      "fromNodeId": "T27",
+      "toNodeId": "T28",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T27, T28) CHƯA xác định."
+    },
+    {
+      "id": "DE40",
+      "fromNodeId": "T28",
+      "toNodeId": "T26",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T28, T26) CHƯA xác định."
+    },
+    {
+      "id": "DE41",
+      "fromNodeId": "T28",
+      "toNodeId": "T30",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T28, T30) CHƯA xác định."
+    },
+    {
+      "id": "DE42",
+      "fromNodeId": "T30",
+      "toNodeId": "T29",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (T30) CHƯA xác định (Đến: T29)."
+    },
+    {
+      "id": "DE43",
+      "fromNodeId": "T30",
+      "toNodeId": "T31",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T30, T31) CHƯA xác định."
+    },
+    {
+      "id": "DE44",
+      "fromNodeId": "T1",
+      "toNodeId": "T32",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T1, T32) CHƯA xác định."
+    },
+    {
+      "id": "DE45",
+      "fromNodeId": "T18",
+      "toNodeId": "T14",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T18, T14) CHƯA xác định."
+    },
+    {
+      "id": "DE46",
+      "fromNodeId": "T33",
+      "toNodeId": "T64",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T64) CHƯA xác định (Từ: T33)."
+    },
+    {
+      "id": "DE47",
+      "fromNodeId": "T64",
+      "toNodeId": "T66",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T64, T66) CHƯA xác định."
+    },
+    {
+      "id": "DE48",
+      "fromNodeId": "T66",
+      "toNodeId": "HS12",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T66, HS12) CHƯA xác định."
+    },
+    {
+      "id": "DE49",
+      "fromNodeId": "HS12",
+      "toNodeId": "T37",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS12, T37) CHƯA xác định."
+    },
+    {
+      "id": "DE50",
+      "fromNodeId": "T37",
+      "toNodeId": "HS9",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T37, HS9) CHƯA xác định."
+    },
+    {
+      "id": "DE51",
+      "fromNodeId": "HS9",
+      "toNodeId": "T38",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS9, T38) CHƯA xác định."
+    },
+    {
+      "id": "DE52",
+      "fromNodeId": "T38",
+      "toNodeId": "T73",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T38, T73) CHƯA xác định."
+    },
+    {
+      "id": "DE53",
+      "fromNodeId": "T73",
+      "toNodeId": "HS10",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T73, HS10) CHƯA xác định."
+    },
+    {
+      "id": "DE54",
+      "fromNodeId": "HS10",
+      "toNodeId": "T9",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS10, T9) CHƯA xác định."
+    },
+    {
+      "id": "DE55",
+      "fromNodeId": "T34",
+      "toNodeId": "T35",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T34, T35) CHƯA xác định."
+    },
+    {
+      "id": "DE56",
+      "fromNodeId": "T35",
+      "toNodeId": "T36",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T35, T36) CHƯA xác định."
+    },
+    {
+      "id": "DE57",
+      "fromNodeId": "T36",
+      "toNodeId": "T37",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T36, T37) CHƯA xác định."
+    },
+    {
+      "id": "DE58",
+      "fromNodeId": "T38",
+      "toNodeId": "T39",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T38, T39) CHƯA xác định."
+    },
+    {
+      "id": "DE59",
+      "fromNodeId": "T41",
+      "toNodeId": "T42",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T42) CHƯA xác định (Từ: T41)."
+    },
+    {
+      "id": "DE60",
+      "fromNodeId": "T42",
+      "toNodeId": "T43",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T42, T43) CHƯA xác định."
+    },
+    {
+      "id": "DE61",
+      "fromNodeId": "T43",
+      "toNodeId": "HS3",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T43, HS3) CHƯA xác định."
+    },
+    {
+      "id": "DE62",
+      "fromNodeId": "HS3",
+      "toNodeId": "P5",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS3, P5) CHƯA xác định."
+    },
+    {
+      "id": "DE63",
+      "fromNodeId": "P5",
+      "toNodeId": "T44",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (P5, T44) CHƯA xác định."
+    },
+    {
+      "id": "DE64",
+      "fromNodeId": "T44",
+      "toNodeId": "T45",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T44, T45) CHƯA xác định."
+    },
+    {
+      "id": "DE65",
+      "fromNodeId": "T45",
+      "toNodeId": "T49",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T45, T49) CHƯA xác định."
+    },
+    {
+      "id": "DE66",
+      "fromNodeId": "T49",
+      "toNodeId": "T48",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T49, T48) CHƯA xác định."
+    },
+    {
+      "id": "DE67",
+      "fromNodeId": "T48",
+      "toNodeId": "T46",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T48, T46) CHƯA xác định."
+    },
+    {
+      "id": "DE68",
+      "fromNodeId": "T47",
+      "toNodeId": "T48",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T47, T48) CHƯA xác định."
+    },
+    {
+      "id": "DE69",
+      "fromNodeId": "T49",
+      "toNodeId": "T50",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T49, T50) CHƯA xác định."
+    },
+    {
+      "id": "DE70",
+      "fromNodeId": "T46",
+      "toNodeId": "T51",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T46, T51) CHƯA xác định."
+    },
+    {
+      "id": "DE71",
+      "fromNodeId": "T51",
+      "toNodeId": "T52",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T51, T52) CHƯA xác định."
+    },
+    {
+      "id": "DE72",
+      "fromNodeId": "T52",
+      "toNodeId": "T46",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T52, T46) CHƯA xác định."
+    },
+    {
+      "id": "DE73",
+      "fromNodeId": "T51",
+      "toNodeId": "T53",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T51, T53) CHƯA xác định."
+    },
+    {
+      "id": "DE74",
+      "fromNodeId": "T54",
+      "toNodeId": "T55",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T54, T55) CHƯA xác định."
+    },
+    {
+      "id": "DE75",
+      "fromNodeId": "T55",
+      "toNodeId": "T56",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T55, T56) CHƯA xác định."
+    },
+    {
+      "id": "DE76",
+      "fromNodeId": "T56",
+      "toNodeId": "T57",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T56, T57) CHƯA xác định."
+    },
+    {
+      "id": "DE77",
+      "fromNodeId": "T57",
+      "toNodeId": "T54",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T57, T54) CHƯA xác định."
+    },
+    {
+      "id": "DE78",
+      "fromNodeId": "T45",
+      "toNodeId": "P1",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T45, P1) CHƯA xác định."
+    },
+    {
+      "id": "DE79",
+      "fromNodeId": "P1",
+      "toNodeId": "T63",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (P1, T63) CHƯA xác định."
+    },
+    {
+      "id": "DE80",
+      "fromNodeId": "T63",
+      "toNodeId": "T62",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T63, T62) CHƯA xác định."
+    },
+    {
+      "id": "DE81",
+      "fromNodeId": "T62",
+      "toNodeId": "T61",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T62, T61) CHƯA xác định."
+    },
+    {
+      "id": "DE82",
+      "fromNodeId": "T61",
+      "toNodeId": "HS17",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T61, HS17) CHƯA xác định."
+    },
+    {
+      "id": "DE83",
+      "fromNodeId": "HS17",
+      "toNodeId": "T33",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (HS17) CHƯA xác định (Đến: T33)."
+    },
+    {
+      "id": "DE84",
+      "fromNodeId": "T33",
+      "toNodeId": "T58",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T58) CHƯA xác định (Từ: T33)."
+    },
+    {
+      "id": "DE85",
+      "fromNodeId": "T58",
+      "toNodeId": "T59",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T58, T59) CHƯA xác định."
+    },
+    {
+      "id": "DE86",
+      "fromNodeId": "T60",
+      "toNodeId": "T61",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T61) CHƯA xác định (Từ: T60)."
+    },
+    {
+      "id": "DE87",
+      "fromNodeId": "T63",
+      "toNodeId": "T60",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (T63) CHƯA xác định (Đến: T60)."
+    },
+    {
+      "id": "DE88",
+      "fromNodeId": "T64",
+      "toNodeId": "T65",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T64, T65) CHƯA xác định."
+    },
+    {
+      "id": "DE89",
+      "fromNodeId": "T65",
+      "toNodeId": "T66",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T65, T66) CHƯA xác định."
+    },
+    {
+      "id": "DE90",
+      "fromNodeId": "T66",
+      "toNodeId": "T67",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T66, T67) CHƯA xác định."
+    },
+    {
+      "id": "DE91",
+      "fromNodeId": "T67",
+      "toNodeId": "T64",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T67, T64) CHƯA xác định."
+    },
+    {
+      "id": "DE92",
+      "fromNodeId": "T67",
+      "toNodeId": "T68",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (T67) CHƯA xác định (Đến: T68)."
+    },
+    {
+      "id": "DE93",
+      "fromNodeId": "T65",
+      "toNodeId": "T34",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T65, T34) CHƯA xác định."
+    },
+    {
+      "id": "DE94",
+      "fromNodeId": "T55",
+      "toNodeId": "T69",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T55, T69) CHƯA xác định."
+    },
+    {
+      "id": "DE95",
+      "fromNodeId": "T35",
+      "toNodeId": "T72",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T35, T72) CHƯA xác định."
+    },
+    {
+      "id": "DE96",
+      "fromNodeId": "T72",
+      "toNodeId": "H25R",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (T72) CHƯA xác định (Đến: H25R)."
+    },
+    {
+      "id": "DE97",
+      "fromNodeId": "H25R",
+      "toNodeId": "T70",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T70) CHƯA xác định (Từ: H25R)."
+    },
+    {
+      "id": "DE98",
+      "fromNodeId": "T70",
+      "toNodeId": "T71",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T70, T71) CHƯA xác định."
+    },
+    {
+      "id": "DE99",
+      "fromNodeId": "T71",
+      "toNodeId": "T72",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T71, T72) CHƯA xác định."
+    },
+    {
+      "id": "DE100",
+      "fromNodeId": "T9",
+      "toNodeId": "T74",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T9, T74) CHƯA xác định."
+    },
+    {
+      "id": "DE101",
+      "fromNodeId": "T74",
+      "toNodeId": "T75",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T74, T75) CHƯA xác định."
+    },
+    {
+      "id": "DE102",
+      "fromNodeId": "T75",
+      "toNodeId": "T76",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T75, T76) CHƯA xác định."
+    },
+    {
+      "id": "DE103",
+      "fromNodeId": "T77",
+      "toNodeId": "T78",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T78) CHƯA xác định (Từ: T77)."
+    },
+    {
+      "id": "DE104",
+      "fromNodeId": "T78",
+      "toNodeId": "T79",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T78, T79) CHƯA xác định."
+    },
+    {
+      "id": "DE105",
+      "fromNodeId": "T79",
+      "toNodeId": "T80",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T79, T80) CHƯA xác định."
+    },
+    {
+      "id": "DE106",
+      "fromNodeId": "T80",
+      "toNodeId": "T81",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T80, T81) CHƯA xác định."
+    },
+    {
+      "id": "DE107",
+      "fromNodeId": "T79",
+      "toNodeId": "T82",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T79, T82) CHƯA xác định."
+    },
+    {
+      "id": "DE108",
+      "fromNodeId": "T82",
+      "toNodeId": "T83",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T82, T83) CHƯA xác định."
+    },
+    {
+      "id": "DE109",
+      "fromNodeId": "HS15",
+      "toNodeId": "X1",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS15, X1) CHƯA xác định."
+    },
+    {
+      "id": "DE110",
+      "fromNodeId": "X1",
+      "toNodeId": "T1",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (X1, T1) CHƯA xác định."
+    },
+    {
+      "id": "DE111",
+      "fromNodeId": "HS4",
+      "toNodeId": "T56",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T56) CHƯA xác định (Từ: HS4)."
+    },
+    {
+      "id": "DE112",
+      "fromNodeId": "HS5",
+      "toNodeId": "T41",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (HS5) CHƯA xác định (Đến: T41)."
+    },
+    {
+      "id": "DE113",
+      "fromNodeId": "HS11",
+      "toNodeId": "T33",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (HS11) CHƯA xác định (Đến: T33)."
+    },
+    {
+      "id": "DE114",
+      "fromNodeId": "HS14",
+      "toNodeId": "T9",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS14, T9) CHƯA xác định."
+    },
+    {
+      "id": "DE115",
+      "fromNodeId": "HS7",
+      "toNodeId": "T34",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS7, T34) CHƯA xác định."
+    },
+    {
+      "id": "DE116",
+      "fromNodeId": "HS13",
+      "toNodeId": "T37",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS13, T37) CHƯA xác định."
+    },
+    {
+      "id": "DE117",
+      "fromNodeId": "HS8",
+      "toNodeId": "T7",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (HS8, T7) CHƯA xác định."
+    },
+    {
+      "id": "DE118",
+      "fromNodeId": "DOM_S5",
+      "toNodeId": "P3",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (DOM_S5, P3) CHƯA xác định."
+    },
+    {
+      "id": "DE119",
+      "fromNodeId": "P3",
+      "toNodeId": "HS4",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (P3) CHƯA xác định (Đến: HS4)."
+    },
+    {
+      "id": "DE120",
+      "fromNodeId": "DOM_S4",
+      "toNodeId": "T41",
+      "fromIdentified": false,
+      "toIdentified": true,
+      "status": "UNKNOWN",
+      "reason": "Endpoint từ (DOM_S4) CHƯA xác định (Đến: T41)."
+    },
+    {
+      "id": "DE121",
+      "fromNodeId": "DOM_S3",
+      "toNodeId": "T43",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (DOM_S3, T43) CHƯA xác định."
+    },
+    {
+      "id": "DE122",
+      "fromNodeId": "DOM_S2",
+      "toNodeId": "P5",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (DOM_S2, P5) CHƯA xác định."
+    },
+    {
+      "id": "DE123",
+      "fromNodeId": "DOM_S1",
+      "toNodeId": "T44",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (DOM_S1, T44) CHƯA xác định."
+    },
+    {
+      "id": "DE124",
+      "fromNodeId": "P2",
+      "toNodeId": "T63",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (P2, T63) CHƯA xác định."
+    },
+    {
+      "id": "DE125",
+      "fromNodeId": "P4",
+      "toNodeId": "T44",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (P4, T44) CHƯA xác định."
+    },
+    {
+      "id": "DE126",
+      "fromNodeId": "INTL_S1",
+      "toNodeId": "T56",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (INTL_S1, T56) CHƯA xác định."
+    },
+    {
+      "id": "DE127",
+      "fromNodeId": "INTL_S3",
+      "toNodeId": "T56",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (INTL_S3, T56) CHƯA xác định."
+    },
+    {
+      "id": "DE128",
+      "fromNodeId": "INTL_S4",
+      "toNodeId": "T56",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (INTL_S4, T56) CHƯA xác định."
+    },
+    {
+      "id": "DE129",
+      "fromNodeId": "RWY07L_THR",
+      "toNodeId": "H07L",
+      "fromIdentified": true,
+      "toIdentified": true,
+      "status": "KEEP",
+      "reason": "Cả 2 endpoint (RWY07L_THR, H07L) đều đã xác định."
+    },
+    {
+      "id": "DE130",
+      "fromNodeId": "RWY25R_THR",
+      "toNodeId": "T70",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T70) CHƯA xác định (Từ: RWY25R_THR)."
+    },
+    {
+      "id": "DE131",
+      "fromNodeId": "RWY25L_THR",
+      "toNodeId": "T76",
+      "fromIdentified": true,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Endpoint đến (T76) CHƯA xác định (Từ: RWY25L_THR)."
+    },
+    {
+      "id": "DE132",
+      "fromNodeId": "H25L",
+      "toNodeId": "T73",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (H25L, T73) CHƯA xác định."
+    },
+    {
+      "id": "DE133",
+      "fromNodeId": "T29",
+      "toNodeId": "T41",
+      "fromIdentified": true,
+      "toIdentified": true,
+      "status": "KEEP",
+      "reason": "Cả 2 endpoint (T29, T41) đều đã xác định."
+    },
+    {
+      "id": "DE134",
+      "fromNodeId": "T32",
+      "toNodeId": "T11",
+      "fromIdentified": false,
+      "toIdentified": false,
+      "status": "UNKNOWN",
+      "reason": "Cả 2 endpoint (T32, T11) CHƯA xác định."
+    }
+  ]
+}

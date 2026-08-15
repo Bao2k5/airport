@@ -1,7 +1,8 @@
-// Complete Scenario Physics Engine decompiled 100% from Vercel Demo
+// Complete Scenario Physics Engine with Dynamic Graph Selection
+// Supports both airportGraph (V1) and airportGraphV2 (V2) seamlessly.
 
-import type { SimulationState, SimulationConfig } from '../types';
-import { PRESET_SCENARIO_DEFS, type ScenarioAircraft, type ScenarioState } from '../data/presetScenarios';
+import type { SimulationState, SimulationConfig, AirportGraph } from '../types';
+import { getPresetScenarioDefs, type ScenarioAircraft, type ScenarioState, type ScenarioObservation } from '../data/presetScenarios';
 import { airportGraph } from '../data/airportGraph';
 import { routeToEdges } from './pathfinding';
 
@@ -9,6 +10,7 @@ const DEFAULT_SCENARIO_CONFIG: SimulationConfig = {
   startNodeId: 'HS3',
   destinationNodeId: 'RWY07L_THR',
   callsign: 'SCENARIO',
+  airlineCode: 'VN',
   aircraftType: 'A321',
   weather: 'clear',
   timeOfDay: 'morning',
@@ -21,13 +23,13 @@ const DEFAULT_SCENARIO_CONFIG: SimulationConfig = {
 
 const KTS_TO_PX_PER_SEC = 0.3;
 
-function getNodePos(nodeId: string) {
-  return airportGraph.nodes.find(n => n.id === nodeId) ?? null;
+function getNodePos(nodeId: string, graph: AirportGraph = airportGraph) {
+  return graph.nodes.find(n => n.id === nodeId) ?? null;
 }
 
-function getBlockedEdgeIds(config: SimulationConfig): Set<string> {
+function getBlockedEdgeIds(config: SimulationConfig, graph: AirportGraph = airportGraph): Set<string> {
   const blocked = new Set<string>();
-  for (const edge of airportGraph.edges) {
+  for (const edge of graph.edges) {
     if (edge.status === 'closed' || edge.status === 'restricted') {
       blocked.add(edge.id);
     }
@@ -40,11 +42,12 @@ function getBlockedEdgeIds(config: SimulationConfig): Set<string> {
 
 function computeScenarioLightStates(
   scenarioAircraft: ScenarioAircraft[],
-  blockedEdgeIds: Set<string>
+  blockedEdgeIds: Set<string>,
+  graph: AirportGraph = airportGraph
 ): Record<string, 'green' | 'red' | 'off'> {
   const lights: Record<string, 'green' | 'red' | 'off'> = {};
 
-  for (const edge of airportGraph.edges) {
+  for (const edge of graph.edges) {
     if (blockedEdgeIds.has(edge.id)) {
       lights[edge.id] = 'red';
     }
@@ -52,10 +55,9 @@ function computeScenarioLightStates(
 
   for (const ac of scenarioAircraft) {
     if (ac.status === 'arrived' || ac.status === 'departed') continue;
-    // Chỉ bật đèn xanh dẫn đường cho các tàu bay ĐANG THỰC SỰ LĂN BÁNH (taxiing)
     if (ac.status !== 'taxiing') continue;
 
-    const routeEdges = routeToEdges(ac.assignedRoute, airportGraph.edges) ?? [];
+    const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
     const remainingEdges = routeEdges.slice(ac.routeEdgeIndex);
 
     for (let i = 0; i < remainingEdges.length; i++) {
@@ -73,13 +75,16 @@ function computeScenarioLightStates(
   return lights;
 }
 
-export function startScenario(scenarioId: string): SimulationState {
-  const def = PRESET_SCENARIO_DEFS[scenarioId];
+export function startScenario(scenarioId: string, graph: AirportGraph = airportGraph): SimulationState {
+  const defs = getPresetScenarioDefs(graph);
+  const def = defs[scenarioId];
   if (!def) {
     throw new Error(`Unknown scenario ID: ${scenarioId}`);
   }
 
-  const { weather, aircraft, triggers } = def.setup();
+  const setupRes = def.setup(graph);
+  const { weather, aircraft, triggers } = setupRes;
+  const observations: ScenarioObservation[] = setupRes.observations || def.observations || [];
 
   const scenarioState: ScenarioState = {
     id: scenarioId,
@@ -87,6 +92,7 @@ export function startScenario(scenarioId: string): SimulationState {
     situation: def.situation,
     challenges: def.challenges,
     watchFor: def.watchFor,
+    observations,
     startedAtSeconds: 0,
     events: [{ atSeconds: 0, message: 'Kịch bản bắt đầu.', severity: 'info' }],
     pendingTriggers: triggers,
@@ -98,7 +104,7 @@ export function startScenario(scenarioId: string): SimulationState {
     weather,
   };
 
-  const blockedEdgeIds = getBlockedEdgeIds(config);
+  const blockedEdgeIds = getBlockedEdgeIds(config, graph);
 
   return {
     aircraft: null,
@@ -110,8 +116,16 @@ export function startScenario(scenarioId: string): SimulationState {
     elapsedSeconds: 0,
     etaSeconds: null,
     warningMessage: null,
-    lightStates: computeScenarioLightStates(aircraft, blockedEdgeIds),
+    lightStates: computeScenarioLightStates(aircraft, blockedEdgeIds, graph),
     blockedEdgeIds,
+    liveEventLog: [
+      {
+        id: `sc_init_${scenarioId}`,
+        atSeconds: 0,
+        message: `Khởi chạy kịch bản: ${def.title}`,
+        severity: 'info',
+      },
+    ],
     scenario: scenarioState,
     scenarioAircraft: aircraft,
   };
@@ -129,7 +143,7 @@ function logScenarioEvent(state: SimulationState, msg: string, severity: 'info' 
   };
 }
 
-export function scenarioTick(state: SimulationState, dt: number): SimulationState {
+export function scenarioTick(state: SimulationState, dt: number, graph: AirportGraph = airportGraph): SimulationState {
   if (!state.isRunning || state.isPaused || !state.scenario || !state.scenarioAircraft) {
     return state;
   }
@@ -143,14 +157,18 @@ export function scenarioTick(state: SimulationState, dt: number): SimulationStat
       return { ...ac, status: 'waiting' as const };
     }
 
-    const routeEdges = routeToEdges(ac.assignedRoute, airportGraph.edges) ?? [];
+    if (ac.status === 'holding' || ac.speedKts === 0) {
+      return ac;
+    }
+
+    const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
     if (ac.routeEdgeIndex >= routeEdges.length) {
       return { ...ac, status: 'arrived' as const, speedKts: 0 };
     }
 
-    const currentEdge = airportGraph.edges.find(e => e.id === routeEdges[ac.routeEdgeIndex]);
-    const fromNode = getNodePos(ac.assignedRoute[ac.routeEdgeIndex]);
-    const toNode = getNodePos(ac.assignedRoute[ac.routeEdgeIndex + 1]);
+    const currentEdge = graph.edges.find(e => e.id === routeEdges[ac.routeEdgeIndex]);
+    const fromNode = getNodePos(ac.assignedRoute[ac.routeEdgeIndex], graph);
+    const toNode = getNodePos(ac.assignedRoute[ac.routeEdgeIndex + 1], graph);
 
     if (!currentEdge || !fromNode || !toNode) {
       return { ...ac, status: 'arrived' as const, speedKts: 0 };
@@ -217,21 +235,51 @@ export function scenarioTick(state: SimulationState, dt: number): SimulationStat
     }
   }
 
+  // ── EVALUATE RUNTIME OBSERVATIONS ─────────────────────────────────────────
+  if (nextState.scenario && nextState.scenario.observations) {
+    const updatedObservations = nextState.scenario.observations.map((obs: ScenarioObservation) => {
+      if (obs.status === 'pass') return obs; // already verified pass
+
+      if (obs.check) {
+        const res = obs.check(nextState, graph);
+        if (res.pass) {
+          return {
+            ...obs,
+            status: 'pass' as const,
+            checkedAtSeconds: elapsed,
+            evidence: res.evidence || `Xác nhận lúc ${elapsed.toFixed(1)}s`,
+          };
+        } else if (res.fail) {
+          return {
+            ...obs,
+            status: 'fail' as const,
+            checkedAtSeconds: elapsed,
+            evidence: res.evidence || `Không đạt lúc ${elapsed.toFixed(1)}s`,
+          };
+        }
+      }
+      return obs;
+    });
+
+    nextState.scenario.observations = updatedObservations;
+  }
+
   // Check scenario completion
-  if (
-    nextState.scenario &&
-    !nextState.scenario.completed &&
-    nextState.scenarioAircraft &&
-    nextState.scenarioAircraft.length > 0 &&
-    nextState.scenarioAircraft.every((ac: ScenarioAircraft) => ac.status === 'arrived' || ac.status === 'departed')
-  ) {
-    nextState = logScenarioEvent(nextState, 'Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí.', 'info');
-    if (nextState.scenario) {
-      nextState.scenario.completed = true;
+  const allObsPass = !nextState.scenario?.observations || nextState.scenario.observations.every((o: ScenarioObservation) => !o.required || o.status === 'pass');
+  const allArrived = nextState.scenarioAircraft && nextState.scenarioAircraft.length > 0 && nextState.scenarioAircraft.every((ac: ScenarioAircraft) => ac.status === 'arrived' || ac.status === 'departed');
+
+  if (nextState.scenario && !nextState.scenario.completed && allArrived) {
+    if (allObsPass) {
+      nextState = logScenarioEvent(nextState, 'Kịch bản hoàn tất — tất cả tiêu chí quan sát đã đạt chuẩn 100%.', 'info');
+      if (nextState.scenario) {
+        nextState.scenario.completed = true;
+      }
+    } else {
+      nextState = logScenarioEvent(nextState, 'Chưa đạt — còn điều kiện cần quan sát chưa được xác nhận.', 'warning');
     }
   }
 
-  nextState.lightStates = computeScenarioLightStates(nextState.scenarioAircraft ?? [], nextState.blockedEdgeIds);
+  nextState.lightStates = computeScenarioLightStates(nextState.scenarioAircraft ?? [], nextState.blockedEdgeIds, graph);
 
   return nextState;
 }

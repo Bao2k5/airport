@@ -1,68 +1,82 @@
 // SVG airport map — aeronautical chart style matching TSN reference.
+// Completely decoupled renderers:
+//   1. Scenario Mode (ScenarioGuidanceRenderer):
+//      - Full route is hidden.
+//      - Follow-the-Green sliding window (80–120px) ahead of nose only with Neon Green drop-shadow (#00ff66, #39ff88).
+//      - Behind the aircraft is completely unlit.
+//   2. Manual Mode (ManualRouteRenderer):
+//      - Full route from start to destination is rendered clearly in Cyan (#00e5ff, #0284c7).
+//      - Independent aircraft movement and markers for all fleet instances.
 
-import { type JSX, useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { airportGraph, SVG_WIDTH, SVG_HEIGHT } from '../data/airportGraph';
-import { getAircraftSpec } from '../data/aircraftTypes';
 import AirportLighting from './AirportLighting';
-import { routeToEdges } from '../simulation/pathfinding';
-import type { Aircraft, SimulationState } from '../types';
-
-// Reference image calibration: ref(0,0)→SVG(-192,-665), ref(2048,1430)→SVG(1308,1417)
-const PINK_X = -192, PINK_Y = -665, PINK_W = 1500, PINK_H = 2082;
+import { getAirlineDef } from '../data/airlineTypes';
+import type { AirportGraph, Aircraft, SimulationState } from '../types';
 
 interface Props {
   state: SimulationState;
+  graph?: AirportGraph;
+  bgImage?: string;
   onNodeClick?: (nodeId: string) => void;
-  showPinkOverlay?: boolean;
-  pinkOpacity?: number;
+  onSelectAircraft?: (aircraftId: string) => void;
   showPaths?: boolean;
   showGrid?: boolean;
+  showGraphV2Overlay?: boolean;
 }
 
-const STAND_HEADINGS: Record<string, number> = {
-  DOM_S1: 90, DOM_S2: 90, DOM_S3: 90, DOM_S4: 90, DOM_S5: 90,
-  INTL_S1: 90, INTL_S2: 90, INTL_S3: 90, INTL_S4: 90,
-};
+const BG_OUTER = '#0c0f12';
+const GUIDANCE_WINDOW_PX = 100;
+const GUIDANCE_MAX_NODES = 4;
 
-// ── Palette ───────────────────────────────────────────────────────────────────
-const ASPHALT  = '#444444';
-const BG_OUTER = '#ebebeb';
+export default function AirportMap({
+  state,
+  graph = airportGraph,
+  bgImage = '/anhtren.png',
+  onNodeClick,
+  onSelectAircraft,
+  showPaths,
+  showGrid,
+  showGraphV2Overlay,
+}: Props) {
+  const activeGraph = graph;
+  const isScenario = !!state.scenario;
 
-const EDGE_STYLES: Record<string, { stroke: string; width: number }> = {
-  runway:  { stroke: ASPHALT, width: 26 },
-  taxiway: { stroke: ASPHALT, width: 0  },
-  apron:   { stroke: ASPHALT, width: 0  },
-  holding: { stroke: ASPHALT, width: 0  },
-};
-
-export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOpacity = 0.45, showPaths, showGrid }: Props) {
-  const { aircraft, lightStates } = state;
-
-  const aircraftPos = getAircraftPosition(state);
-
-  const occupiedStands = new Set([
-    state.config.startNodeId,
-    state.config.destinationNodeId,
-  ]);
-
-  const isNight     = state.config.timeOfDay === 'night';
+  const isNight = state.config.timeOfDay === 'night';
   const isAfternoon = state.config.timeOfDay === 'afternoon';
   const isFog = state.config.weather === 'fog';
   const isRain = state.config.weather === 'rain';
   const isThunderstorm = state.config.weather === 'thunderstorm';
 
+  // ── Continuous animation clock for Follow-the-Green pulsing ──────────────────
+  const [animPhase, setAnimPhase] = useState(0);
+  const animRef = useRef<number | null>(null);
+
+  useEffect(() => {
+    let lastT = performance.now();
+    const frame = (now: number) => {
+      const dt = (now - lastT) / 1000;
+      lastT = now;
+      if (state.isRunning && !state.isPaused) {
+        setAnimPhase(prev => (prev + dt * 3.5) % (Math.PI * 200));
+      }
+      animRef.current = requestAnimationFrame(frame);
+    };
+    animRef.current = requestAnimationFrame(frame);
+    return () => {
+      if (animRef.current) cancelAnimationFrame(animRef.current);
+    };
+  }, [state.isRunning, state.isPaused]);
+
   // ── Pan / zoom (viewBox-based) ────────────────────────────────────────────────
-  // A stateful viewBox lets the user cuộn để phóng to vào khu vực sân đỗ (apron)
-  // and kéo để di chuyển. Full view = {0,0,SVG_WIDTH,SVG_HEIGHT}.
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT });
   const [dragging, setDragging] = useState(false);
   const drag = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
   const ASPECT = SVG_HEIGHT / SVG_WIDTH;
-  const MIN_W = SVG_WIDTH * 0.12;   // phóng to tối đa ~8×
-  const MAX_W = SVG_WIDTH;          // không thu nhỏ quá khung đầy đủ
+  const MIN_W = SVG_WIDTH * 0.12;
+  const MAX_W = SVG_WIDTH;
 
-  // Kẹp viewBox nằm trong ranh giới chart để không lộ vùng trống.
   const clampView = (v: { x: number; y: number; w: number; h: number }) => {
     const w = Math.min(MAX_W, Math.max(MIN_W, v.w));
     const h = w * ASPECT;
@@ -78,7 +92,6 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
     setView(v => {
       const w = Math.min(MAX_W, Math.max(MIN_W, v.w * factor));
       const h = w * ASPECT;
-      // Giữ điểm dưới con trỏ đứng yên khi phóng to/thu nhỏ.
       const fx = (clientX - rect.left) / rect.width;
       const fy = (clientY - rect.top) / rect.height;
       const sx = v.x + fx * v.w;
@@ -87,7 +100,6 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
     });
   };
 
-  // Wheel listener gắn thủ công để preventDefault (React onWheel là passive).
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
@@ -97,7 +109,6 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
     };
     svg.addEventListener('wheel', onWheel, { passive: false });
     return () => svg.removeEventListener('wheel', onWheel);
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
@@ -125,9 +136,21 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
 
   const zoomed = view.w < SVG_WIDTH - 0.5;
 
+  const allActiveAircraft: Aircraft[] = isScenario
+    ? (state.scenarioAircraft ?? []).filter((ac: any) => {
+        if (ac.releaseAtSeconds !== undefined && state.elapsedSeconds < ac.releaseAtSeconds) return false;
+        if (ac.status === 'departed' || ac.status === 'arrived') return false;
+        return true;
+      })
+    : (state.manualFleet && state.manualFleet.length
+        ? state.manualFleet.filter(ac => ac.status !== 'arrived' && ac.status !== 'departed')
+        : (state.aircraft ? [state.aircraft] : []));
+
   return (
-    <div className="relative w-full h-full rounded-xl overflow-hidden border border-[#bbb]"
-      style={{ background: isNight ? '#0a0e18' : isAfternoon ? '#dfc98a' : BG_OUTER }}>
+    <div
+      className="relative w-full h-full rounded-xl overflow-hidden border border-[#223044]"
+      style={{ background: isNight ? '#0a0e18' : isAfternoon ? '#dfc98a' : BG_OUTER }}
+    >
       {isAfternoon && (
         <div
           className="absolute inset-0 pointer-events-none z-10"
@@ -168,44 +191,35 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         className="w-full h-full"
         preserveAspectRatio="none"
-        shapeRendering="crispEdges"
-        style={{ fontFamily: 'Arial, Helvetica, sans-serif', cursor: dragging ? 'grabbing' : zoomed ? 'grab' : 'default', touchAction: 'none' }}
+        shapeRendering="geometricPrecision"
+        style={{
+          fontFamily: 'Arial, Helvetica, sans-serif',
+          cursor: dragging ? 'grabbing' : zoomed ? 'grab' : 'default',
+          touchAction: 'none',
+        }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={endDrag}
         onPointerLeave={endDrag}
       >
         <defs>
-          <filter id="glow-green" x="-60%" y="-60%" width="220%" height="220%">
-            <feGaussianBlur stdDeviation="2.5" result="coloredBlur" />
-            <feMerge>
-              <feMergeNode in="coloredBlur" />
-              <feMergeNode in="SourceGraphic" />
-            </feMerge>
-          </filter>
-          {/* Soft green bead for the discrete guidance (lead-on) lights: bright centre
-              fading out to a transparent halo — reads as a glowing lamp, not a band. */}
-          <radialGradient id="lead-green">
-            <stop offset="0%"   stopColor="#ffffff" stopOpacity="1" />
-            <stop offset="28%"  stopColor="#86efac" stopOpacity="1" />
-            <stop offset="60%"  stopColor="#22c55e" stopOpacity="0.95" />
-            <stop offset="100%" stopColor="#15a34a" stopOpacity="0" />
-          </radialGradient>
           <filter id="glow-aircraft" x="-50%" y="-50%" width="200%" height="200%">
-            <feGaussianBlur stdDeviation="4" result="coloredBlur" />
+            <feGaussianBlur stdDeviation="3" result="coloredBlur" />
             <feMerge>
               <feMergeNode in="coloredBlur" />
               <feMergeNode in="SourceGraphic" />
             </feMerge>
           </filter>
+
+          <radialGradient id="neon-lead-green">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="30%" stopColor="#39ff88" stopOpacity="1" />
+            <stop offset="65%" stopColor="#00ff66" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#00cc44" stopOpacity="0" />
+          </radialGradient>
         </defs>
 
         <style>{`
-          @keyframes guidance-pulse {
-            0%, 100% { opacity: 1; }
-            50%       { opacity: 0.78; }
-          }
-          .guidance-dot { animation: guidance-pulse 1.8s ease-in-out infinite; }
           @keyframes storm-flash {
             0%, 92%, 100% { opacity: 0; }
             94%           { opacity: 0.35; }
@@ -213,36 +227,14 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
             98%           { opacity: 0.30; }
           }
           .storm-flash { animation: storm-flash 6s ease-out infinite; }
-
           .rain-fall {
-            background-image:
-              repeating-linear-gradient(105deg,
-                rgba(255,255,255,0) 0px,
-                rgba(255,255,255,0) 8px,
-                rgba(190,205,225,0.28) 9px,
-                rgba(190,205,225,0.28) 10px);
+            background-image: repeating-linear-gradient(105deg, rgba(255,255,255,0) 0px, rgba(255,255,255,0) 8px, rgba(190,205,225,0.28) 9px, rgba(190,205,225,0.28) 10px);
             background-size: 100px 100px;
             animation: rain-fall 0.55s linear infinite;
           }
-          .rain-fall.rain-heavy {
-            background-image:
-              repeating-linear-gradient(102deg,
-                rgba(255,255,255,0) 0px,
-                rgba(255,255,255,0) 5px,
-                rgba(200,212,230,0.38) 6px,
-                rgba(200,212,230,0.38) 7px);
-            background-size: 70px 70px;
-            animation-duration: 0.4s;
-          }
-          @keyframes rain-fall {
-            0%   { background-position: 0 0; }
-            100% { background-position: -26px 100px; }
-          }
-
           .fog-drift {
-            background-image:
-              radial-gradient(ellipse 50% 60% at 20% 40%, rgba(225,227,232,0.30), rgba(225,227,232,0) 70%),
-              radial-gradient(ellipse 60% 50% at 80% 60%, rgba(225,227,232,0.25), rgba(225,227,232,0) 70%);
+            background-image: radial-gradient(ellipse 50% 60% at 20% 40%, rgba(225,227,232,0.30), rgba(225,227,232,0) 70%),
+                              radial-gradient(ellipse 60% 50% at 80% 60%, rgba(225,227,232,0.25), rgba(225,227,232,0) 70%);
             background-size: 200% 200%;
             animation: fog-drift 22s ease-in-out infinite alternate;
           }
@@ -252,270 +244,249 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
           }
         `}</style>
 
-        {/* ── Layer 1: reference image base — 1309×875 at SVG 1200×860 = perfect 1:1 CMP mapping */}
-        <image href="/ref_full.png" x={0} y={0} width={1200} height={860} preserveAspectRatio="none" />
+        {/* ── Layer 1: Clean background map ── */}
+        <image href={bgImage} x={0} y={0} width={SVG_WIDTH} height={SVG_HEIGHT} preserveAspectRatio="none" />
 
-        {/* Đêm: phủ navy rất tối lên chart để làm mờ pavement — đèn vẽ TRÊN lớp này */}
+        {/* Đêm: phủ navy tối lên map */}
         {isNight && (
           <rect x={0} y={0} width={SVG_WIDTH} height={SVG_HEIGHT} fill="#0a0e18" fillOpacity={0.92} />
         )}
 
-        {/* ── Pink path overlay (allowed_paths.jpg, toggled via showPinkOverlay prop) ── */}
-        {showPinkOverlay && (
-          <image
-            href="/allowed_paths.jpg"
-            x={PINK_X} y={PINK_Y} width={PINK_W} height={PINK_H}
-            preserveAspectRatio="none"
-            opacity={pinkOpacity}
-          />
+        {/* Night lighting — render động theo activeGraph */}
+        {isNight && <AirportLighting graph={activeGraph} />}
+
+        {/* ── Layer 2: Optional Graph Overlay (When toggled ON) ── */}
+        {(showGraphV2Overlay || showPaths) && (
+          <g opacity={0.85}>
+            {activeGraph.edges.map(edge => {
+              const f = activeGraph.nodes.find(n => n.id === edge.fromNodeId);
+              const t = activeGraph.nodes.find(n => n.id === edge.toNodeId);
+              if (!f || !t) return null;
+              const isBlocked = state.blockedEdgeIds.has(edge.id);
+              return (
+                <g key={`v2-edge-${edge.id}`}>
+                  <line
+                    x1={f.x} y1={f.y} x2={t.x} y2={t.y}
+                    stroke={isBlocked ? '#ef4444' : '#00e5ff'}
+                    strokeWidth={isBlocked ? 3.5 : 1.8}
+                    strokeDasharray={isBlocked ? '6,4' : undefined}
+                    opacity={isBlocked ? 0.95 : 0.6}
+                  />
+                  {showPaths && (
+                    <text
+                      x={(f.x + t.x) / 2} y={(f.y + t.y) / 2 - 1}
+                      textAnchor="middle" fontSize={3.8} fontWeight={700}
+                      fill="#ffffff" stroke="#0f172a" strokeWidth={0.4} paintOrder="stroke"
+                    >
+                      {edge.id}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+            {activeGraph.nodes.map(n => {
+              const isStart = state.config.startNodeId === n.id;
+              const isDest = state.config.destinationNodeId === n.id;
+              const isRwy = n.type === 'runway_entry' || n.type === 'runway_exit';
+              const isHp = n.type === 'holding_point';
+              const fill = isStart ? '#22c55e' : (isDest ? '#ef4444' : (isRwy ? '#f97316' : (isHp ? '#eab308' : '#38bdf8')));
+              return (
+                <g
+                  key={`v2-node-${n.id}`}
+                  onClick={() => onNodeClick?.(n.id)}
+                  style={{ cursor: onNodeClick ? 'pointer' : 'default' }}
+                >
+                  <circle cx={n.x} cy={n.y} r={isStart || isDest ? 4.5 : 2.5} fill={fill} stroke="#ffffff" strokeWidth={0.8} />
+                  {(isStart || isDest || showPaths) && (
+                    <text
+                      x={n.x} y={n.y - 4}
+                      textAnchor="middle" fontSize={4.5} fontWeight={800}
+                      fill="#ffffff" stroke="#000000" strokeWidth={0.6} paintOrder="stroke"
+                    >
+                      {n.label || n.id}
+                    </text>
+                  )}
+                </g>
+              );
+            })}
+          </g>
         )}
 
-        {/* ── Lớp đèn sân bay ban đêm (tĩnh, có glow) ────────────────────── */}
-        {isNight && <AirportLighting />}
-
-        {/* ── Layer 2: planned route preview (remaining path, dashed blue) ── */}
-        {aircraft && aircraft.status !== 'arrived' && aircraft.assignedRoute.length > 1 && (
-          <RoutePlanLine route={aircraft.assignedRoute.slice(aircraft.routeEdgeIndex)} />
-        )}
-
-        {/* ── Layer 4: parked aircraft at stands ────────────────────────── */}
-        {Object.entries(STAND_HEADINGS).map(([id, heading]) => {
-          if (occupiedStands.has(id)) return null;
-          const node = airportGraph.nodes.find(n => n.id === id);
-          if (!node) return null;
-          // INTL stands in the infield (y<265) create wrong-color pixels — skip parked aircraft there
-          if (node.y < 265) return null;
-          return <ParkedAircraft key={id} x={node.x} y={node.y} heading={heading} />;
-        })}
-
-        {/* ── Layer 5: taxiway / apron edges ────────────────────────────── */}
-        {airportGraph.edges.map(edge => {
-          if (edge.type === 'runway') return null;
-          // Stand / parking edges: hide when not lit (no dark marking in chart)
-          const isStandEdge = edge.fromNodeId.startsWith('DOM_S') || edge.toNodeId.startsWith('DOM_S')
-            || edge.fromNodeId.startsWith('INTL_S') || edge.toNodeId.startsWith('INTL_S')
-            || edge.fromNodeId.startsWith('P') || edge.toNodeId.startsWith('P');
-          if (isStandEdge && (lightStates[edge.id] ?? 'off') === 'off') return null;
-          const fromNode = airportGraph.nodes.find(n => n.id === edge.fromNodeId);
-          const toNode   = airportGraph.nodes.find(n => n.id === edge.toNodeId);
-          if (!fromNode || !toNode) return null;
-
-          const lightState = lightStates[edge.id] ?? 'off';
-          const style      = EDGE_STYLES[edge.type] ?? EDGE_STYLES.taxiway;
-
-          let stroke = style.stroke;
-          let strokeWidth = style.width;
-          // Green route is drawn as individual centreline lights (GuidanceLights below),
-          // NOT a solid green band — so keep the base pavement stroke. Only red (stop)
-          // paints the edge line itself.
-          if (lightState === 'red') { stroke = '#ef4444'; strokeWidth = Math.max(strokeWidth, 3); }
-
-          // On the edge the aircraft is currently traversing, the portion it has
-          // ALREADY PASSED must go dark immediately (rather than staying green until
-          // the whole edge falls behind) — so split the highlight at the aircraft's
-          // position. This is direction-aware: the route may traverse an edge either
-          // fromNode→toNode or toNode→fromNode, and the "passed" side is whichever end
-          // the aircraft came from. `aircraftT` is measured from fromNode (0=fromNode,
-          // 1=toNode) regardless of travel direction.
-          const activeAircraftList = [
-            ...(aircraft ? [aircraft] : []),
-            ...(state.scenarioAircraft ?? []),
-          ];
-
-          const acOnThisEdge = lightState === 'green'
-            ? activeAircraftList.find(a => a.currentEdgeId === edge.id && a.status !== 'arrived' && a.status !== 'departed')
-            : undefined;
-
-          const isForward = !!acOnThisEdge && acOnThisEdge.assignedRoute[acOnThisEdge.routeEdgeIndex] === edge.fromNodeId;
-          const aircraftT = acOnThisEdge
-            ? (isForward ? acOnThisEdge.progressOnEdge : 1 - acOnThisEdge.progressOnEdge)
-            : undefined;
-          const splitX = aircraftT !== undefined ? fromNode.x + (toNode.x - fromNode.x) * aircraftT : null;
-          const splitY = aircraftT !== undefined ? fromNode.y + (toNode.y - fromNode.y) * aircraftT : null;
-          // Entry node = where the aircraft came from (its side is the dark, passed
-          // segment); exit node = where it's heading (its side stays green).
-          const entryNode = isForward ? fromNode : toNode;
-          const exitNode  = isForward ? toNode : fromNode;
-
-          return (
-            <g key={edge.id}>
-              {splitX !== null && splitY !== null && (
-                <line
-                  x1={entryNode.x} y1={entryNode.y}
-                  x2={splitX}      y2={splitY}
-                  stroke={style.stroke}
-                  strokeWidth={style.width}
-                  strokeLinecap="round"
-                  opacity={edge.status === 'closed' ? 0.3 : 1}
-                />
-              )}
-              <line
-                x1={splitX ?? fromNode.x} y1={splitY ?? fromNode.y}
-                x2={splitX !== null ? exitNode.x : toNode.x}
-                y2={splitY !== null ? exitNode.y : toNode.y}
-                stroke={stroke}
-                strokeWidth={strokeWidth}
-                strokeLinecap="round"
-                opacity={edge.status === 'closed' ? 0.3 : 1}
+        {/* ── Layer 3: RENDERER 1 - SCENARIO MODE (Sliding Neon Green FTG Only) ── */}
+        {isScenario && (
+          <g className="scenario-guidance-layer">
+            {allActiveAircraft.map(ac => (
+              <ScenarioGuidanceRenderer
+                key={`sc-guidance-${ac.id}`}
+                aircraft={ac}
+                graph={activeGraph}
+                animPhase={animPhase}
               />
-              {lightState === 'green' && (
-                <GuidanceLights
-                  x1={fromNode.x} y1={fromNode.y}
-                  x2={toNode.x}   y2={toNode.y}
-                  aircraftT={aircraftT}
-                  aircraftForward={isForward}
-                />
-              )}
-              {lightState === 'red' && (
-                <StopBar
-                  x1={fromNode.x} y1={fromNode.y}
-                  x2={toNode.x}   y2={toNode.y}
-                />
-              )}
-              {edge.status === 'closed' && (
-                <ClosedMarker
-                  x1={fromNode.x} y1={fromNode.y}
-                  x2={toNode.x}   y2={toNode.y}
-                />
-              )}
-            </g>
-          );
+            ))}
+          </g>
+        )}
+
+        {/* ── Layer 4: RENDERER 2 - MANUAL MODE (Full Route from Start to Dest in Cyan) ── */}
+        {!isScenario && (
+          <g className="manual-full-route-layer">
+            {allActiveAircraft.map(ac => (
+              <ManualRouteRenderer
+                key={`manual-route-${ac.id}`}
+                aircraft={ac}
+                graph={activeGraph}
+                isSelected={ac.id === (state.selectedAircraftId || state.aircraft?.id)}
+              />
+            ))}
+          </g>
+        )}
+
+        {/* ── Layer 4.5: Stand Labels (Stand 1, Stand 2, Stand 3, Stand 4, Stand 5, Stand 7) ── */}
+        {!isScenario && (
+          <g className="stand-labels-layer">
+            {[
+              { nodeId: 'P1', label: 'Stand 1', offsetY: 15 },
+              { nodeId: 'P2', label: 'Stand 2', offsetY: -16 },
+              { nodeId: 'P3', label: 'Stand 3', offsetY: 15 },
+              { nodeId: 'P4', label: 'Stand 4', offsetY: 15 },
+              { nodeId: 'P5', label: 'Stand 5', offsetY: -16 },
+              { nodeId: 'T49', label: 'Stand 7', offsetY: 15 },
+            ].map(s => {
+              const node = activeGraph.nodes.find(n => n.id === s.nodeId);
+              if (!node) return null;
+              return (
+                <g key={`stand-lbl-${s.nodeId}`}>
+                  <rect
+                    x={node.x - 14}
+                    y={node.y + s.offsetY}
+                    width={28}
+                    height={8}
+                    rx={2}
+                    fill="#0f172a"
+                    fillOpacity={0.9}
+                    stroke="#38bdf8"
+                    strokeWidth={0.6}
+                  />
+                  <text
+                    x={node.x}
+                    y={node.y + s.offsetY + 6}
+                    textAnchor="middle"
+                    fontSize={5.2}
+                    fontWeight={800}
+                    fill="#38bdf8"
+                  >
+                    {s.label}
+                  </text>
+                </g>
+              );
+            })}
+          </g>
+        )}
+
+        {/* ── Layer 5: Holding Bars & Closed Edge Markers ── */}
+        {allActiveAircraft.map(ac => {
+          if (ac.status !== 'holding') return null;
+          const fromNode = activeGraph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex]);
+          const toNode = activeGraph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex + 1]);
+          if (!fromNode || !toNode) return null;
+          return <StopBar key={`hold-bar-${ac.id}`} x1={fromNode.x} y1={fromNode.y} x2={toNode.x} y2={toNode.y} />;
         })}
 
-        {/* ── Debug: glow every taxi/apron/holding edge + its id, to vet the network ── */}
-        {showPaths && <AllowedPathsOverlay />}
+        {Array.from(state.blockedEdgeIds).map(edgeId => {
+          const edge = activeGraph.edges.find(e => e.id === edgeId);
+          if (!edge) return null;
+          const fromNode = activeGraph.nodes.find(n => n.id === edge.fromNodeId);
+          const toNode = activeGraph.nodes.find(n => n.id === edge.toNodeId);
+          if (!fromNode || !toNode) return null;
+          return <ClosedMarker key={`closed-${edge.id}`} x1={fromNode.x} y1={fromNode.y} x2={toNode.x} y2={toNode.y} />;
+        })}
 
-        {/* ── Debug: coordinate grid (read x,y to guide edits) ── */}
+        {/* ── Layer 6: Coordinate Grid (Debug) ── */}
         {showGrid && <CoordinateGrid />}
 
-        {/* ── Layer 6: visual-only E-series / NS-series taxiway lines ──── */}
-        <ExtraTaxiwayLines />
-
-        {/* ── Layer 7: taxiway name labels + all map annotations ────────── */}
-        <TaxiwayLabels />
-        <AreaLabels />
-        {/* ClosedTaxiwayMarkers removed — reference shows clean white infield */}
-        <HoldingSpotMarkers />
-        <ParkingPositionMarkers />
-
-        {/* ── Layer 8: nodes ────────────────────────────────────────────── */}
-        {airportGraph.nodes.map(node => {
-          const isStart = state.config.startNodeId === node.id;
-          const isDest  = state.config.destinationNodeId === node.id;
-
-          if (node.type === 'intersection' && !isStart && !isDest) return null;
-          // H25L holding point is mispositioned in the white infield — suppress visual unless active
-          if (node.id === 'H25L' && !isStart && !isDest) return null;
-          // INTL stands are in the infield zone (y<265) — suppress circles to avoid wrong color pixels
-          if (node.type === 'stand' && node.y < 265 && !isStart && !isDest) return null;
-
-          // Hot-spots: the only travel-to/from points — draw them as labelled markers.
-          if (node.type === 'hotspot') {
-            const active = isStart || isDest;
-            return (
-              <g
-                key={node.id}
-                onClick={() => onNodeClick?.(node.id)}
-                style={{ cursor: onNodeClick ? 'pointer' : 'default' }}
-              >
-                <circle
-                  cx={node.x} cy={node.y} r={5}
-                  fill={active ? '#f59e0b' : '#9ca3af'}
-                  stroke="#1f2937" strokeWidth={1} opacity={0.95}
-                />
-                <text
-                  x={node.x} y={node.y - 7}
-                  textAnchor="middle" fontSize={7} fontWeight={700}
-                  fill="#111827" stroke="#ffffff" strokeWidth={0.4}
-                  paintOrder="stroke"
-                >
-                  {node.label}
-                </text>
-              </g>
-            );
-          }
+        {/* ── Layer 7: Render All Active Aircraft with Custom Liveries ── */}
+        {allActiveAircraft.map(ac => {
+          const pos = getPositionForAircraft(ac, activeGraph);
+          if (!pos) return null;
+          const isSelected = ac.id === (state.selectedAircraftId || state.aircraft?.id);
+          const aDef = getAirlineDef(ac.airlineCode || ac.callsign);
+          const labelColor = isSelected ? '#38bdf8' : (aDef.accentColor || '#fbbf24');
+          const isFacingSouth = pos.heading > 135 && pos.heading < 225;
+          const callsignY = isFacingSouth ? pos.y + 19 : pos.y - 17;
 
           return (
             <g
-              key={node.id}
-              onClick={() => onNodeClick?.(node.id)}
-              style={{ cursor: onNodeClick ? 'pointer' : 'default' }}
+              key={`aircraft-${ac.id}`}
+              onClick={() => onSelectAircraft?.(ac.id)}
+              style={{ cursor: 'pointer' }}
             >
-              {node.type !== 'runway_entry' && (
-                <circle
-                  cx={node.x} cy={node.y}
-                  r={node.type === 'stand' ? 3.5 : 3}
-                  fill="#ebebeb"
-                  stroke="none"
-                  strokeWidth={0}
-                  opacity={0.75}
-                />
+              <AircraftIcon
+                x={pos.x}
+                y={pos.y}
+                heading={pos.heading}
+                callsign={ac.callsign}
+                airlineCode={ac.airlineCode}
+                aircraftAsset={ac.aircraftAsset}
+                scale={1}
+                isEmergency={ac.role === 'emergency' || ac.scenarioLabel === 'KHẨN NGUY'}
+                isDeviated={ac.deviated}
+                isRadioFailure={ac.radioFailure}
+                isSelected={isSelected && !isScenario}
+              />
+              <text
+                x={pos.x} y={callsignY}
+                textAnchor="middle" fontSize={6.8} fontWeight={800}
+                fill={labelColor}
+                stroke="#000000" strokeWidth={0.8} paintOrder="stroke"
+              >
+                {ac.callsign} {ac.scenarioLabel ? `(${ac.scenarioLabel})` : ''}
+              </text>
+
+              {/* Dấu X đỏ phát sáng ngăn máy bay khi holding / stop-bar */}
+              {ac.status === 'holding' && (
+                <g transform={`translate(${pos.x}, ${pos.y})`}>
+                  {/* Position X marker in front of aircraft along its heading */}
+                  <g transform={`rotate(${pos.heading}) translate(0, -22)`}>
+                    {/* Glowing Red X Barrier */}
+                    <g className="animate-pulse">
+                      {/* Glow backdrop circle */}
+                      <circle cx={0} cy={0} r={11} fill="rgba(239, 68, 68, 0.3)" stroke="#ef4444" strokeWidth={1.2} strokeDasharray="3,2" />
+                      {/* Outer red glow */}
+                      <line x1={-7} y1={-7} x2={7} y2={7} stroke="#ff0000" strokeWidth={3.5} strokeLinecap="round" />
+                      <line x1={-7} y1={7} x2={7} y2={-7} stroke="#ff0000" strokeWidth={3.5} strokeLinecap="round" />
+                      {/* Bright white core */}
+                      <line x1={-7} y1={-7} x2={7} y2={7} stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" />
+                      <line x1={-7} y1={7} x2={7} y2={-7} stroke="#ffffff" strokeWidth={1.4} strokeLinecap="round" />
+                    </g>
+                    {/* Stop Bar Badge Text */}
+                    <g transform={`rotate(${-pos.heading}) translate(0, 16)`}>
+                      <rect x={-42} y={-7} width={84} height={13} rx={3} fill="#180404" stroke="#ef4444" strokeWidth={0.9} />
+                      <text x={0} y={2.5} textAnchor="middle" fontSize={5.5} fontWeight={900} fill="#fca5a5">
+                        {ac.callsign === 'TG302' ? 'STOP BAR — NHƯỜNG VN301' : 'STOP BAR — DỪNG LẠI'}
+                      </text>
+                    </g>
+                  </g>
+                </g>
               )}
             </g>
           );
         })}
-
-        {/* ── Layer 8.5: background traffic (visual-only, grey) ──────────── */}
-        {state.trafficAircraft.map(ac => {
-          const pos = getPositionForAircraft(ac);
-          if (!pos) return null;
-          return <BackgroundAircraftIcon key={ac.id} x={pos.x} y={pos.y} heading={pos.heading} />;
-        })}
-
-        {/* ── Layer 9: active aircraft ───────────────────────────────────── */}
-        {aircraft && aircraftPos && (
-          <AircraftIcon
-            x={aircraftPos.x}
-            y={aircraftPos.y}
-            heading={aircraftPos.heading}
-            scale={getAircraftSpec(state.config.aircraftType).sizeScale}
-          />
-        )}
-
-        {state.scenarioAircraft?.map((ac: any) => {
-          // Ẩn máy bay chưa tới giờ xuất phát (releaseAtSeconds)
-          if (ac.releaseAtSeconds !== undefined && state.elapsedSeconds < ac.releaseAtSeconds) {
-            return null;
-          }
-          // Ẩn máy bay đã cất cánh (departed) hoặc đã tới bến (arrived)
-          if (ac.status === 'departed' || ac.status === 'arrived') {
-            return null;
-          }
-
-          const pos = getPositionForAircraft(ac);
-          if (!pos) return null;
-          const colors = getScenarioAircraftColor(ac);
-          return (
-            <g key={ac.id}>
-              <AircraftIcon x={pos.x} y={pos.y} heading={pos.heading} scale={1} fill={colors.fill} stroke={colors.stroke} />
-              <text
-                x={pos.x} y={pos.y - 12}
-                textAnchor="middle" fontSize={6.5} fontWeight={800}
-                fill={colors.labelColor}
-                stroke="#000000" strokeWidth={0.6} paintOrder="stroke"
-              >
-                {ac.callsign} {ac.scenarioLabel ? `(${ac.scenarioLabel})` : ''}
-              </text>
-            </g>
-          );
-        })}
-
-        {/* ── Layer 10: compass rose + chart border ─────────────────────── */}
-        <CompassRose x={1148} y={28} />
-
-        {/* ── Layer 11: legend ──────────────────────────────────────────── */}
-        <MapLegend />
       </svg>
 
       {/* ── Zoom controls ─────────────────────────────────────────────── */}
       <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1 select-none">
         <button
-          onClick={() => { const r = svgRef.current!.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.4); }}
+          onClick={() => {
+            const r = svgRef.current!.getBoundingClientRect();
+            zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.4);
+          }}
           className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-lg font-bold leading-none border border-gray-600 shadow"
           title="Phóng to"
         >+</button>
         <button
-          onClick={() => { const r = svgRef.current!.getBoundingClientRect(); zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.4); }}
+          onClick={() => {
+            const r = svgRef.current!.getBoundingClientRect();
+            zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.4);
+          }}
           className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-lg font-bold leading-none border border-gray-600 shadow"
           title="Thu nhỏ"
         >−</button>
@@ -531,62 +502,245 @@ export default function AirportMap({ state, onNodeClick, showPinkOverlay, pinkOp
   );
 }
 
+// ── RENDERER 1: SCENARIO MODE (Sliding Neon Green Follow-the-Green Window 80-120px)
+interface PolylinePoint {
+  x: number;
+  y: number;
+  distFromStart: number;
+}
 
+function getForwardRoutePolyline(
+  aircraft: Aircraft,
+  graph: AirportGraph,
+  maxWindowPx = GUIDANCE_WINDOW_PX,
+  maxNodes = GUIDANCE_MAX_NODES,
+): { points: PolylinePoint[]; totalLen: number } | null {
+  if (!aircraft.assignedRoute || aircraft.assignedRoute.length < 2) return null;
+  if (aircraft.routeEdgeIndex >= aircraft.assignedRoute.length - 1) return null;
 
-// ── Route plan preview ────────────────────────────────────────────────────────
+  const fromNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex]);
+  const toNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 1]);
+  if (!fromNode || !toNode) return null;
 
-function RoutePlanLine({ route }: { route: string[] }) {
-  const nodes = route.map(id => airportGraph.nodes.find(n => n.id === id));
-  if (nodes.some(n => !n)) return null;
-  const d = nodes.map((n, i) => `${i === 0 ? 'M' : 'L'}${n!.x},${n!.y}`).join(' ');
+  const t = aircraft.progressOnEdge;
+  const currX = fromNode.x + (toNode.x - fromNode.x) * t;
+  const currY = fromNode.y + (toNode.y - fromNode.y) * t;
+
+  const points: PolylinePoint[] = [{ x: currX, y: currY, distFromStart: 0 }];
+  let accumDist = 0;
+
+  // 1. Remaining segment on current edge
+  const remDx = toNode.x - currX;
+  const remDy = toNode.y - currY;
+  const remLen = Math.hypot(remDx, remDy);
+
+  if (remLen > 0.5) {
+    if (accumDist + remLen >= maxWindowPx) {
+      const frac = (maxWindowPx - accumDist) / remLen;
+      points.push({
+        x: currX + remDx * frac,
+        y: currY + remDy * frac,
+        distFromStart: maxWindowPx,
+      });
+      return { points, totalLen: maxWindowPx };
+    }
+    accumDist += remLen;
+    points.push({ x: toNode.x, y: toNode.y, distFromStart: accumDist });
+  }
+
+  // 2. Subsequent edges along the polyline up to maxNodes and maxWindowPx
+  let prevNode = toNode;
+  let nodesCount = 1;
+
+  for (let i = aircraft.routeEdgeIndex + 1; i < aircraft.assignedRoute.length - 1 && nodesCount < maxNodes; i++) {
+    const nextNodeId = aircraft.assignedRoute[i + 1];
+    const nextNode = graph.nodes.find(n => n.id === nextNodeId);
+    if (!nextNode) break;
+
+    const segDx = nextNode.x - prevNode.x;
+    const segDy = nextNode.y - prevNode.y;
+    const segLen = Math.hypot(segDx, segDy);
+    nodesCount++;
+
+    if (segLen <= 0.5) {
+      prevNode = nextNode;
+      continue;
+    }
+
+    if (accumDist + segLen >= maxWindowPx) {
+      const frac = (maxWindowPx - accumDist) / segLen;
+      points.push({
+        x: prevNode.x + segDx * frac,
+        y: prevNode.y + segDy * frac,
+        distFromStart: maxWindowPx,
+      });
+      accumDist = maxWindowPx;
+      break;
+    }
+
+    accumDist += segLen;
+    points.push({ x: nextNode.x, y: nextNode.y, distFromStart: accumDist });
+    prevNode = nextNode;
+  }
+
+  return { points, totalLen: accumDist };
+}
+
+function ScenarioGuidanceRenderer({
+  aircraft,
+  graph,
+  animPhase,
+}: {
+  aircraft: Aircraft;
+  graph: AirportGraph;
+  animPhase: number;
+}) {
+  if (aircraft.status === 'arrived' || aircraft.status === 'departed') return null;
+  const poly = getForwardRoutePolyline(aircraft, graph, GUIDANCE_WINDOW_PX, GUIDANCE_MAX_NODES);
+  if (!poly || poly.points.length < 2 || poly.totalLen < 2) return null;
+
+  // Compute discrete glowing circular dots along forward guidance polyline (Nét đứt hình tròn)
+  const dots: { x: number; y: number; dist: number; phase: number }[] = [];
+  const dotSpacing = 11;
+  const numDots = Math.floor(poly.totalLen / dotSpacing);
+
+  for (let i = 1; i <= numDots; i++) {
+    const targetDist = i * dotSpacing;
+    let pt: { x: number; y: number } | null = null;
+    for (let j = 0; j < poly.points.length - 1; j++) {
+      const p1 = poly.points[j];
+      const p2 = poly.points[j + 1];
+      if (targetDist >= p1.distFromStart && targetDist <= p2.distFromStart) {
+        const segLen = p2.distFromStart - p1.distFromStart;
+        const t = segLen > 0 ? (targetDist - p1.distFromStart) / segLen : 0;
+        pt = {
+          x: p1.x + (p2.x - p1.x) * t,
+          y: p1.y + (p2.y - p1.y) * t,
+        };
+        break;
+      }
+    }
+    if (pt) {
+      const p = (targetDist / 15 - animPhase) % (Math.PI * 2);
+      dots.push({ x: pt.x, y: pt.y, dist: targetDist, phase: p });
+    }
+  }
+
   return (
-    <>
-      {/* dark halo for contrast on any background */}
-      <path d={d} stroke="#0f172a" strokeWidth={5} fill="none" opacity={0.4}
-        strokeLinecap="round" strokeLinejoin="round" />
-      {/* mảnh & dịu hơn đèn để không át bản đồ */}
-      <path d={d} stroke="#38bdf8" strokeWidth={2.2} fill="none" opacity={0.6}
-        strokeDasharray="10,7" strokeLinecap="round" strokeLinejoin="round" />
-    </>
+    <g
+      className="scenario-ftg-neon-dots"
+      style={{
+        filter: 'drop-shadow(0 0 6px #00ff66) drop-shadow(0 0 14px #00ff66)',
+      }}
+    >
+      {/* Chuỗi chấm tròn sáng màu xanh lá neon chạy tuần tự (Nét đứt hình tròn ● ● ●) */}
+      {dots.map((dot, idx) => {
+        const pulse = 0.8 + 0.3 * Math.sin(dot.phase);
+        const fade = Math.max(0.3, 1 - dot.dist / (GUIDANCE_WINDOW_PX * 1.15));
+        return (
+          <g key={`sc-dot-${idx}`} opacity={fade}>
+            <circle cx={dot.x} cy={dot.y} r={7.0 * pulse} fill="url(#neon-lead-green)" />
+            <circle cx={dot.x} cy={dot.y} r={3.4 * pulse} fill="#00ff66" />
+            <circle cx={dot.x} cy={dot.y} r={1.4} fill="#ffffff" />
+          </g>
+        );
+      })}
+    </g>
   );
 }
 
-// ── Taxiway marking components ────────────────────────────────────────────────
-
-function GuidanceLights({
-  x1, y1, x2, y2, aircraftT, aircraftForward,
+// ── RENDERER 2: MANUAL MODE (Full Route in Cyan Minus Dashes - - - -) ─────────
+function ManualRouteRenderer({
+  aircraft,
+  graph,
+  isSelected = false,
 }: {
-  x1: number; y1: number; x2: number; y2: number;
-  // Aircraft's position along this edge, 0 (=x1,y1) to 1 (=x2,y2). When set, this is
-  // the edge the aircraft is currently on — dots behind it (already passed) go dark
-  // immediately instead of staying lit until the whole edge falls behind.
-  aircraftT?: number;
-  // Travel direction along this edge: true = fromNode→toNode (forward), false =
-  // toNode→fromNode (reverse). Determines which side of `aircraftT` is "passed".
-  aircraftForward?: boolean;
+  aircraft: Aircraft;
+  graph: AirportGraph;
+  isSelected?: boolean;
 }) {
-  const dx = x2 - x1, dy = y2 - y1;
-  const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  const spacing = 16;                              // gap between lights (px)
-  const count   = Math.max(1, Math.round(len / spacing));
-  const dots: JSX.Element[] = [];
-  for (let i = 1; i < count; i++) {
-    const t = i / count;
-    // Skip lights the aircraft has already passed (direction-aware): forward → lights
-    // before it (t < aircraftT); reverse → lights after it (t > aircraftT).
-    if (aircraftT !== undefined && (aircraftForward ? t < aircraftT : t > aircraftT)) continue;
-    const cx = x1 + dx * t, cy = y1 + dy * t;
-    // Each light = bright glowing halo (gradient) + a solid vivid-green core → a big,
-    // punchy discrete lamp rather than a continuous stripe.
-    dots.push(
-      <g key={i} className="guidance-dot" filter="url(#glow-green)">
-        <circle cx={cx} cy={cy} r={6.5} fill="url(#lead-green)" />
-        <circle cx={cx} cy={cy} r={3}   fill="#22c55e" />
-        <circle cx={cx} cy={cy} r={1.3} fill="#f0fff6" />
-      </g>,
-    );
+  // STRICT RULE: Hide route when parked / before Start is clicked
+  if (!aircraft.routeVisible && aircraft.status !== 'taxiing' && aircraft.status !== 'holding') {
+    return null;
   }
-  return <g>{dots}</g>;
+  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed') return null;
+  if (!aircraft.assignedRoute || aircraft.assignedRoute.length < 2) return null;
+
+  const nodeObjs = aircraft.assignedRoute
+    .map(id => graph.nodes.find(n => n.id === id))
+    .filter((n): n is typeof graph.nodes[0] => n !== undefined);
+
+  if (nodeObjs.length < 2) return null;
+
+  const pathD = nodeObjs.map((n, i) => `${i === 0 ? 'M' : 'L'}${n.x},${n.y}`).join(' ');
+  const opacity = isSelected ? 1.0 : 0.55;
+  const startNode = nodeObjs[0];
+  const destNode = nodeObjs[nodeObjs.length - 1];
+
+  return (
+    <g
+      className="manual-full-route-group"
+      opacity={opacity}
+      style={{
+        filter: isSelected
+          ? 'drop-shadow(0 0 5px #00e5ff) drop-shadow(0 0 12px #0284c7)'
+          : undefined,
+      }}
+    >
+      {/* Outer Cyan Dash Glow (- - - -) */}
+      <path
+        d={pathD}
+        stroke="#0284c7"
+        strokeWidth={isSelected ? 6.5 : 4.5}
+        strokeDasharray="9,6"
+        strokeLinecap="butt"
+        fill="none"
+        opacity={0.5}
+        strokeLinejoin="round"
+      />
+      {/* Solid Cyan Dash Line (- - - -) */}
+      <path
+        d={pathD}
+        stroke="#00e5ff"
+        strokeWidth={isSelected ? 3.2 : 2.2}
+        strokeDasharray="9,6"
+        strokeLinecap="butt"
+        fill="none"
+        opacity={0.95}
+        strokeLinejoin="round"
+      />
+      {/* Bright Core White/Sky Dash Line */}
+      <path
+        d={pathD}
+        stroke="#e0f2fe"
+        strokeWidth={isSelected ? 1.4 : 1.0}
+        strokeDasharray="9,6"
+        strokeLinecap="butt"
+        fill="none"
+        opacity={0.9}
+        strokeLinejoin="round"
+      />
+
+      {/* Start Node Marker (Green) */}
+      <circle cx={startNode.x} cy={startNode.y} r={4.5} fill="#22c55e" stroke="#ffffff" strokeWidth={1.2} />
+      {/* Destination Node Marker (Red) */}
+      <circle cx={destNode.x} cy={destNode.y} r={4.5} fill="#ef4444" stroke="#ffffff" strokeWidth={1.2} />
+
+      {/* Intermediate Route Node Waypoints (when selected) */}
+      {isSelected &&
+        nodeObjs.slice(1, -1).map((n, i) => (
+          <circle
+            key={`wp-${i}`}
+            cx={n.x}
+            cy={n.y}
+            r={2.2}
+            fill="#38bdf8"
+            stroke="#0f172a"
+            strokeWidth={0.8}
+          />
+        ))}
+    </g>
+  );
 }
 
 function StopBar({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
@@ -595,8 +749,7 @@ function StopBar({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: n
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
   const px = (-dy / len) * 12, py = (dx / len) * 12;
   return (
-    <line x1={mx - px} y1={my - py} x2={mx + px} y2={my + py}
-      stroke="#ef4444" strokeWidth={4.5} strokeLinecap="round" />
+    <line x1={mx - px} y1={my - py} x2={mx + px} y2={my + py} stroke="#ef4444" strokeWidth={4.5} strokeLinecap="round" />
   );
 }
 
@@ -606,188 +759,137 @@ function ClosedMarker({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; 
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
   const px = (-dy / len) * 10, py = (dx / len) * 10;
   return (
-    <g opacity={0.85}>
-      <line x1={mx - px - (dx / len) * 8} y1={my - py - (dy / len) * 8}
-            x2={mx + px + (dx / len) * 8} y2={my + py + (dy / len) * 8}
-            stroke="#ff8c00" strokeWidth={2.5} />
-      <line x1={mx + px - (dx / len) * 8} y1={my - py + (dy / len) * 8}
-            x2={mx - px + (dx / len) * 8} y2={my + py - (dy / len) * 8}
-            stroke="#ff8c00" strokeWidth={2.5} />
+    <g opacity={0.9}>
+      <line x1={mx - px - (dx / len) * 8} y1={my - py - (dy / len) * 8} x2={mx + px + (dx / len) * 8} y2={my + py + (dy / len) * 8} stroke="#ff8c00" strokeWidth={3} />
+      <line x1={mx + px - (dx / len) * 8} y1={my - py - (dy / len) * 8} x2={mx - px + (dx / len) * 8} y2={my + py - (dy / len) * 8} stroke="#ff8c00" strokeWidth={3} />
     </g>
   );
 }
 
-// ── Aircraft ──────────────────────────────────────────────────────────────────
-
-function ParkedAircraft(_props: { x: number; y: number; heading: number }) {
-  return null;
-}
-
-function getScenarioAircraftColor(ac: any): { fill: string; stroke: string; labelColor: string } {
-  if (ac.radioFailure) {
-    return { fill: '#a855f7', stroke: '#c084fc', labelColor: '#c084fc' };
-  }
-  if (ac.role === 'emergency' || ac.scenarioLabel === 'KHẨN NGUY') {
-    return { fill: '#ef4444', stroke: '#b91c1c', labelColor: '#ef4444' };
-  }
-  if (ac.role === 'pushback' || ac.scenarioLabel === 'PUSHBACK') {
-    return { fill: '#9333ea', stroke: '#6b21a8', labelColor: '#c084fc' };
-  }
-  if (ac.role === 'arriving') {
-    return { fill: '#3b82f6', stroke: '#1d4ed8', labelColor: '#60a5fa' };
-  }
-  if (ac.role === 'departing') {
-    return { fill: '#f97316', stroke: '#c2410c', labelColor: '#fb923c' };
-  }
-  return { fill: '#f59e0b', stroke: '#b45309', labelColor: '#fbbf24' };
-}
-
+// ── Realistic Transparent Aircraft Sprite ──────────────────────────────────────
 function AircraftIcon({
-  x, y, heading, scale = 1, fill = '#f59e0b', stroke = '#1e293b',
+  x,
+  y,
+  heading,
+  scale = 1,
+  callsign = '',
+  airlineCode,
+  aircraftAsset,
+  isEmergency = false,
+  isDeviated = false,
+  isRadioFailure = false,
+  isSelected = false,
 }: {
-  x: number; y: number; heading: number; scale?: number; fill?: string; stroke?: string;
+  x: number;
+  y: number;
+  heading: number;
+  scale?: number;
+  callsign?: string;
+  airlineCode?: string;
+  aircraftAsset?: string;
+  isEmergency?: boolean;
+  isDeviated?: boolean;
+  isRadioFailure?: boolean;
+  isSelected?: boolean;
 }) {
+  const aDef = getAirlineDef(airlineCode || callsign);
+  const assetSrc = aircraftAsset || aDef.asset;
+
+  // The user raw asset is cropped with its nose aligned at 67.1 deg.
+  const rotationDeg = heading - 67.1;
+  const size = 36 * scale;
+
   return (
-    <g transform={`translate(${x},${y}) rotate(${heading}) scale(${scale})`} filter="url(#glow-aircraft)">
-      <ellipse cx={0} cy={0} rx={3} ry={12} fill={fill} stroke={stroke} strokeWidth={1.2} />
-      <polygon points="0,-1 13,6 7,8 0,5 -7,8 -13,6" fill={fill} stroke={stroke} strokeWidth={1.2} />
-      <polygon points="0,9 4,12 0,11 -4,12" fill={fill} stroke={stroke} strokeWidth={1.2} />
+    <g transform={`translate(${x},${y})`}>
+      {isSelected && (
+        <g>
+          <circle cx={0} cy={0} r={28 * scale} fill="rgba(56, 189, 248, 0.2)" stroke="#38bdf8" strokeWidth={2.5} strokeDasharray="5,3" opacity={0.95} />
+          <circle cx={0} cy={0} r={33 * scale} fill="none" stroke="#00e5ff" strokeWidth={1} opacity={0.6} />
+        </g>
+      )}
+      {isEmergency && (
+        <circle cx={0} cy={0} r={26 * scale} fill="none" stroke="#ef4444" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+      )}
+      {isDeviated && (
+        <circle cx={0} cy={0} r={26 * scale} fill="none" stroke="#f97316" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+      )}
+      {isRadioFailure && (
+        <circle cx={0} cy={0} r={26 * scale} fill="none" stroke="#c084fc" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+      )}
+      <g transform={`rotate(${rotationDeg})`} filter="url(#glow-aircraft)">
+        <image
+          href={assetSrc}
+          x={-size / 2}
+          y={-size / 2}
+          width={size}
+          height={size}
+          preserveAspectRatio="xMidYMid meet"
+        />
+      </g>
     </g>
   );
 }
 
-// Background traffic: blue with a dark outline — visible on the light chart yet
-// clearly distinct from the amber active aircraft.
-function BackgroundAircraftIcon({ x, y, heading }: { x: number; y: number; heading: number }) {
-  return (
-    <g transform={`translate(${x},${y}) rotate(${heading}) scale(0.9)`} opacity={0.95}>
-      <ellipse cx={0} cy={0} rx={3} ry={12} fill="#2563eb" stroke="#0b1220" strokeWidth={1.3} />
-      <polygon points="0,-1 13,6 7,8 0,5 -7,8 -13,6" fill="#60a5fa" stroke="#0b1220" strokeWidth={1.3} />
-      <polygon points="0,9 4,12 0,11 -4,12" fill="#2563eb" stroke="#0b1220" strokeWidth={1.3} />
-    </g>
-  );
-}
-
-// ── Labels ────────────────────────────────────────────────────────────────────
-
-function TaxiwayLabels() {
-  return null;
-}
-
-function AreaLabels() {
-  return null;
-}
-
-
-// ── Holding spot markers ─────────────────────────────────────────────────────
-function HoldingSpotMarkers() {
-  return null;
-}
-
-// ── Parking position markers ─────────────────────────────────────────────────
-function ParkingPositionMarkers() {
-  return null;
-}
-
-// ── Visual-only extra taxiway lines ──────────────────────────────────────────
-function ExtraTaxiwayLines() {
-  return null;
-}
-
-// ── Debug: coordinate grid so paths can be specified by (x,y) ─────────────────
+// ── Coordinate Grid (Debug tool) ───────────────────────────────────────────────
 function CoordinateGrid() {
   const lines = [];
   for (let x = 0; x <= SVG_WIDTH; x += 50) {
     const bold = x % 100 === 0;
-    lines.push(<line key={`gx${x}`} x1={x} y1={0} x2={x} y2={SVG_HEIGHT}
-      stroke={bold ? '#dc2626' : '#f8a8a8'} strokeWidth={bold ? 0.5 : 0.25} opacity={0.55} />);
+    lines.push(<line key={`gx${x}`} x1={x} y1={0} x2={x} y2={SVG_HEIGHT} stroke={bold ? '#dc2626' : '#f8a8a8'} strokeWidth={bold ? 0.5 : 0.25} opacity={0.55} />);
   }
   for (let y = 0; y <= SVG_HEIGHT; y += 50) {
     const bold = y % 100 === 0;
-    lines.push(<line key={`gy${y}`} x1={0} y1={y} x2={SVG_WIDTH} y2={y}
-      stroke={bold ? '#dc2626' : '#f8a8a8'} strokeWidth={bold ? 0.5 : 0.25} opacity={0.55} />);
+    lines.push(<line key={`gy${y}`} x1={0} y1={y} x2={SVG_WIDTH} y2={y} stroke={bold ? '#dc2626' : '#f8a8a8'} strokeWidth={bold ? 0.5 : 0.25} opacity={0.55} />);
   }
   const labels = [];
   for (let x = 0; x <= SVG_WIDTH; x += 100) {
     for (let y = 100; y <= SVG_HEIGHT; y += 100) {
       labels.push(
-        <text key={`gl${x}-${y}`} x={x + 1} y={y - 1} fontSize={5} fontWeight={800}
-          fill="#b91c1c" opacity={0.9}>{x},{y}</text>,
+        <text key={`gl${x}-${y}`} x={x + 1} y={y - 1} fontSize={5} fontWeight={800} fill="#b91c1c" opacity={0.9}>{x},{y}</text>,
       );
     }
   }
   return <g>{lines}{labels}</g>;
 }
 
-// ── Debug overlay: glow every routable (non-runway) edge + label its id ───────
-// Use this to vet the graph and decide which edges to delete.
-function AllowedPathsOverlay() {
-  return (
-    <g>
-      {airportGraph.edges.map(edge => {
-        if (edge.type === 'runway') return null;
-        const f = airportGraph.nodes.find(n => n.id === edge.fromNodeId);
-        const t = airportGraph.nodes.find(n => n.id === edge.toNodeId);
-        if (!f || !t) return null;
-        const mx = (f.x + t.x) / 2, my = (f.y + t.y) / 2;
-        return (
-          <g key={`path-${edge.id}`}>
-            <line
-              x1={f.x} y1={f.y} x2={t.x} y2={t.y}
-              stroke="#00e5ff" strokeWidth={2.5} opacity={0.9}
-              strokeLinecap="round" filter="url(#glow-green)"
-            />
-            <text
-              x={mx} y={my - 1} textAnchor="middle" fontSize={4.2} fontWeight={700}
-              fill="#0b3d4d" stroke="#e0ffff" strokeWidth={0.5} paintOrder="stroke"
-            >
-              {edge.id}
-            </text>
-          </g>
-        );
-      })}
-      {airportGraph.nodes.map(n => (
-        <circle key={`pn-${n.id}`} cx={n.x} cy={n.y} r={1.6} fill="#ff1493" stroke="#fff" strokeWidth={0.4} />
-      ))}
-    </g>
-  );
-}
+const STAND_PARKING_HEADINGS: Record<string, number> = {
+  P1: 0,    // Stand 1: quay thẳng lên (North 0°)
+  P2: 180,  // Stand 2: quay thẳng xuống (South 180°), quay đầu vào Stand 1
+  P3: 0,    // Stand 3: quay thẳng lên (North 0°)
+  P4: 0,    // Stand 4: quay thẳng lên (North 0°)
+  P5: 180,  // Stand 5: quay thẳng xuống (South 180°), quay đầu vào Stand 4
+  T49: 90,  // Stand 7: quay sang phải theo làn đỗ (East 90°)
+};
 
-function CompassRose(_props: { x: number; y: number }) {
-  return null;
-}
-
-function MapLegend() {
-  return null;
-}
-
-// ── Helper: interpolate aircraft position along its route ─────────────────────
-function getAircraftPosition(state: SimulationState) {
-  return getPositionForAircraft(state.aircraft);
-}
-
-function getPositionForAircraft(aircraft: Aircraft | null) {
+// ── Interpolate aircraft position along its route ──────────────────────────────
+function getPositionForAircraft(aircraft: Aircraft | null, graph: AirportGraph = airportGraph) {
   if (!aircraft) return null;
 
-  const routeEdgeIds = routeToEdges(aircraft.assignedRoute, airportGraph.edges);
-  if (!routeEdgeIds) return null;
-  const edgeId = routeEdgeIds[aircraft.routeEdgeIndex];
-  if (!edgeId) return null;
+  const isMoving = (aircraft.status === 'taxiing' || aircraft.status === 'holding') &&
+    (aircraft.routeEdgeIndex > 0 || aircraft.progressOnEdge > 0.001);
 
-  if (!airportGraph.edges.find(e => e.id === edgeId)) return null;
+  if (isMoving && aircraft.assignedRoute && aircraft.assignedRoute.length >= 2 && aircraft.routeEdgeIndex < aircraft.assignedRoute.length - 1) {
+    const fromNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex]);
+    const toNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 1]);
+    if (fromNode && toNode) {
+      const t = aircraft.progressOnEdge;
+      const x = fromNode.x + (toNode.x - fromNode.x) * t;
+      const y = fromNode.y + (toNode.y - fromNode.y) * t;
 
-  // Use route node order (not stored edge direction) so bidirectional edges interpolate correctly
-  const fromNode = airportGraph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex]);
-  const toNode   = airportGraph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 1]);
-  if (!fromNode || !toNode) return null;
+      const dx = toNode.x - fromNode.x;
+      const dy = toNode.y - fromNode.y;
+      const heading = (Math.atan2(dx, -dy) * 180) / Math.PI;
 
-  const t = aircraft.progressOnEdge;
-  const x = fromNode.x + (toNode.x - fromNode.x) * t;
-  const y = fromNode.y + (toNode.y - fromNode.y) * t;
+      return { x, y, heading };
+    }
+  }
 
-  const dx = toNode.x - fromNode.x;
-  const dy = toNode.y - fromNode.y;
-  const heading = (Math.atan2(dx, -dy) * 180) / Math.PI;
+  // Fallback to currentNodeId (e.g. idle/waiting at stand)
+  const node = graph.nodes.find(n => n.id === aircraft.currentNodeId);
+  if (node) {
+    const defaultHeading = STAND_PARKING_HEADINGS[node.id] ?? 67.1;
+    return { x: node.x, y: node.y, heading: defaultHeading };
+  }
 
-  return { x, y, heading };
+  return null;
 }

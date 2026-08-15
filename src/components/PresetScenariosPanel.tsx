@@ -1,245 +1,274 @@
-// Preset Scenarios Side Panel — 100% parity with Vercel Production UI
-
 import { useState } from 'react';
-import { PRESET_SCENARIO_DEFS, type ScenarioAircraft } from '../data/presetScenarios';
-import type { SimulationState } from '../types';
+import type { ScenarioState, ScenarioObservation } from '../data/presetScenarios';
+import { getPresetScenarioDefs } from '../data/presetScenarios';
+import { airportGraph } from '../data/airportGraph';
+import type { AirportGraph, SimulationState } from '../types';
 
 interface Props {
-  state: SimulationState;
-  onStartScenario: (scenarioId: string) => void;
-  onExitScenario: () => void;
+  state?: SimulationState;
+  scenarioState?: ScenarioState | null;
+  onStartScenario: (id: string) => void;
+  onExitScenario?: () => void;
+  graph?: AirportGraph;
+}
+
+export default function PresetScenariosPanel({
+  state,
+  scenarioState,
+  onStartScenario,
+  onExitScenario,
+  graph = airportGraph,
+}: Props) {
+  const [showList, setShowList] = useState(false);
+  const [selectedId, setSelectedId] = useState<string>('emergency_priority');
+
+  const currentScenarioState: ScenarioState | null = scenarioState !== undefined
+    ? scenarioState
+    : state?.scenario || null;
+
+  const SCENARIO_DEFS = getPresetScenarioDefs(graph);
+  const defs = Object.values(SCENARIO_DEFS);
+  const activeDef = currentScenarioState
+    ? SCENARIO_DEFS[currentScenarioState.id] || defs[0]
+    : SCENARIO_DEFS[selectedId] || defs[0];
+
+  const latestEvent = currentScenarioState && currentScenarioState.events.length > 0
+    ? currentScenarioState.events[currentScenarioState.events.length - 1]
+    : null;
+
+  const currentObservations: ScenarioObservation[] = currentScenarioState?.observations || activeDef.observations || [];
+  const passedCount = currentObservations.filter(o => o.status === 'pass').length;
+  const totalCount = currentObservations.length;
+
+  return (
+    <div className="flex flex-col gap-3 p-4 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200 shadow-md">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-1.5">
+          <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
+          KỊCH BẢN MÔ PHỎNG (PRESET)
+        </h2>
+        {currentScenarioState && (
+          <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 font-bold">
+            {currentScenarioState.completed ? 'HOÀN TẤT' : 'ĐANG CHẠY'}
+          </span>
+        )}
+      </div>
+
+      {/* When Scenario is ACTIVE */}
+      {currentScenarioState && !showList && (
+        <div className="flex flex-col gap-3">
+          <div className="flex items-center justify-between">
+            <span className="font-semibold text-white text-sm">{currentScenarioState.title}</span>
+            {onExitScenario && (
+              <button
+                onClick={onExitScenario}
+                className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition flex-shrink-0"
+              >
+                ✕ Thoát
+              </button>
+            )}
+          </div>
+
+          {/* Action controls */}
+          <div className="flex gap-2">
+            <button
+              onClick={() => onStartScenario(currentScenarioState.id)}
+              className="flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-600 text-white transition shadow-sm"
+            >
+              ↺ Chạy lại
+            </button>
+            <button
+              onClick={() => setShowList(true)}
+              className="flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#0d1318] border border-[#1e2838] hover:border-blue-600 text-gray-200 transition"
+            >
+              ≡ Đổi kịch bản
+            </button>
+          </div>
+
+          {/* ── TIÊU CHÍ KIỂM THỬ BẮT BUỘC (ĐIỀU CẦN QUAN SÁT RUNTIME) ── */}
+          {currentObservations.length > 0 && (
+            <div className="p-3 bg-[#15120c] border border-amber-800/80 rounded-xl text-xs flex flex-col gap-2 shadow-sm">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-1.5 text-amber-400 font-bold tracking-wide">
+                  <span>👁</span> ĐIỀU CẦN QUAN SÁT (TIÊU CHÍ RUNTIME)
+                </div>
+                <span className={`font-mono text-[10px] px-2 py-0.5 rounded font-bold ${
+                  passedCount === totalCount
+                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
+                    : 'bg-amber-950 text-amber-300 border border-amber-700'
+                }`}>
+                  {passedCount}/{totalCount} ĐẠT
+                </span>
+              </div>
+
+              <div className="flex flex-col gap-2">
+                {currentObservations.map((obs, idx) => {
+                  const isPass = obs.status === 'pass';
+                  const isFail = obs.status === 'fail';
+                  return (
+                    <div
+                      key={obs.id || idx}
+                      className={`p-2 rounded-lg border flex flex-col gap-1 transition ${
+                        isPass
+                          ? 'bg-emerald-950/40 border-emerald-700/80 text-emerald-200'
+                          : isFail
+                          ? 'bg-red-950/50 border-red-700/80 text-red-200'
+                          : 'bg-[#1e1710] border-amber-900/60 text-amber-200/90'
+                      }`}
+                    >
+                      <div className="flex items-start justify-between gap-2">
+                        <div className="flex items-start gap-1.5 leading-snug">
+                          <span className="font-bold flex-shrink-0">{idx + 1}.</span>
+                          <span className="font-medium text-[11px]">{obs.text}</span>
+                        </div>
+                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono flex-shrink-0 flex items-center gap-0.5 ${
+                          isPass
+                            ? 'bg-emerald-800 text-emerald-100'
+                            : isFail
+                            ? 'bg-red-800 text-red-100'
+                            : 'bg-amber-900/80 text-amber-200'
+                        }`}>
+                          {isPass ? '✅ ĐẠT' : isFail ? '❌ SAI' : '⏳ CHƯA ĐẠT'}
+                        </span>
+                      </div>
+
+                      {obs.evidence && (
+                        <div className="font-mono text-[10px] pl-4 text-gray-400 bg-[#0d1017] p-1 rounded border border-[#1e2838]/60 flex items-center justify-between">
+                          <span className="truncate">Bằng chứng: {obs.evidence}</span>
+                          {obs.checkedAtSeconds != null && (
+                            <span className="text-gray-500 font-bold ml-1 flex-shrink-0">
+                              [{obs.checkedAtSeconds.toFixed(1)}s]
+                            </span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          )}
+
+          {/* Box THÁCH THỨC */}
+          {activeDef.challenges && activeDef.challenges.length > 0 && (
+            <div className="p-3 bg-[#0d1726] border border-blue-800/60 rounded-xl text-xs flex flex-col gap-1.5 shadow-sm">
+              <div className="flex items-center gap-1.5 text-blue-400 font-bold tracking-wide">
+                <span>🎯</span> THÁCH THỨC VẬN HÀNH
+              </div>
+              <ul className="list-disc list-inside space-y-1 text-blue-200/90 leading-relaxed pl-1">
+                {activeDef.challenges.map((c, i) => (
+                  <li key={i}>{c}</li>
+                ))}
+              </ul>
+            </div>
+          )}
+
+          {/* Real-time alert banner */}
+          {latestEvent && (
+            <div className={`p-2.5 rounded-lg border text-xs leading-relaxed ${
+              latestEvent.severity === 'critical'
+                ? 'bg-red-950/60 border-red-800/80 text-red-200'
+                : latestEvent.severity === 'warning'
+                ? 'bg-amber-950/60 border-amber-800/80 text-amber-200'
+                : 'bg-blue-950/60 border-blue-800/80 text-blue-200'
+            }`}>
+              <span className="font-mono font-bold mr-1">[{formatTime(latestEvent.atSeconds)}]</span>
+              <span>{latestEvent.message}</span>
+            </div>
+          )}
+
+          {/* Tình huống chi tiết */}
+          <div className="text-xs text-gray-300 border-t border-[#1e2838] pt-2">
+            <span className="text-gray-400 font-semibold">Tình huống: </span>
+            <span className="leading-relaxed">{activeDef.situation}</span>
+          </div>
+
+          {/* Event Log Timeline (NHẬT KÝ SỰ KIỆN) */}
+          <div className="border-t border-[#1e2838] pt-2.5 flex flex-col gap-2">
+            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
+              NHẬT KÝ SỰ KIỆN ({currentScenarioState.events.length})
+            </div>
+            <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1 font-mono text-[11px]">
+              {currentScenarioState.events.slice().reverse().map((evt: any, idx: number) => (
+                <div key={idx} className="flex items-start gap-1.5 text-gray-300">
+                  <span className="text-gray-500 font-bold flex-shrink-0">[{formatTime(evt.atSeconds)}]</span>
+                  <span className={
+                    evt.severity === 'critical'
+                      ? 'text-red-400 font-bold'
+                      : evt.severity === 'warning'
+                      ? 'text-amber-400 font-semibold'
+                      : 'text-gray-300'
+                  }>
+                    {evt.message}
+                  </span>
+                </div>
+              ))}
+            </div>
+          </div>
+        </div>
+      )}
+
+      {/* When Scenario is NOT active OR showList is True */}
+      {(!currentScenarioState || showList) && (
+        <div className="flex flex-col gap-3">
+          <div className="text-xs text-gray-400 font-semibold uppercase tracking-wider">
+            CHỌN KỊCH BẢN ({defs.length})
+          </div>
+          <div className="flex flex-col gap-2 max-h-80 overflow-y-auto pr-1">
+            {defs.map((def) => {
+              const isSelected = def.id === selectedId;
+              return (
+                <div
+                  key={def.id}
+                  onClick={() => setSelectedId(def.id)}
+                  className={`p-3 rounded-xl border cursor-pointer transition flex flex-col gap-1.5 ${
+                    isSelected
+                      ? 'bg-blue-950/40 border-blue-500 shadow-md'
+                      : 'bg-[#0d1318] border-[#1e2838] hover:border-gray-600'
+                  }`}
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="font-bold text-white text-xs">{def.title}</span>
+                    {isSelected && (
+                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-600 text-white font-bold">
+                        Đang chọn
+                      </span>
+                    )}
+                  </div>
+                  <p className="text-xs text-gray-400 leading-relaxed">{def.teaser}</p>
+                </div>
+              );
+            })}
+          </div>
+
+          <div className="flex gap-2 pt-2 border-t border-[#1e2838]">
+            <button
+              onClick={() => {
+                setShowList(false);
+                onStartScenario(selectedId);
+              }}
+              className="flex-1 py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition shadow-md"
+            >
+              ▶ Bắt đầu mô phỏng kịch bản này
+            </button>
+            {showList && currentScenarioState && (
+              <button
+                onClick={() => setShowList(false)}
+                className="py-2 px-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs transition"
+              >
+                Quay lại
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+    </div>
+  );
 }
 
 function formatTime(seconds: number): string {
   const m = Math.floor(seconds / 60);
   const s = Math.floor(seconds % 60);
-  return `[${m}:${s.toString().padStart(2, '0')}]`;
-}
-
-function getRoleBadge(ac: ScenarioAircraft) {
-  if (ac.radioFailure) {
-    return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-900/60 border border-purple-400 text-purple-200">MẤT LIÊN LẠC</span>;
-  }
-  if (ac.role === 'emergency' || ac.scenarioLabel === 'KHẨN NGUY') {
-    return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-red-600 text-white">KHẨN NGUY</span>;
-  }
-  if (ac.role === 'pushback' || ac.scenarioLabel === 'PUSHBACK') {
-    return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-purple-700 text-white">PUSHBACK</span>;
-  }
-  if (ac.role === 'arriving') {
-    return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-blue-600 text-white">Hạ cánh</span>;
-  }
-  return <span className="px-1.5 py-0.5 rounded text-[10px] font-bold bg-amber-600 text-white">Cất cánh</span>;
-}
-
-function getStatusBadge(ac: ScenarioAircraft) {
-  if (ac.status === 'departed') {
-    return <span className="text-gray-400 text-xs font-semibold">ĐÃ CẤT CÁNH</span>;
-  }
-  if (ac.status === 'arrived') {
-    return <span className="text-emerald-400 text-xs font-semibold">ĐÃ ĐẾN</span>;
-  }
-  if (ac.status === 'stopped' || ac.status === 'holding') {
-    return <span className="text-amber-400 text-xs font-semibold">GIỮ NGUYÊN</span>;
-  }
-  if (ac.status === 'waiting') {
-    return <span className="text-gray-400 text-xs font-semibold">CHỜ LĂN</span>;
-  }
-  return <span className="text-blue-400 text-xs font-semibold">LĂN BÁNH</span>;
-}
-
-export default function PresetScenariosPanel({ state, onStartScenario, onExitScenario }: Props) {
-  const [showList, setShowList] = useState(false);
-  const scenarioList = Object.values(PRESET_SCENARIO_DEFS);
-
-  const scenarioState = state.scenario;
-  const activeDef = scenarioState ? PRESET_SCENARIO_DEFS[scenarioState.id] : null;
-
-  // Active scenario detail view
-  if (scenarioState && activeDef && !showList) {
-    const fleet = state.scenarioAircraft ?? [];
-    const latestEvent = scenarioState.events.length > 0
-      ? scenarioState.events[scenarioState.events.length - 1]
-      : null;
-
-    return (
-      <div className="flex flex-col gap-3 p-3.5 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200">
-        {/* Header & Status */}
-        <div className="flex items-start justify-between gap-2">
-          <div className="flex flex-col gap-1">
-            <h2 className="text-sm font-bold text-white leading-snug">
-              {scenarioState.title}
-            </h2>
-          </div>
-          {scenarioState.completed ? (
-            <span className="px-2 py-0.5 rounded bg-emerald-600/90 text-white font-bold text-xs uppercase flex-shrink-0">
-              HOÀN TẤT
-            </span>
-          ) : (
-            <button
-              onClick={onExitScenario}
-              className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition flex-shrink-0"
-            >
-              ✕ Thoát
-            </button>
-          )}
-        </div>
-
-        {/* Action controls */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => onStartScenario(scenarioState.id)}
-            className="flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-600 text-white transition shadow-sm"
-          >
-            ↺ Chạy lại
-          </button>
-          <button
-            onClick={() => setShowList(true)}
-            className="flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#0d1318] border border-[#1e2838] hover:border-blue-600 text-gray-200 transition"
-          >
-            ≡ Đổi kịch bản
-          </button>
-        </div>
-
-        {/* Box ĐIỀU CẦN QUAN SÁT */}
-        {activeDef.watchFor && activeDef.watchFor.length > 0 && (
-          <div className="p-3 bg-[#191308] border border-amber-800/60 rounded-xl text-xs flex flex-col gap-1.5">
-            <div className="flex items-center gap-1.5 text-amber-400 font-bold tracking-wide">
-              <span>👁</span> ĐIỀU CẦN QUAN SÁT
-            </div>
-            <ol className="list-decimal list-inside space-y-1 text-amber-200/90 leading-relaxed pl-1">
-              {activeDef.watchFor.map((item, idx) => (
-                <li key={idx}>{item}</li>
-              ))}
-            </ol>
-          </div>
-        )}
-
-        {/* Real-time alert banner */}
-        {latestEvent && (
-          <div className={`p-2.5 rounded-lg border text-xs leading-relaxed ${
-            latestEvent.severity === 'critical'
-              ? 'bg-red-950/60 border-red-800/80 text-red-200'
-              : latestEvent.severity === 'warning'
-              ? 'bg-amber-950/60 border-amber-800/80 text-amber-200'
-              : 'bg-blue-950/60 border-blue-800/80 text-blue-200'
-          }`}>
-            <span className="font-mono font-bold mr-1">{formatTime(latestEvent.atSeconds)}</span>
-            <span>{latestEvent.message}</span>
-          </div>
-        )}
-
-        {/* Collapsible Situation & Challenges */}
-        <details className="text-xs text-gray-400 group border-t border-[#1e2838] pt-2">
-          <summary className="cursor-pointer font-semibold text-gray-300 hover:text-white select-none">
-            ▶ Tình huống & thách thức (chi tiết)
-          </summary>
-          <div className="mt-2 space-y-2 text-gray-300 pl-2">
-            <div>
-              <span className="text-gray-400 font-semibold">Tình huống: </span>
-              {activeDef.situation}
-            </div>
-            {activeDef.challenges && (
-              <div>
-                <span className="text-gray-400 font-semibold">Thách thức:</span>
-                <ul className="list-disc list-inside space-y-0.5 mt-1 pl-1">
-                  {activeDef.challenges.map((c, i) => (
-                    <li key={i}>{c}</li>
-                  ))}
-                </ul>
-              </div>
-            )}
-          </div>
-        </details>
-
-        {/* Fleet Table (ĐỘI BAY) */}
-        <div className="border-t border-[#1e2838] pt-2.5 flex flex-col gap-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            ĐỘI BAY ({fleet.length})
-          </div>
-          <div className="flex flex-col gap-1.5 max-h-48 overflow-y-auto pr-1">
-            {fleet.map((ac) => (
-              <div key={ac.id} className="flex items-center justify-between p-2 bg-[#0d1318] rounded-lg border border-[#1e2838]/60 text-xs">
-                <div className="flex items-center gap-2">
-                  {getRoleBadge(ac)}
-                  <span className="font-semibold text-white font-mono">{ac.callsign}</span>
-                </div>
-                <div>{getStatusBadge(ac)}</div>
-              </div>
-            ))}
-          </div>
-        </div>
-
-        {/* Event Log Timeline (NHẬT KÝ SỰ KIỆN) */}
-        <div className="border-t border-[#1e2838] pt-2.5 flex flex-col gap-2">
-          <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
-            NHẬT KÝ SỰ KIỆN
-          </div>
-          <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1 font-mono text-[11px]">
-            {scenarioState.events.slice().reverse().map((evt: any, idx: number) => (
-              <div key={idx} className="flex items-start gap-1.5 text-gray-300">
-                <span className="text-gray-500 font-bold flex-shrink-0">{formatTime(evt.atSeconds)}</span>
-                <span className={
-                  evt.severity === 'critical'
-                    ? 'text-red-400'
-                    : evt.severity === 'warning'
-                    ? 'text-amber-400'
-                    : 'text-blue-300'
-                }>
-                  {evt.message}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      </div>
-    );
-  }
-
-  // Selection list view
-  return (
-    <div className="flex flex-col gap-2 p-4 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-white tracking-wide">Kịch Bản Mẫu</h2>
-        {scenarioState && (
-          <button
-            onClick={onExitScenario}
-            className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-700 hover:bg-gray-600 text-white transition"
-          >
-            ✕ Thoát kịch bản
-          </button>
-        )}
-      </div>
-      <p className="text-xs text-gray-500 -mt-1 leading-relaxed">
-        Mỗi kịch bản chạy tự động một đội bay có mục đích — minh họa các tình huống kiểm soát mặt đất điển hình dưới Follow the Green.
-      </p>
-
-      <div className="flex flex-col gap-2 max-h-[550px] overflow-y-auto pr-1 mt-1">
-        {scenarioList.map(sc => {
-          const isActive = scenarioState?.id === sc.id;
-          return (
-            <button
-              key={sc.id}
-              onClick={() => {
-                onStartScenario(sc.id);
-                setShowList(false);
-              }}
-              className={`text-left rounded-xl p-3 transition border ${
-                isActive
-                  ? 'bg-blue-950/60 border-blue-500 shadow-md'
-                  : 'bg-[#0d1318] border-[#1e2838] hover:border-blue-600 hover:bg-[#131b28]'
-              }`}
-            >
-              <div className={`text-xs font-bold ${isActive ? 'text-blue-300' : 'text-gray-100'} leading-snug`}>
-                {sc.title}
-              </div>
-              <div className="text-[11px] text-gray-400 mt-1 leading-relaxed">
-                {sc.teaser}
-              </div>
-            </button>
-          );
-        })}
-      </div>
-    </div>
-  );
+  return `${m}:${s.toString().padStart(2, '0')}`;
 }

@@ -19,6 +19,8 @@ export type EdgeStatus = 'open' | 'closed' | 'occupied' | 'restricted';
 export type TrafficLevel = 'low' | 'medium' | 'high';
 
 export type AircraftStatus =
+  | 'parked'
+  | 'idle'
   | 'waiting'
   | 'taxiing'
   | 'holding'
@@ -31,6 +33,8 @@ export type WeatherCondition = 'clear' | 'rain' | 'fog' | 'thunderstorm';
 export type TimeOfDay = 'morning' | 'afternoon' | 'night';
 
 export type AircraftType = 'A321' | 'B737' | 'A350' | 'ATR72';
+
+export type AirlineCode = 'VJ' | 'VN' | 'QH' | 'VU' | 'SQ' | 'TG';
 
 export type IncidentType =
   | 'none'
@@ -69,6 +73,11 @@ export interface AirportGraph {
 export interface Aircraft {
   id: string;
   callsign: string;
+  airline?: string;
+  airlineCode?: AirlineCode;
+  airlineName?: string;
+  aircraftAsset?: string;
+  aircraftType?: AircraftType;
   currentNodeId: string;
   targetNodeId: string;
   currentEdgeId: string | null;
@@ -77,7 +86,16 @@ export interface Aircraft {
   status: AircraftStatus;
   assignedRoute: string[]; // ordered node IDs
   routeEdgeIndex: number;  // which edge in the route we're currently traversing
-  heldSeconds?: number;    // background traffic: how long it has been blocked (for deadlock breaking)
+  routeVisible?: boolean;  // only true after user presses Start for this aircraft
+  guidanceVisible?: boolean;
+  isMoving?: boolean;
+  heldSeconds?: number;
+  radioFailure?: boolean;
+  deviated?: boolean;
+  holdReason?: string;
+  releaseAtSeconds?: number;
+  role?: string;
+  scenarioLabel?: string;
 }
 
 export interface SimulationConfig {
@@ -85,6 +103,7 @@ export interface SimulationConfig {
   destinationNodeId: string;
   callsign: string;
   aircraftType: AircraftType;
+  airlineCode: AirlineCode;
   weather: WeatherCondition;
   timeOfDay: TimeOfDay;
   trafficLevel: TrafficLevel;
@@ -94,8 +113,18 @@ export interface SimulationConfig {
   autoReroute: boolean;
 }
 
+export interface LiveEventLogItem {
+  id: string;
+  atSeconds: number;
+  callsign?: string;
+  message: string;
+  severity: 'info' | 'warning' | 'critical';
+}
+
 export interface SimulationState {
   aircraft: Aircraft | null;
+  manualFleet?: Aircraft[];
+  selectedAircraftId?: string;
   // Visual-only background traffic that roams hot-spot to hot-spot. Driven by
   // config.trafficLevel; does not affect routing, lights or incidents.
   trafficAircraft: Aircraft[];
@@ -110,6 +139,7 @@ export interface SimulationState {
   lightStates: Record<string, 'green' | 'red' | 'off'>;
   // Edges blocked due to incidents
   blockedEdgeIds: Set<string>;
+  liveEventLog: LiveEventLogItem[];
   scenario?: any;
   scenarioAircraft?: any[];
 }
