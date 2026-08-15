@@ -233,7 +233,8 @@ export default function App() {
 
         {/* Bộ chọn Đồ thị (Graph Selector) */}
         <div className="flex items-center gap-1.5 ml-4 bg-[#0a0e14] px-2.5 py-1 rounded-lg border border-[#223044]">
-          <span className="text-xs text-gray-400 font-medium">📊 Mô hình:</span>
+          <img src="/logotruong.png" alt="Logo" className="w-4 h-4 object-contain inline-block rounded-sm" />
+          <span className="text-xs text-gray-400 font-medium">Mô hình:</span>
           <select
             value={selectedGraphId}
             onChange={(e) => {
