@@ -14,6 +14,7 @@ import {
   randomIncidentEdge,
   startManualAircraft,
   resetManualAircraft,
+  resetToManualMode,
 } from './simulation/simulator';
 import { findPath, routeToEdges } from './simulation/pathfinding';
 import { getAirlineDef } from './data/airlineTypes';
@@ -333,9 +334,19 @@ export default function App() {
 
   const handleReset = useCallback(() => {
     setSimState(prev => {
+      if (prev.scenario) {
+        return resetToManualMode(prev, currentGraph);
+      }
       const selectedId = prev.selectedAircraftId || 'VN001';
       return resetManualAircraft(prev, selectedId, currentGraph);
     });
+  }, [currentGraph]);
+
+  const handleExitScenario = useCallback(() => {
+    setSimState(prev => resetToManualMode(prev, currentGraph));
+    setDesktopTab('control');
+    setMobileTab('control');
+    setSheetExpanded(true);
   }, [currentGraph]);
 
   const handleStartScenario = useCallback((scId: string) => {
@@ -347,6 +358,7 @@ export default function App() {
   const activeAircraft = (simState.manualFleet && simState.manualFleet.length > 0)
     ? (simState.manualFleet.find(a => a.id === (simState.selectedAircraftId || 'VN001')) || simState.manualFleet[0])
     : simState.aircraft;
+
 
   return (
     <ErrorBoundary name="Ứng dụng mô phỏng sân bay" fallbackTitle="Đã xảy ra sự cố trong ứng dụng">
@@ -519,14 +531,19 @@ export default function App() {
               {/* Tab Switcher */}
               <div className="flex bg-[#111620] p-1 rounded-xl border border-[#1e2838]">
                 <button
-                  onClick={() => setDesktopTab('control')}
+                  onClick={() => {
+                    if (simState.scenario) {
+                      setSimState(prev => resetToManualMode(prev, currentGraph));
+                    }
+                    setDesktopTab('control');
+                  }}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
                     desktopTab === 'control'
                       ? 'bg-blue-600 text-white shadow'
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  🎮 Điều khiển
+                  Điều khiển
                 </button>
                 <button
                   onClick={() => setDesktopTab('scenarios')}
@@ -536,7 +553,7 @@ export default function App() {
                       : 'text-gray-400 hover:text-white'
                   }`}
                 >
-                  📋 Kịch bản mẫu
+                  Kịch bản mẫu
                 </button>
               </div>
 
@@ -572,10 +589,7 @@ export default function App() {
                     state={simState}
                     graph={currentGraph}
                     onStartScenario={handleStartScenario}
-                    onExitScenario={() => {
-                      handleReset();
-                      setDesktopTab('control');
-                    }}
+                    onExitScenario={handleExitScenario}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
                 </>
@@ -608,6 +622,9 @@ export default function App() {
               <div className="flex flex-1 gap-1">
                 <button
                   onClick={() => {
+                    if (simState.scenario) {
+                      setSimState(prev => resetToManualMode(prev, currentGraph));
+                    }
                     setMobileTab('control');
                     setSheetExpanded(true);
                   }}
@@ -617,7 +634,7 @@ export default function App() {
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <span>🎮</span> Điều khiển
+                  Điều khiển
                 </button>
                 <button
                   onClick={() => {
@@ -630,9 +647,9 @@ export default function App() {
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <span>📊</span> Trực tiếp
+                  Trực tiếp
                   {simState.isRunning && (
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping ml-0.5" />
+                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping ml-1" />
                   )}
                 </button>
                 <button
@@ -646,7 +663,7 @@ export default function App() {
                       : 'text-gray-400 hover:text-gray-200'
                   }`}
                 >
-                  <span>📋</span> Kịch bản
+                  Kịch bản mẫu
                 </button>
               </div>
 
@@ -720,10 +737,7 @@ export default function App() {
                       state={simState}
                       graph={currentGraph}
                       onStartScenario={handleStartScenario}
-                      onExitScenario={() => {
-                        handleReset();
-                        setMobileTab('control');
-                      }}
+                      onExitScenario={handleExitScenario}
                     />
                   )}
                 </ErrorBoundary>

@@ -46,9 +46,8 @@ export default function PresetScenariosPanel({
     <div className="flex flex-col gap-3 p-4 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200 shadow-md">
       {/* Header */}
       <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-1.5">
-          <span className="inline-block w-2 h-2 rounded-full bg-blue-500 animate-pulse" />
-          KỊCH BẢN MÔ PHỎNG (PRESET)
+        <h2 className="text-base font-bold text-white tracking-wide">
+          KỊCH BẢN MÔ PHỎNG
         </h2>
         {currentScenarioState && (
           <span className="text-[11px] font-mono px-2 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 font-bold">
@@ -65,7 +64,7 @@ export default function PresetScenariosPanel({
             {onExitScenario && (
               <button
                 onClick={onExitScenario}
-                className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition flex-shrink-0"
+                className="text-xs font-semibold px-2 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition flex-shrink-0 cursor-pointer"
               >
                 ✕ Thoát
               </button>
@@ -90,7 +89,7 @@ export default function PresetScenariosPanel({
               onClick={() => setShowList(true)}
               className="flex-1 text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-xl bg-[#0d1318] border border-[#1e2838] hover:border-blue-600 text-gray-200 transition min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              <span>≡</span> Đổi kịch bản
+              Đổi kịch bản
             </button>
           </div>
 
@@ -98,8 +97,8 @@ export default function PresetScenariosPanel({
           {currentObservations.length > 0 && (
             <div className="p-3 bg-[#15120c] border border-amber-800/80 rounded-xl text-xs flex flex-col gap-2 shadow-sm">
               <div className="flex items-center justify-between">
-                <div className="flex items-center gap-1.5 text-amber-400 font-bold tracking-wide">
-                  <span>👁</span> ĐIỀU CẦN QUAN SÁT (TIÊU CHÍ RUNTIME)
+                <div className="text-amber-400 font-bold tracking-wide">
+                  ĐIỀU CẦN QUAN SÁT (TIÊU CHÍ RUNTIME)
                 </div>
                 <span className={`font-mono text-[10px] px-2 py-0.5 rounded font-bold ${
                   passedCount === totalCount
@@ -137,7 +136,7 @@ export default function PresetScenariosPanel({
                             ? 'bg-red-800 text-red-100'
                             : 'bg-amber-900/80 text-amber-200'
                         }`}>
-                          {isPass ? '✅ ĐẠT' : isFail ? '❌ SAI' : '⏳ CHƯA ĐẠT'}
+                          {isPass ? 'ĐẠT' : isFail ? 'SAI' : 'CHƯA ĐẠT'}
                         </span>
                       </div>
 
@@ -161,8 +160,8 @@ export default function PresetScenariosPanel({
           {/* Box THÁCH THỨC */}
           {activeDef.challenges && activeDef.challenges.length > 0 && (
             <div className="p-3 bg-[#0d1726] border border-blue-800/60 rounded-xl text-xs flex flex-col gap-1.5 shadow-sm">
-              <div className="flex items-center gap-1.5 text-blue-400 font-bold tracking-wide">
-                <span>🎯</span> THÁCH THỨC VẬN HÀNH
+              <div className="text-blue-400 font-bold tracking-wide">
+                THÁCH THỨC VẬN HÀNH
               </div>
               <ul className="list-disc list-inside space-y-1 text-blue-200/90 leading-relaxed pl-1">
                 {activeDef.challenges.map((c, i) => (

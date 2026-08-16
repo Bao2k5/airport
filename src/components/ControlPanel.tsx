@@ -91,66 +91,55 @@ export default function ControlPanel({
 
   return (
     <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200">
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-white tracking-wide flex items-center gap-2">
-          <span>🎮</span> Điều Khiển Thủ Công
-        </h2>
-        <span className="text-[11px] px-2 py-1 rounded bg-cyan-950/80 text-cyan-300 border border-cyan-800 font-mono font-semibold">
-          6 Máy bay độc lập
-        </span>
-      </div>
-
-      {/* ── 6 Máy Bay Manual Tabs ── */}
-      {manualFleet.length > 0 && (
-        <div className="flex flex-col gap-1.5 bg-[#0a0e14] p-2 rounded-xl border border-[#1e2838]">
-          <div className="flex items-center justify-between px-1">
-            <span className="text-xs font-semibold text-gray-300">Chọn tàu bay điều khiển:</span>
-            <span className="text-[10px] text-cyan-400 font-mono">
-              ● Chỉ 1 tàu bay chạy
-            </span>
-          </div>
-          <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
-            {manualFleet.map(ac => {
-              const aDef = AIRLINES[ac.airlineCode as AirlineCode] || AIRLINES.VN;
-              const isSelected = ac.id === selectedAircraftId;
-              const isTaxiing = ac.status === 'taxiing';
-              const isHolding = ac.status === 'holding';
-
-              return (
-                <button
-                  key={ac.id}
-                  type="button"
-                  onClick={() => onSelectAircraft?.(ac.id)}
-                  className={`flex flex-col items-start p-2 rounded-lg border text-left transition min-h-[58px] cursor-pointer ${
-                    isSelected
-                      ? 'bg-[#152336] border-cyan-400 text-white shadow-md ring-2 ring-cyan-500/50'
-                      : 'bg-[#0f141c] border-[#1f2937] text-gray-400 hover:text-gray-200 hover:border-gray-600'
-                  }`}
-                >
-                  <div className="flex items-center justify-between w-full">
-                    <span className="font-bold text-xs" style={{ color: isSelected ? '#38bdf8' : aDef.accentColor }}>
-                      {ac.callsign}
-                    </span>
-                    <span className="text-[9px] px-1 py-0.5 rounded bg-black/50 text-gray-300 uppercase font-semibold">
-                      {ac.airlineCode}
-                    </span>
-                  </div>
-                  <div className="text-[10px] text-gray-400 truncate w-full mt-1">
-                    {ac.currentNodeId} → {ac.targetNodeId}
-                  </div>
-                  <div className="text-[10px] font-bold mt-1 flex items-center gap-1" style={{ color: isTaxiing ? '#22c55e' : (isHolding ? '#ef4444' : '#9ca3af') }}>
-                    <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isTaxiing ? '#22c55e' : (isHolding ? '#ef4444' : '#9ca3af') }} />
-                    {ac.status.toUpperCase()}
-                  </div>
-                </button>
-              );
-            })}
-          </div>
-        </div>
-      )}
-
       {/* Cấu hình tàu bay */}
       <Section title={`Cấu hình tàu bay: ${currentCallsign}`}>
+        {/* ── Danh sách chọn tàu bay ── */}
+        {manualFleet.length > 0 && (
+          <div className="flex flex-col gap-1.5 bg-[#0a0e14] p-2 rounded-xl border border-[#1e2838]">
+            <div className="px-1">
+              <span className="text-xs font-semibold text-gray-300">Chọn tàu bay:</span>
+            </div>
+            <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+              {manualFleet.map(ac => {
+                const aDef = AIRLINES[ac.airlineCode as AirlineCode] || AIRLINES.VN;
+                const isSelected = ac.id === selectedAircraftId;
+                const isTaxiing = ac.status === 'taxiing';
+                const isHolding = ac.status === 'holding';
+
+                return (
+                  <button
+                    key={ac.id}
+                    type="button"
+                    data-testid={`fleet-${ac.id}`}
+                    onClick={() => onSelectAircraft?.(ac.id)}
+                    className={`flex flex-col items-start p-2 rounded-lg border text-left transition min-h-[58px] cursor-pointer ${
+                      isSelected
+                        ? 'bg-[#152336] border-cyan-400 text-white shadow-md ring-2 ring-cyan-500/50'
+                        : 'bg-[#0f141c] border-[#1f2937] text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                    }`}
+                  >
+                    <div className="flex items-center justify-between w-full">
+                      <span className="font-bold text-xs" style={{ color: isSelected ? '#38bdf8' : aDef.accentColor }}>
+                        {ac.callsign}
+                      </span>
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-black/50 text-gray-300 uppercase font-semibold">
+                        {ac.airlineCode}
+                      </span>
+                    </div>
+                    <div className="text-[10px] text-gray-400 truncate w-full mt-1">
+                      {ac.currentNodeId} → {ac.targetNodeId}
+                    </div>
+                    <div className="text-[10px] font-bold mt-1 flex items-center gap-1" style={{ color: isTaxiing ? '#22c55e' : (isHolding ? '#ef4444' : '#9ca3af') }}>
+                      <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isTaxiing ? '#22c55e' : (isHolding ? '#ef4444' : '#9ca3af') }} />
+                      {ac.status.toUpperCase()}
+                    </div>
+                  </button>
+                );
+              })}
+            </div>
+          </div>
+        )}
+
         <div className="flex flex-col gap-1">
           <label className="text-xs text-gray-400 font-medium">Số hiệu chuyến bay</label>
           <input
@@ -347,6 +336,7 @@ export default function ControlPanel({
       <div className="flex flex-col gap-2.5 mt-2">
         {!isRunning && !isPaused && routeStatus === 'pending' && (
           <button
+            data-testid="accept-route-btn"
             onClick={() => executeAction('accept_route', onAcceptRoute)}
             disabled={!canStart || getActionState('accept_route').isPending}
             className="w-full bg-blue-700 hover:bg-blue-600 active:bg-blue-800 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-2.5 rounded-xl transition text-sm min-h-[46px] flex items-center justify-center gap-2 shadow-lg cursor-pointer"
@@ -363,6 +353,7 @@ export default function ControlPanel({
         {/* Điều khiển hành trình */}
         {(!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && routeStatus === 'accepted' && (
           <button
+            data-testid="start-aircraft-btn"
             onClick={() => executeAction('start', onStart)}
             disabled={!canStart || getActionState('start').isPending}
             className="w-full bg-green-600 hover:bg-green-500 active:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] shadow-lg flex items-center justify-center gap-2 cursor-pointer"
@@ -409,6 +400,7 @@ export default function ControlPanel({
         )}
 
         <button
+          data-testid="reset-aircraft-btn"
           onClick={() => executeAction('reset', onReset)}
           disabled={getActionState('reset').isPending}
           className="w-full bg-gray-700 hover:bg-gray-600 active:bg-gray-800 disabled:bg-gray-800 text-white font-bold py-2.5 rounded-xl transition text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer"

@@ -369,6 +369,60 @@ export function startManualAircraft(
 }
 
 /**
+ * Reset simulation state completely from Scenario mode back to Manual Control mode.
+ * Completely removes scenario state, clears scenario aircraft, recreates manual fleet with 6 parked aircraft,
+ * clears dynamic incidents, and preserves the selected graph and configuration.
+ */
+export function resetToManualMode(
+  state: SimulationState,
+  graph: AirportGraph = airportGraph,
+): SimulationState {
+  const staticBlockedEdgeIds = new Set<string>();
+  for (const e of graph.edges) {
+    if (e.status === 'closed' || e.status === 'restricted') {
+      staticBlockedEdgeIds.add(e.id);
+    }
+  }
+
+  const manualFleet = createDefaultManualFleet(graph, state.config);
+  const selectedId = state.selectedAircraftId || 'VN001';
+  const selectedAc = manualFleet.find(a => a.id === selectedId) || manualFleet[0];
+
+  const effectiveSpeed = effectiveTaxiSpeedKts(state.config);
+  const eta = selectedAc ? estimateTravelTimeSeconds(selectedAc.assignedRoute, graph.edges, effectiveSpeed) : null;
+
+  return {
+    aircraft: selectedAc,
+    manualFleet,
+    selectedAircraftId: selectedId,
+    trafficAircraft: spawnBackgroundTraffic(state.config, new Set(), graph),
+    config: {
+      ...state.config,
+      incident: 'none',
+      incidentEdgeId: null,
+    },
+    isRunning: false,
+    isPaused: false,
+    routeStatus: 'pending',
+    elapsedSeconds: 0,
+    etaSeconds: eta,
+    warningMessage: null,
+    lightStates: selectedAc ? computeLightStates(selectedAc, staticBlockedEdgeIds, graph) : {},
+    blockedEdgeIds: staticBlockedEdgeIds,
+    liveEventLog: [
+      {
+        id: `manual_ready_${Date.now()}`,
+        atSeconds: 0,
+        message: 'Đã chuyển về chế độ Điều khiển thủ công. 6 máy bay sẵn sàng tại sân đỗ.',
+        severity: 'info',
+      },
+    ],
+    scenario: undefined,
+    scenarioAircraft: undefined,
+  };
+}
+
+/**
  * Reset a specific aircraft in the manual fleet back to its initial parking stand
  */
 export function resetManualAircraft(
@@ -376,11 +430,15 @@ export function resetManualAircraft(
   aircraftId: string,
   graph: AirportGraph = airportGraph,
 ): SimulationState {
-  const defaultFleet = createDefaultManualFleet(graph);
-  const defaultSpec = defaultFleet.find(a => a.id === aircraftId);
-  if (!defaultSpec || !state.manualFleet) return state;
+  // If state still has scenario attached or fleet is empty, regenerate fleet safely
+  const baseFleet = (state.manualFleet && state.manualFleet.length > 0)
+    ? state.manualFleet
+    : createDefaultManualFleet(graph, state.config);
 
-  const updatedFleet = state.manualFleet.map(ac => {
+  const defaultFleet = createDefaultManualFleet(graph, state.config);
+  const defaultSpec = defaultFleet.find(a => a.id === aircraftId) || defaultFleet[0];
+
+  const updatedFleet = baseFleet.map(ac => {
     if (ac.id === aircraftId) {
       return {
         ...defaultSpec,
@@ -395,7 +453,8 @@ export function resetManualAircraft(
     return ac;
   });
 
-  const selectedAc = updatedFleet.find(a => a.id === (state.selectedAircraftId || aircraftId)) || updatedFleet[0];
+  const selectedId = state.selectedAircraftId || aircraftId;
+  const selectedAc = updatedFleet.find(a => a.id === selectedId) || updatedFleet[0];
   const anyTaxiing = updatedFleet.some(a => a.status === 'taxiing');
   const newLogs = appendLiveLog(state.liveEventLog, {
     atSeconds: state.elapsedSeconds,
@@ -406,6 +465,8 @@ export function resetManualAircraft(
 
   return {
     ...state,
+    scenario: undefined,
+    scenarioAircraft: undefined,
     isRunning: anyTaxiing,
     manualFleet: updatedFleet,
     aircraft: selectedAc,
