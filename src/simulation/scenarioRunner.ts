@@ -21,7 +21,7 @@ const DEFAULT_SCENARIO_CONFIG: SimulationConfig = {
   autoReroute: true,
 };
 
-const KTS_TO_PX_PER_SEC = 0.3;
+const KTS_TO_PX_PER_SEC = 0.22;
 
 function getNodePos(nodeId: string, graph: AirportGraph = airportGraph) {
   return graph.nodes.find(n => n.id === nodeId) ?? null;

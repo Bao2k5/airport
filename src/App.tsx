@@ -51,8 +51,8 @@ const DEFAULT_CONFIG: SimulationConfig = {
   autoReroute:       true,
 };
 
-// Số giây mô phỏng trên mỗi giây thực
-const TIME_SCALE = 8;
+// Số giây mô phỏng trên mỗi giây thực (giảm nhẹ từ 8 xuống 6 để quan sát trực quan mượt mà)
+const TIME_SCALE = 6;
 
 export default function App() {
   // Check reload guard on start
@@ -422,9 +422,18 @@ export default function App() {
           {/* Bộ chọn Đồ thị & Nút Hành Động */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
             {/* Bộ chọn Model/Graph */}
-            <div className="flex items-center gap-1 bg-[#0A1B36] px-2 py-1 rounded-lg border border-[#1E3A8A]">
+            <div
+              data-testid="graph-meta"
+              data-graph-id={selectedGraphId}
+              data-graph-name={currentGraphEntry.name}
+              data-nodes={currentGraph.nodes.length}
+              data-edges={currentGraph.edges.length}
+              data-bg={currentGraphEntry.bgImage}
+              className="flex items-center gap-1 bg-[#0A1B36] px-2 py-1 rounded-lg border border-[#1E3A8A]"
+            >
               <span className="text-[11px] text-[#93C5FD] font-medium hidden md:inline">Mô hình:</span>
               <select
+                data-testid="graph-select"
                 value={selectedGraphId}
                 onChange={(e) => {
                   const newId = e.target.value as GraphId;
@@ -552,7 +561,7 @@ export default function App() {
               {/* Tab Switcher */}
               <div className="flex bg-[#E4E4E7]/60 p-1 rounded-[10px]">
                 <button
-                  data-testid="desktop-tab-control"
+                  data-testid="control-tab"
                   onClick={() => {
                     if (simState.scenario) {
                       setSimState(prev => resetToManualMode(prev, currentGraph));
@@ -568,7 +577,7 @@ export default function App() {
                   Điều khiển
                 </button>
                 <button
-                  data-testid="desktop-tab-scenarios"
+                  data-testid="scenario-tab"
                   onClick={() => setDesktopTab('scenarios')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
                     desktopTab === 'scenarios'

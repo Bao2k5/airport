@@ -276,6 +276,7 @@ export default function ControlPanel({
         </p>
 
         <button
+          data-testid="incident-btn"
           onClick={() => executeAction('trigger_incident', onTriggerIncident)}
           disabled={!isRunning || getActionState('trigger_incident').isPending}
           className="w-full bg-[#D32F2F] hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition min-h-[44px] flex items-center justify-center gap-2 shadow-sm cursor-pointer"

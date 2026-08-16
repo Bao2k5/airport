@@ -108,6 +108,7 @@ export default function PresetScenariosPanel({
                 : 'Chạy lại'}
             </button>
             <button
+              data-testid="change-scenario-btn"
               onClick={() => setShowList(true)}
               className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#334155] transition min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
             >
@@ -263,7 +264,7 @@ export default function PresetScenariosPanel({
               return (
                 <div
                   key={def.id}
-                  data-testid={`scenario-card-${def.id}`}
+                  data-testid={`scenario-${idx + 1}`}
                   onClick={() => handleCardClick(def.id)}
                   className={`relative p-3.5 rounded-xl border transition-all duration-200 ease-out cursor-pointer flex flex-col gap-2 group ${
                     isSelected

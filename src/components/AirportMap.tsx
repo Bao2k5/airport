@@ -27,8 +27,6 @@ interface Props {
 }
 
 const BG_OUTER = '#0c0f12';
-const GUIDANCE_WINDOW_PX = 100;
-const GUIDANCE_MAX_NODES = 4;
 
 function AirportMap({
   state,
@@ -413,33 +411,19 @@ function AirportMap({
           </g>
         )}
 
-        {/* ── Layer 3: RENDERER 1 - SCENARIO MODE (Sliding Neon Green FTG Only) ── */}
-        {isScenario && (
-          <g className="scenario-guidance-layer">
-            {allActiveAircraft.map(ac => (
-              <ScenarioGuidanceRenderer
-                key={`sc-guidance-${ac.id}`}
-                aircraft={ac}
-                graph={activeGraph}
-                animPhase={animPhase}
-              />
-            ))}
-          </g>
-        )}
-
-        {/* ── Layer 4: RENDERER 2 - MANUAL MODE (Full Route from Start to Dest in Cyan) ── */}
-        {!isScenario && (
-          <g className="manual-full-route-layer">
-            {allActiveAircraft.map(ac => (
-              <ManualRouteRenderer
-                key={`manual-route-${ac.id}`}
-                aircraft={ac}
-                graph={activeGraph}
-                isSelected={ac.id === (state.selectedAircraftId || state.aircraft?.id)}
-              />
-            ))}
-          </g>
-        )}
+        {/* ── Layer 3: Unified Follow-the-Green Guidance Layer (Scenario & Manual) ── */}
+        <g className="follow-the-green-layer">
+          {allActiveAircraft.map(ac => (
+            <FollowTheGreenRenderer
+              key={`ftg-guidance-${ac.id}`}
+              aircraft={ac}
+              graph={activeGraph}
+              animPhase={animPhase}
+              isScenario={isScenario}
+              isSelected={ac.id === (state.selectedAircraftId || state.aircraft?.id)}
+            />
+          ))}
+        </g>
 
         {/* ── Layer 4.5: Stand Labels (Stand 1, Stand 2, Stand 3, Stand 4, Stand 5, Stand 7) ── */}
         {!isScenario && (
@@ -606,19 +590,21 @@ function AirportMap({
   );
 }
 
-// ── RENDERER 1: SCENARIO MODE (Sliding Neon Green Follow-the-Green Window 80-120px)
+// ── UNIFIED FOLLOW-THE-GREEN GUIDANCE RENDERER (SMGCS Standard) ─────────────
+export const GUIDANCE_LOOKAHEAD_RATIO = 0.6; // 60% of visible route ahead
+export const MIN_LOOKAHEAD_METERS = 40;
+export const MAX_LOOKAHEAD_METERS = 180;
+
 interface PolylinePoint {
   x: number;
   y: number;
-  distFromStart: number;
+  distMetersFromNose: number;
 }
 
-function getForwardRoutePolyline(
+function computeForwardGuidancePolyline(
   aircraft: Aircraft,
   graph: AirportGraph,
-  maxWindowPx = GUIDANCE_WINDOW_PX,
-  maxNodes = GUIDANCE_MAX_NODES,
-): { points: PolylinePoint[]; totalLen: number } | null {
+): { points: PolylinePoint[]; totalMeters: number; pathD: string } | null {
   if (!aircraft.assignedRoute || aircraft.assignedRoute.length < 2) return null;
   if (aircraft.routeEdgeIndex >= aircraft.assignedRoute.length - 1) return null;
 
@@ -626,223 +612,176 @@ function getForwardRoutePolyline(
   const toNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 1]);
   if (!fromNode || !toNode) return null;
 
-  const t = aircraft.progressOnEdge;
-  const currX = fromNode.x + (toNode.x - fromNode.x) * t;
-  const currY = fromNode.y + (toNode.y - fromNode.y) * t;
+  const edges = graph.edges;
+  const currentEdge = edges.find(
+    e => (e.fromNodeId === fromNode.id && e.toNodeId === toNode.id) ||
+         (e.bidirectional && e.fromNodeId === toNode.id && e.toNodeId === fromNode.id)
+  ) || edges.find(e => e.id === aircraft.currentEdgeId);
 
-  const points: PolylinePoint[] = [{ x: currX, y: currY, distFromStart: 0 }];
-  let accumDist = 0;
+  const t = Math.max(0, Math.min(1, aircraft.progressOnEdge));
+  const noseX = fromNode.x + (toNode.x - fromNode.x) * t;
+  const noseY = fromNode.y + (toNode.y - fromNode.y) * t;
 
-  // 1. Remaining segment on current edge
-  const remDx = toNode.x - currX;
-  const remDy = toNode.y - currY;
-  const remLen = Math.hypot(remDx, remDy);
+  // 1. Calculate total remaining meters along the entire remainder of the route
+  const currentEdgeLenMeters = currentEdge?.lengthMeters || 50;
+  let remainingMetersOnRoute = (1 - t) * currentEdgeLenMeters;
 
-  if (remLen > 0.5) {
-    if (accumDist + remLen >= maxWindowPx) {
-      const frac = (maxWindowPx - accumDist) / remLen;
-      points.push({
-        x: currX + remDx * frac,
-        y: currY + remDy * frac,
-        distFromStart: maxWindowPx,
-      });
-      return { points, totalLen: maxWindowPx };
-    }
-    accumDist += remLen;
-    points.push({ x: toNode.x, y: toNode.y, distFromStart: accumDist });
+  for (let i = aircraft.routeEdgeIndex + 1; i < aircraft.assignedRoute.length - 1; i++) {
+    const u = aircraft.assignedRoute[i];
+    const v = aircraft.assignedRoute[i + 1];
+    const edge = edges.find(
+      e => (e.fromNodeId === u && e.toNodeId === v) ||
+           (e.bidirectional && e.fromNodeId === v && e.toNodeId === u)
+    );
+    remainingMetersOnRoute += edge?.lengthMeters || 50;
   }
 
-  // 2. Subsequent edges along the polyline up to maxNodes and maxWindowPx
-  let prevNode = toNode;
-  let nodesCount = 1;
+  // 2. Compute dynamic lookahead window (60% of visible route, bounded 40m - 180m)
+  const targetLookaheadMeters = Math.max(
+    MIN_LOOKAHEAD_METERS,
+    Math.min(MAX_LOOKAHEAD_METERS, remainingMetersOnRoute * GUIDANCE_LOOKAHEAD_RATIO)
+  );
 
-  for (let i = aircraft.routeEdgeIndex + 1; i < aircraft.assignedRoute.length - 1 && nodesCount < maxNodes; i++) {
+  const points: PolylinePoint[] = [{ x: noseX, y: noseY, distMetersFromNose: 0 }];
+  let accumMeters = 0;
+
+  // 3. Forward trace along current edge
+  const remCurrentMeters = (1 - t) * currentEdgeLenMeters;
+  if (remCurrentMeters > 0.1) {
+    if (accumMeters + remCurrentMeters >= targetLookaheadMeters) {
+      const frac = (targetLookaheadMeters - accumMeters) / remCurrentMeters;
+      const ptX = noseX + (toNode.x - noseX) * frac;
+      const ptY = noseY + (toNode.y - noseY) * frac;
+      points.push({ x: ptX, y: ptY, distMetersFromNose: targetLookaheadMeters });
+      const pathD = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+      return { points, totalMeters: targetLookaheadMeters, pathD };
+    }
+    accumMeters += remCurrentMeters;
+    points.push({ x: toNode.x, y: toNode.y, distMetersFromNose: accumMeters });
+  }
+
+  // 4. Forward trace along subsequent edges
+  let prevNode = toNode;
+  for (let i = aircraft.routeEdgeIndex + 1; i < aircraft.assignedRoute.length - 1; i++) {
     const nextNodeId = aircraft.assignedRoute[i + 1];
     const nextNode = graph.nodes.find(n => n.id === nextNodeId);
     if (!nextNode) break;
 
-    const segDx = nextNode.x - prevNode.x;
-    const segDy = nextNode.y - prevNode.y;
-    const segLen = Math.hypot(segDx, segDy);
-    nodesCount++;
+    const edge = edges.find(
+      e => (e.fromNodeId === prevNode.id && e.toNodeId === nextNode.id) ||
+           (e.bidirectional && e.fromNodeId === nextNode.id && e.toNodeId === prevNode.id)
+    );
+    const segMeters = edge?.lengthMeters || 50;
 
-    if (segLen <= 0.5) {
-      prevNode = nextNode;
-      continue;
-    }
-
-    if (accumDist + segLen >= maxWindowPx) {
-      const frac = (maxWindowPx - accumDist) / segLen;
-      points.push({
-        x: prevNode.x + segDx * frac,
-        y: prevNode.y + segDy * frac,
-        distFromStart: maxWindowPx,
-      });
-      accumDist = maxWindowPx;
+    if (accumMeters + segMeters >= targetLookaheadMeters) {
+      const frac = (targetLookaheadMeters - accumMeters) / segMeters;
+      const ptX = prevNode.x + (nextNode.x - prevNode.x) * frac;
+      const ptY = prevNode.y + (nextNode.y - prevNode.y) * frac;
+      points.push({ x: ptX, y: ptY, distMetersFromNose: targetLookaheadMeters });
+      accumMeters = targetLookaheadMeters;
       break;
     }
 
-    accumDist += segLen;
-    points.push({ x: nextNode.x, y: nextNode.y, distFromStart: accumDist });
+    accumMeters += segMeters;
+    points.push({ x: nextNode.x, y: nextNode.y, distMetersFromNose: accumMeters });
     prevNode = nextNode;
   }
 
-  return { points, totalLen: accumDist };
+  if (points.length < 2) return null;
+  const pathD = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  return { points, totalMeters: accumMeters, pathD };
 }
 
-function ScenarioGuidanceRenderer({
+function FollowTheGreenRenderer({
   aircraft,
   graph,
   animPhase,
-}: {
-  aircraft: Aircraft;
-  graph: AirportGraph;
-  animPhase: number;
-}) {
-  if (aircraft.status === 'arrived' || aircraft.status === 'departed') return null;
-  const poly = getForwardRoutePolyline(aircraft, graph, GUIDANCE_WINDOW_PX, GUIDANCE_MAX_NODES);
-  if (!poly || poly.points.length < 2 || poly.totalLen < 2) return null;
-
-  // Compute discrete glowing circular dots along forward guidance polyline (Nét đứt hình tròn)
-  const dots: { x: number; y: number; dist: number; phase: number }[] = [];
-  const dotSpacing = 11;
-  const numDots = Math.floor(poly.totalLen / dotSpacing);
-
-  for (let i = 1; i <= numDots; i++) {
-    const targetDist = i * dotSpacing;
-    let pt: { x: number; y: number } | null = null;
-    for (let j = 0; j < poly.points.length - 1; j++) {
-      const p1 = poly.points[j];
-      const p2 = poly.points[j + 1];
-      if (targetDist >= p1.distFromStart && targetDist <= p2.distFromStart) {
-        const segLen = p2.distFromStart - p1.distFromStart;
-        const t = segLen > 0 ? (targetDist - p1.distFromStart) / segLen : 0;
-        pt = {
-          x: p1.x + (p2.x - p1.x) * t,
-          y: p1.y + (p2.y - p1.y) * t,
-        };
-        break;
-      }
-    }
-    if (pt) {
-      const p = (targetDist / 15 - animPhase) % (Math.PI * 2);
-      dots.push({ x: pt.x, y: pt.y, dist: targetDist, phase: p });
-    }
-  }
-
-  return (
-    <g
-      className="scenario-ftg-neon-dots"
-      style={{
-        filter: 'drop-shadow(0 0 6px #00ff66) drop-shadow(0 0 14px #00ff66)',
-      }}
-    >
-      {/* Chuỗi chấm tròn sáng màu xanh lá neon chạy tuần tự (Nét đứt hình tròn ● ● ●) */}
-      {dots.map((dot, idx) => {
-        const pulse = 0.8 + 0.3 * Math.sin(dot.phase);
-        const fade = Math.max(0.3, 1 - dot.dist / (GUIDANCE_WINDOW_PX * 1.15));
-        return (
-          <g key={`sc-dot-${idx}`} opacity={fade}>
-            <circle cx={dot.x} cy={dot.y} r={7.0 * pulse} fill="url(#neon-lead-green)" />
-            <circle cx={dot.x} cy={dot.y} r={3.4 * pulse} fill="#00ff66" />
-            <circle cx={dot.x} cy={dot.y} r={1.4} fill="#ffffff" />
-          </g>
-        );
-      })}
-    </g>
-  );
-}
-
-// ── RENDERER 2: MANUAL MODE (Full Route in Cyan Minus Dashes - - - -) ─────────
-function ManualRouteRenderer({
-  aircraft,
-  graph,
+  isScenario = false,
   isSelected = false,
 }: {
   aircraft: Aircraft;
   graph: AirportGraph;
+  animPhase: number;
+  isScenario?: boolean;
   isSelected?: boolean;
 }) {
-  // STRICT RULE: Hide route when parked / before Start is clicked
-  if (!aircraft.routeVisible && aircraft.status !== 'taxiing' && aircraft.status !== 'holding') {
+  // STRICT RULE: Do not show guidance when aircraft is parked, arrived, departed, or before starting in manual mode
+  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed') {
     return null;
   }
-  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed') return null;
-  if (!aircraft.assignedRoute || aircraft.assignedRoute.length < 2) return null;
+  if (!isScenario && !aircraft.routeVisible && aircraft.status !== 'taxiing' && aircraft.status !== 'holding') {
+    return null;
+  }
 
-  const nodeObjs = aircraft.assignedRoute
-    .map(id => graph.nodes.find(n => n.id === id))
-    .filter((n): n is typeof graph.nodes[0] => n !== undefined);
+  const poly = computeForwardGuidancePolyline(aircraft, graph);
+  if (!poly || poly.points.length < 2 || poly.totalMeters < 1) return null;
 
-  if (nodeObjs.length < 2) return null;
+  // Discrete glowing circular dots along forward guidance path (Nét đứt hình tròn sáng rực rỡ)
+  const dotSpacingMeters = 8; // approximately every 8 meters
+  const numDots = Math.max(1, Math.floor(poly.totalMeters / dotSpacingMeters));
+  const dots: { x: number; y: number; distMeters: number; phase: number }[] = [];
 
-  const pathD = nodeObjs.map((n, i) => `${i === 0 ? 'M' : 'L'}${n.x},${n.y}`).join(' ');
-  const opacity = isSelected ? 1.0 : 0.55;
-  const startNode = nodeObjs[0];
-  const destNode = nodeObjs[nodeObjs.length - 1];
+  for (let i = 1; i <= numDots; i++) {
+    const targetM = i * dotSpacingMeters;
+    for (let j = 0; j < poly.points.length - 1; j++) {
+      const p1 = poly.points[j];
+      const p2 = poly.points[j + 1];
+      if (targetM >= p1.distMetersFromNose && targetM <= p2.distMetersFromNose) {
+        const segLen = p2.distMetersFromNose - p1.distMetersFromNose;
+        const frac = segLen > 0 ? (targetM - p1.distMetersFromNose) / segLen : 0;
+        const ptX = p1.x + (p2.x - p1.x) * frac;
+        const ptY = p1.y + (p2.y - p1.y) * frac;
+        const phase = (targetM / 10 - animPhase) % (Math.PI * 2);
+        dots.push({ x: ptX, y: ptY, distMeters: targetM, phase });
+        break;
+      }
+    }
+  }
 
   return (
     <g
-      className="manual-full-route-group"
-      opacity={opacity}
+      className={`ftg-guidance-group-${aircraft.id}`}
       style={{
         filter: isSelected
-          ? 'drop-shadow(0 0 5px #00e5ff) drop-shadow(0 0 12px #0284c7)'
-          : undefined,
+          ? 'drop-shadow(0 0 7px #22c55e) drop-shadow(0 0 16px #16a34a)'
+          : 'drop-shadow(0 0 5px #22c55e) drop-shadow(0 0 10px #16a34a)',
       }}
     >
-      {/* Outer Cyan Dash Glow (- - - -) */}
+      {/* 1. Subtle forward centerline lead line ahead of nose */}
       <path
-        d={pathD}
-        stroke="#0284c7"
-        strokeWidth={isSelected ? 6.5 : 4.5}
-        strokeDasharray="9,6"
-        strokeLinecap="butt"
-        fill="none"
-        opacity={0.5}
+        d={poly.pathD}
+        stroke="#22c55e"
+        strokeWidth={3.0}
+        strokeLinecap="round"
         strokeLinejoin="round"
+        fill="none"
+        opacity={0.4}
       />
-      {/* Solid Cyan Dash Line (- - - -) */}
       <path
-        d={pathD}
-        stroke="#00e5ff"
-        strokeWidth={isSelected ? 3.2 : 2.2}
-        strokeDasharray="9,6"
-        strokeLinecap="butt"
-        fill="none"
-        opacity={0.95}
+        d={poly.pathD}
+        stroke="#86efac"
+        strokeWidth={1.2}
+        strokeLinecap="round"
         strokeLinejoin="round"
-      />
-      {/* Bright Core White/Sky Dash Line */}
-      <path
-        d={pathD}
-        stroke="#e0f2fe"
-        strokeWidth={isSelected ? 1.4 : 1.0}
-        strokeDasharray="9,6"
-        strokeLinecap="butt"
         fill="none"
-        opacity={0.9}
-        strokeLinejoin="round"
+        opacity={0.7}
       />
 
-      {/* Start Node Marker (Green) */}
-      <circle cx={startNode.x} cy={startNode.y} r={4.5} fill="#22c55e" stroke="#ffffff" strokeWidth={1.2} />
-      {/* Destination Node Marker (Red) */}
-      <circle cx={destNode.x} cy={destNode.y} r={4.5} fill="#ef4444" stroke="#ffffff" strokeWidth={1.2} />
-
-      {/* Intermediate Route Node Waypoints (when selected) */}
-      {isSelected &&
-        nodeObjs.slice(1, -1).map((n, i) => (
-          <circle
-            key={`wp-${i}`}
-            cx={n.x}
-            cy={n.y}
-            r={2.2}
-            fill="#38bdf8"
-            stroke="#0f172a"
-            strokeWidth={0.8}
-          />
-        ))}
+      {/* 2. Sliding discrete glowing Follow-the-Green dots ahead of nose */}
+      {dots.map((dot, idx) => {
+        const pulse = 0.82 + 0.25 * Math.sin(dot.phase);
+        const fade = Math.max(0.35, 1 - (dot.distMeters / (poly.totalMeters * 1.1)));
+        return (
+          <g key={`ftg-dot-${aircraft.id}-${idx}`} opacity={fade}>
+            {/* Outer halo */}
+            <circle cx={dot.x} cy={dot.y} r={6.8 * pulse} fill="url(#neon-lead-green)" />
+            {/* Bright green body */}
+            <circle cx={dot.x} cy={dot.y} r={3.2 * pulse} fill="#22c55e" />
+            {/* Bright white core */}
+            <circle cx={dot.x} cy={dot.y} r={1.3} fill="#ffffff" />
+          </g>
+        );
+      })}
     </g>
   );
 }

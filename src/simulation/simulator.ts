@@ -571,6 +571,25 @@ export function resetManualAircraft(
   };
 }
 
+function getAircraftCoordinate(ac: Aircraft, graph: AirportGraph): { x: number; y: number } | null {
+  if (ac.assignedRoute && ac.assignedRoute.length >= 2 && ac.routeEdgeIndex < ac.assignedRoute.length - 1) {
+    const f = graph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex]);
+    const t = graph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex + 1]);
+    if (f && t) {
+      const prog = Math.max(0, Math.min(1, ac.progressOnEdge));
+      return { x: f.x + (t.x - f.x) * prog, y: f.y + (t.y - f.y) * prog };
+    }
+  }
+  const n = graph.nodes.find(n => n.id === ac.currentNodeId);
+  return n ? { x: n.x, y: n.y } : null;
+}
+
+function isRunwayNodeOrEdge(nodeId: string | undefined, edge: AirportEdge | undefined): boolean {
+  if (edge && edge.type === 'runway') return true;
+  if (!nodeId) return false;
+  return nodeId.includes('RWY') || nodeId.startsWith('R1_') || nodeId.startsWith('R2_') || nodeId.includes('THR');
+}
+
 /**
  * Single simulation tick. dt is elapsed time in seconds.
  */
@@ -587,9 +606,29 @@ export function simulationTick(
 
   let tickLogs = state.liveEventLog || [];
 
+  // 1. Identify which runway segments / runways are currently occupied
+  const runwayOccupants = new Map<string, string>(); // runwayKey -> occupying aircraft callsign
+  for (const ac of fleet) {
+    if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
+    const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
+    const currEdge = graph.edges.find(e => e.id === routeEdges[ac.routeEdgeIndex]);
+    const currNode = ac.assignedRoute[ac.routeEdgeIndex];
+    if (isRunwayNodeOrEdge(currNode, currEdge)) {
+      const rwyKey = currNode?.includes('07L') || currNode?.includes('25R') || currEdge?.id.includes('R1') ? 'RWY07L/25R' : 'RWY07R/25L';
+      runwayOccupants.set(rwyKey, ac.callsign);
+    }
+  }
+
+  // 2. Pre-calculate aircraft coordinates for separation checks
+  const coords = new Map<string, { x: number; y: number }>();
+  for (const ac of fleet) {
+    const pt = getAircraftCoordinate(ac, graph);
+    if (pt) coords.set(ac.id, pt);
+  }
+
   const updatedFleet = fleet.map(ac => {
-    // Only aircraft with status === 'taxiing' are updated. All others stay still.
-    if (ac.status !== 'taxiing') {
+    // Only aircraft with status === 'taxiing' or 'holding' are evaluated. Parked stays parked.
+    if (ac.status !== 'taxiing' && ac.status !== 'holding') {
       return ac;
     }
 
@@ -597,7 +636,7 @@ export function simulationTick(
       ...state.config,
       aircraftType: ac.aircraftType || state.config.aircraftType,
       taxiSpeedKts: state.config.taxiSpeedKts,
-    });
+    }) * 0.85; // Giảm tốc độ lăn bánh xuống một chút theo yêu cầu
     const effectiveSpeedMs = effectiveSpeed * KNOTS_TO_MS;
     const edges = graph.edges;
     const routeEdgeIds = routeToEdges(ac.assignedRoute, edges) ?? [];
@@ -614,6 +653,7 @@ export function simulationTick(
         status: 'arrived' as const,
         currentNodeId: ac.assignedRoute[ac.assignedRoute.length - 1],
         progressOnEdge: 1,
+        speedKts: 0,
       };
     }
 
@@ -622,19 +662,21 @@ export function simulationTick(
     const currentBlocked = state.blockedEdgeIds.has(currentEdgeId);
     const blockAhead = remainingEdgeIds.some(id => state.blockedEdgeIds.has(id));
 
+    // Dynamic Rerouting via Dijkstra
     if (blockAhead && state.config.autoReroute) {
       const fromNode = ac.assignedRoute[ac.routeEdgeIndex];
-      let reroutedPath = currentBlocked
+      const reroutedPath = currentBlocked
         ? findPath(graph, fromNode, ac.targetNodeId, state.blockedEdgeIds)
         : findPath(graph, ac.assignedRoute[ac.routeEdgeIndex + 1], ac.targetNodeId, state.blockedEdgeIds);
 
       if (reroutedPath && reroutedPath.length > 1) {
         const fullPath = currentBlocked ? reroutedPath : [fromNode, ...reroutedPath];
-        const newEdges = routeToEdges(fullPath, edges);
+        const newEdges = routeToEdges(fullPath, edges) ?? [];
+        const totalMeters = newEdges.reduce((sum, eId) => sum + (edges.find(e => e.id === eId)?.lengthMeters || 0), 0);
         tickLogs = appendLiveLog(tickLogs, {
           atSeconds: state.elapsedSeconds + dt,
           callsign: ac.callsign,
-          message: `${ac.callsign} tự động đổi tuyến vòng qua Dijkstra: [${fullPath.join(' -> ')}] né đoạn bị chặn.`,
+          message: `Sự cố đoạn [${Array.from(state.blockedEdgeIds).join(', ')}] — ${ac.callsign} đã tự động đổi tuyến (Dijkstra) sang [${fullPath.join(' → ')}], tổng chi phí: ${totalMeters.toFixed(0)}m.`,
           severity: 'warning',
         });
         return {
@@ -645,8 +687,79 @@ export function simulationTick(
           currentNodeId: fromNode,
           currentEdgeId: newEdges ? newEdges[0] : null,
           status: 'taxiing' as const,
+          holdReason: undefined,
         };
       }
+    }
+
+    // Check Runway Occupancy ahead
+    const nextNode = ac.assignedRoute[ac.routeEdgeIndex + 1];
+    const nextEdge = edges.find(e => e.id === routeEdgeIds[ac.routeEdgeIndex + 1]);
+    const isEnteringRunway = isRunwayNodeOrEdge(nextNode, nextEdge);
+    if (isEnteringRunway) {
+      const rwyKey = nextNode?.includes('07L') || nextNode?.includes('25R') || nextEdge?.id.includes('R1') ? 'RWY07L/25R' : 'RWY07R/25L';
+      const occupyingCallsign = runwayOccupants.get(rwyKey);
+      if (occupyingCallsign && occupyingCallsign !== ac.callsign && ac.progressOnEdge >= 0.85) {
+        if (ac.status !== 'holding' || ac.holdReason !== 'runway-occupied') {
+          tickLogs = appendLiveLog(tickLogs, {
+            atSeconds: state.elapsedSeconds + dt,
+            callsign: ac.callsign,
+            message: `Stop Bar kích hoạt: ${ac.callsign} dừng trước ${rwyKey} do ${occupyingCallsign} đang chiếm dụng đường băng.`,
+            severity: 'warning',
+          });
+        }
+        return {
+          ...ac,
+          status: 'holding' as const,
+          holdReason: 'runway-occupied',
+          speedKts: 0,
+        };
+      }
+    }
+
+    // Check Junction / Separation conflict with other active aircraft
+    const myPos = coords.get(ac.id);
+    if (myPos) {
+      for (const other of fleet) {
+        if (other.id === ac.id) continue;
+        if (other.status !== 'taxiing' && other.status !== 'holding') continue;
+        const otherPos = coords.get(other.id);
+        if (!otherPos) continue;
+
+        const dist = Math.hypot(myPos.x - otherPos.x, myPos.y - otherPos.y);
+        if (dist < 22) {
+          // Compare priority (canonical spec index)
+          const myIdx = CANONICAL_FLEET_SPECS.findIndex(s => s.id === ac.id);
+          const otherIdx = CANONICAL_FLEET_SPECS.findIndex(s => s.id === other.id);
+          if (myIdx > otherIdx) {
+            // Lower priority yields
+            if (ac.status !== 'holding' || ac.holdReason !== 'separation') {
+              tickLogs = appendLiveLog(tickLogs, {
+                atSeconds: state.elapsedSeconds + dt,
+                callsign: ac.callsign,
+                message: `KSVKL: Giữ giãn cách giao lộ an toàn — ${ac.callsign} dừng nhường đường cho ${other.callsign}.`,
+                severity: 'warning',
+              });
+            }
+            return {
+              ...ac,
+              status: 'holding' as const,
+              holdReason: 'separation',
+              speedKts: 0,
+            };
+          }
+        }
+      }
+    }
+
+    // Resume taxiing if previously holding and path is now clear
+    if (ac.status === 'holding' && (ac.holdReason === 'runway-occupied' || ac.holdReason === 'separation')) {
+      tickLogs = appendLiveLog(tickLogs, {
+        atSeconds: state.elapsedSeconds + dt,
+        callsign: ac.callsign,
+        message: `Đường lăn đã được giải phóng — ${ac.callsign} tiếp tục lăn bánh.`,
+        severity: 'info',
+      });
     }
 
     const currentEdge = edges.find(e => e.id === currentEdgeId);
@@ -669,6 +782,17 @@ export function simulationTick(
     }
 
     if (newCurrentNodeId !== ac.currentNodeId) {
+      const prevWasRunway = isRunwayNodeOrEdge(ac.currentNodeId, currentEdge);
+      const nowIsTaxiway = !isRunwayNodeOrEdge(newCurrentNodeId, edges.find(e => e.id === routeEdgeIds[newEdgeIndex]));
+      if (prevWasRunway && nowIsTaxiway) {
+        tickLogs = appendLiveLog(tickLogs, {
+          atSeconds: state.elapsedSeconds + dt,
+          callsign: ac.callsign,
+          message: `Tàu bay ${ac.callsign} đã clear runway, thoát an toàn sang đường lăn.`,
+          severity: 'info',
+        });
+      }
+
       tickLogs = appendLiveLog(tickLogs, {
         atSeconds: state.elapsedSeconds + dt,
         callsign: ac.callsign,
@@ -695,6 +819,7 @@ export function simulationTick(
       currentEdgeId: newEdgeIndex < routeEdgeIds.length ? routeEdgeIds[newEdgeIndex] : null,
       speedKts: effectiveSpeed,
       status: isArrived ? ('arrived' as const) : ('taxiing' as const),
+      holdReason: undefined,
     };
   });
 

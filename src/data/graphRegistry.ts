@@ -32,7 +32,7 @@ export const GRAPH_REGISTRY: Record<GraphId, GraphRegistryEntry> = {
   },
 };
 
-export const DEFAULT_GRAPH_ID: GraphId = 'v1';
+export const DEFAULT_GRAPH_ID: GraphId = 'v2';
 
 export function getAirportGraph(id: GraphId = DEFAULT_GRAPH_ID): AirportGraph {
   return GRAPH_REGISTRY[id]?.graph ?? airportGraph;
