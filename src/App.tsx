@@ -15,6 +15,7 @@ import {
   startManualAircraft,
   resetManualAircraft,
   resetToManualMode,
+  sanitizeManualFleet,
 } from './simulation/simulator';
 import { findPath, routeToEdges } from './simulation/pathfinding';
 import { getAirlineDef } from './data/airlineTypes';
@@ -79,14 +80,15 @@ export default function App() {
     const initialConfig = saved?.config ? { ...DEFAULT_CONFIG, ...saved.config } : DEFAULT_CONFIG;
     const base = initSimulation(initialConfig, baseGraph);
     if (saved) {
-      if (saved.selectedAircraftId) base.selectedAircraftId = saved.selectedAircraftId;
       if (saved.blockedEdgeIds && Array.isArray(saved.blockedEdgeIds)) {
         base.blockedEdgeIds = new Set(saved.blockedEdgeIds);
       }
       if (saved.manualFleet && Array.isArray(saved.manualFleet) && saved.manualFleet.length > 0) {
-        base.manualFleet = saved.manualFleet;
-        const found = saved.manualFleet.find((a: any) => a.id === saved.selectedAircraftId) || saved.manualFleet[0];
+        base.manualFleet = sanitizeManualFleet(saved.manualFleet, baseGraph);
+        const selectedId = saved.selectedAircraftId || 'VN001';
+        const found = base.manualFleet.find((a: any) => a.id === selectedId) || base.manualFleet[0];
         base.aircraft = found;
+        base.selectedAircraftId = found.id;
       }
       if (saved.elapsedSeconds) base.elapsedSeconds = saved.elapsedSeconds;
     }
@@ -222,8 +224,8 @@ export default function App() {
 
   const handleSelectAircraft = useCallback((aircraftId: string) => {
     setSimState(prev => {
-      const fleet = prev.manualFleet || [];
-      const selectedAc = fleet.find(a => a.id === aircraftId);
+      const sanitized = sanitizeManualFleet(prev.manualFleet, currentGraph);
+      const selectedAc = sanitized.find(a => a.id === aircraftId) || sanitized[0];
       if (selectedAc) {
         setConfig(c => ({
           ...c,
@@ -236,29 +238,33 @@ export default function App() {
       }
       return {
         ...prev,
-        selectedAircraftId: aircraftId,
+        manualFleet: sanitized,
+        selectedAircraftId: selectedAc ? selectedAc.id : 'VN001',
         aircraft: selectedAc || prev.aircraft,
       };
     });
-  }, []);
+  }, [currentGraph]);
 
   const handleConfigChange = useCallback((patch: Partial<SimulationConfig>) => {
     setConfig(prev => {
       const next = { ...prev, ...patch };
       setSimState(prevSim => {
+        const sanitized = sanitizeManualFleet(prevSim.manualFleet, currentGraph);
         const selectedId = prevSim.selectedAircraftId || 'VN001';
         const blockedEdgeIds = prevSim.blockedEdgeIds;
-        const updatedFleet = (prevSim.manualFleet || []).map(ac => {
+        const updatedFleet = sanitized.map(ac => {
           if (ac.id !== selectedId) return ac;
           const newStart = patch.startNodeId ?? ac.currentNodeId;
           const newDest = patch.destinationNodeId ?? ac.targetNodeId;
           const newRoute = findPath(currentGraph, newStart, newDest, blockedEdgeIds) || [newStart];
           const newEdges = routeToEdges(newRoute, currentGraph.edges);
-          const aDef = getAirlineDef(patch.airlineCode || patch.callsign || ac.airlineCode || 'VN');
+          const newAirlineCode = patch.airlineCode ?? ac.airlineCode ?? 'VN';
+          const aDef = getAirlineDef(newAirlineCode);
           return {
             ...ac,
-            callsign: patch.callsign ?? ac.callsign,
-            airlineCode: (patch.airlineCode ?? ac.airlineCode ?? 'VN') as any,
+            // id is IMMUTABLE - never changes with form edit
+            callsign: patch.callsign ? patch.callsign.toUpperCase() : ac.callsign,
+            airlineCode: newAirlineCode as any,
             airlineName: aDef.name,
             aircraftAsset: aDef.asset,
             aircraftType: patch.aircraftType ?? ac.aircraftType ?? 'A321',
@@ -531,6 +537,7 @@ export default function App() {
               {/* Tab Switcher */}
               <div className="flex bg-[#111620] p-1 rounded-xl border border-[#1e2838]">
                 <button
+                  data-testid="desktop-tab-control"
                   onClick={() => {
                     if (simState.scenario) {
                       setSimState(prev => resetToManualMode(prev, currentGraph));
@@ -546,6 +553,7 @@ export default function App() {
                   Điều khiển
                 </button>
                 <button
+                  data-testid="desktop-tab-scenarios"
                   onClick={() => setDesktopTab('scenarios')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
                     desktopTab === 'scenarios'
@@ -581,7 +589,7 @@ export default function App() {
                     onClearIncidents={handleClearIncidents}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
-                  <ScenarioPanel state={simState} />
+                  <ScenarioPanel state={simState} graph={currentGraph} />
                 </>
               ) : (
                 <>
@@ -621,6 +629,7 @@ export default function App() {
             <div className="flex items-center justify-between p-1.5 bg-[#0a0e14] border-b border-[#1e2838]">
               <div className="flex flex-1 gap-1">
                 <button
+                  data-testid="mobile-tab-control"
                   onClick={() => {
                     if (simState.scenario) {
                       setSimState(prev => resetToManualMode(prev, currentGraph));
@@ -637,6 +646,7 @@ export default function App() {
                   Điều khiển
                 </button>
                 <button
+                  data-testid="mobile-tab-status"
                   onClick={() => {
                     setMobileTab('status');
                     setSheetExpanded(true);
@@ -653,6 +663,7 @@ export default function App() {
                   )}
                 </button>
                 <button
+                  data-testid="mobile-tab-scenarios"
                   onClick={() => {
                     setMobileTab('scenarios');
                     setSheetExpanded(true);
@@ -724,7 +735,7 @@ export default function App() {
                         onTriggerIncident={handleTriggerIncident}
                         onClearIncidents={handleClearIncidents}
                       />
-                      <ScenarioPanel state={simState} />
+                      <ScenarioPanel state={simState} graph={currentGraph} />
                     </>
                   )}
 

@@ -230,53 +230,49 @@ export function computeLightStates(
 }
 
 // ── 6 Manual Aircraft Factory ──────────────────────────────────────────────────
+export const CANONICAL_FLEET_SPECS: {
+  id: string;
+  callsign: string;
+  airlineCode: AirlineCode;
+  type: SimulationConfig['aircraftType'];
+  startId: string;
+  destId: string;
+}[] = [
+  { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'P1', destId: 'RWY07L_THR' },
+  { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'P2', destId: 'RWY07R_THR' },
+  { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'P3', destId: 'RWY25L_THR' },
+  { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'P4', destId: 'RWY25R_THR' },
+  { id: 'VN005', callsign: 'VN005', airlineCode: 'SQ', type: 'A350', startId: 'P5', destId: 'RWY07L_THR' },
+  { id: 'VN006', callsign: 'VN006', airlineCode: 'TG', type: 'A350', startId: 'T49', destId: 'RWY25L_THR' },
+];
+
 export function createDefaultManualFleet(
-  graph: AirportGraph,
-  primaryConfig?: SimulationConfig,
+  graph: AirportGraph = airportGraph,
+  _unusedConfig?: SimulationConfig,
 ): Aircraft[] {
-  const fleetSpecs: {
-    id: string;
-    callsign: string;
-    airlineCode: AirlineCode;
-    type: SimulationConfig['aircraftType'];
-    startId: string;
-    destId: string;
-  }[] = [
-    { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'P1', destId: 'RWY07L_THR' },
-    { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'P2', destId: 'RWY07R_THR' },
-    { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'P3', destId: 'RWY25L_THR' },
-    { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'P4', destId: 'RWY25R_THR' },
-    { id: 'VN005', callsign: 'VN005', airlineCode: 'SQ', type: 'A350', startId: 'P5', destId: 'RWY07L_THR' },
-    { id: 'VN006', callsign: 'VN006', airlineCode: 'TG', type: 'A350', startId: 'T49', destId: 'RWY25L_THR' },
-  ];
+  const staticBlockedEdgeIds = new Set<string>();
+  for (const e of graph.edges) {
+    if (e.status === 'closed' || e.status === 'restricted') staticBlockedEdgeIds.add(e.id);
+  }
 
-  const blockedEdgeIds = primaryConfig ? buildBlockedEdgeIds(primaryConfig, graph.edges) : new Set<string>();
-
-  return fleetSpecs.map(spec => {
-    const isPrimary = primaryConfig && spec.id === 'VN001';
-    const startNodeId = isPrimary && primaryConfig.startNodeId ? primaryConfig.startNodeId : spec.startId;
-    const destNodeId = isPrimary && primaryConfig.destinationNodeId ? primaryConfig.destinationNodeId : spec.destId;
-    const callsign = isPrimary && primaryConfig.callsign ? primaryConfig.callsign : spec.callsign;
-    const airlineCode = isPrimary && primaryConfig.airlineCode ? primaryConfig.airlineCode : spec.airlineCode;
-    const aircraftType = isPrimary && primaryConfig.aircraftType ? primaryConfig.aircraftType : spec.type;
-
-    const route = findPath(graph, startNodeId, destNodeId, blockedEdgeIds) || [startNodeId];
+  return CANONICAL_FLEET_SPECS.map(spec => {
+    const route = findPath(graph, spec.startId, spec.destId, staticBlockedEdgeIds) || [spec.startId];
     const routeEdgeIds = routeToEdges(route, graph.edges);
-    const airlineDef = getAirlineDef(airlineCode);
+    const airlineDef = getAirlineDef(spec.airlineCode);
 
     return {
       id: spec.id,
-      callsign,
+      callsign: spec.callsign,
       airline: airlineDef.name,
-      airlineCode,
+      airlineCode: spec.airlineCode,
       airlineName: airlineDef.name,
       aircraftAsset: airlineDef.asset,
-      aircraftType,
-      currentNodeId: startNodeId,
-      targetNodeId: destNodeId,
+      aircraftType: spec.type,
+      currentNodeId: spec.startId,
+      targetNodeId: spec.destId,
       currentEdgeId: routeEdgeIds ? routeEdgeIds[0] : null,
       progressOnEdge: 0,
-      speedKts: primaryConfig?.taxiSpeedKts ?? 15,
+      speedKts: 15,
       status: 'parked' as const,
       isMoving: false,
       routeVisible: false,
@@ -285,6 +281,101 @@ export function createDefaultManualFleet(
       routeEdgeIndex: 0,
     };
   });
+}
+
+/**
+ * Sanitize and heal manual fleet state against corruption:
+ * - Ensures exactly 6 unique aircraft: VN001, VN002, VN003, VN004, VN005, VN006.
+ * - Prevents duplicate IDs, duplicate callsigns, or stand collisions at initial parking.
+ * - Reconstructs missing/corrupted aircraft from canonical specs.
+ */
+export function sanitizeManualFleet(
+  fleet: Aircraft[] | undefined,
+  graph: AirportGraph = airportGraph,
+): Aircraft[] {
+  const defaultFleet = createDefaultManualFleet(graph);
+  if (!fleet || !Array.isArray(fleet) || fleet.length === 0) {
+    return defaultFleet;
+  }
+
+  const defaultMap = new Map(defaultFleet.map(a => [a.id, a]));
+  const seenIds = new Set<string>();
+  const seenCallsigns = new Set<string>();
+  const seenParkedStands = new Set<string>();
+  let hasCorruption = false;
+
+  // Check if exactly 6 canonical IDs exist
+  for (const requiredId of CANONICAL_FLEET_SPECS.map(s => s.id)) {
+    const matches = fleet.filter(a => a && a.id === requiredId);
+    if (matches.length !== 1) {
+      hasCorruption = true;
+      break;
+    }
+  }
+
+  if (!hasCorruption) {
+    for (const ac of fleet) {
+      if (!ac || !ac.id || seenIds.has(ac.id)) {
+        hasCorruption = true;
+        break;
+      }
+      seenIds.add(ac.id);
+
+      const effectiveCallsign = ac.callsign || ac.id;
+      if (seenCallsigns.has(effectiveCallsign)) {
+        hasCorruption = true;
+        break;
+      }
+      seenCallsigns.add(effectiveCallsign);
+
+      if (ac.status === 'parked') {
+        if (seenParkedStands.has(ac.currentNodeId)) {
+          hasCorruption = true;
+          break;
+        }
+        seenParkedStands.add(ac.currentNodeId);
+      }
+    }
+  }
+
+  if (hasCorruption) {
+    console.warn('[FleetSanitizer] Rebuilding clean canonical 6-aircraft fleet.');
+    return CANONICAL_FLEET_SPECS.map(spec => {
+      const canonicalDefault = defaultMap.get(spec.id)!;
+      const existing = fleet.find(a => a && a.id === spec.id);
+      if (!existing) return canonicalDefault;
+
+      const airlineDef = getAirlineDef(existing.airlineCode || spec.airlineCode);
+      const isCustomCallsignValid = existing.callsign && !CANONICAL_FLEET_SPECS.some(s => s.id !== spec.id && s.callsign === existing.callsign);
+      const safeCallsign = isCustomCallsignValid ? existing.callsign : spec.callsign;
+
+      const safeCurrentNode = (existing.status === 'taxiing' || existing.status === 'holding')
+        ? existing.currentNodeId
+        : spec.startId;
+
+      const route = findPath(graph, safeCurrentNode, existing.targetNodeId || spec.destId) || [safeCurrentNode];
+      const routeEdges = routeToEdges(route, graph.edges);
+
+      return {
+        ...canonicalDefault,
+        callsign: safeCallsign,
+        airlineCode: (existing.airlineCode || spec.airlineCode) as any,
+        airlineName: airlineDef.name,
+        aircraftAsset: airlineDef.asset,
+        aircraftType: existing.aircraftType || spec.type,
+        currentNodeId: safeCurrentNode,
+        targetNodeId: existing.targetNodeId || spec.destId,
+        assignedRoute: route,
+        currentEdgeId: routeEdges ? routeEdges[0] : null,
+        status: existing.status === 'taxiing' ? ('taxiing' as const) : ('parked' as const),
+        isMoving: existing.status === 'taxiing',
+        routeVisible: existing.status === 'taxiing',
+        guidanceVisible: existing.status === 'taxiing',
+      };
+    });
+  }
+
+  return fleet;
 }
 
 function appendLiveLog(
@@ -384,8 +475,10 @@ export function resetToManualMode(
     }
   }
 
-  const manualFleet = createDefaultManualFleet(graph, state.config);
-  const selectedId = state.selectedAircraftId || 'VN001';
+  const manualFleet = createDefaultManualFleet(graph);
+  const selectedId = CANONICAL_FLEET_SPECS.some(s => s.id === state.selectedAircraftId)
+    ? state.selectedAircraftId!
+    : 'VN001';
   const selectedAc = manualFleet.find(a => a.id === selectedId) || manualFleet[0];
 
   const effectiveSpeed = effectiveTaxiSpeedKts(state.config);
@@ -398,6 +491,11 @@ export function resetToManualMode(
     trafficAircraft: spawnBackgroundTraffic(state.config, new Set(), graph),
     config: {
       ...state.config,
+      callsign: selectedAc.callsign,
+      airlineCode: selectedAc.airlineCode || 'VJ',
+      aircraftType: selectedAc.aircraftType || 'A321',
+      startNodeId: selectedAc.currentNodeId,
+      destinationNodeId: selectedAc.targetNodeId,
       incident: 'none',
       incidentEdgeId: null,
     },
@@ -430,15 +528,11 @@ export function resetManualAircraft(
   aircraftId: string,
   graph: AirportGraph = airportGraph,
 ): SimulationState {
-  // If state still has scenario attached or fleet is empty, regenerate fleet safely
-  const baseFleet = (state.manualFleet && state.manualFleet.length > 0)
-    ? state.manualFleet
-    : createDefaultManualFleet(graph, state.config);
-
-  const defaultFleet = createDefaultManualFleet(graph, state.config);
+  const sanitizedFleet = sanitizeManualFleet(state.manualFleet, graph);
+  const defaultFleet = createDefaultManualFleet(graph);
   const defaultSpec = defaultFleet.find(a => a.id === aircraftId) || defaultFleet[0];
 
-  const updatedFleet = baseFleet.map(ac => {
+  const updatedFleet = sanitizedFleet.map(ac => {
     if (ac.id === aircraftId) {
       return {
         ...defaultSpec,
@@ -453,7 +547,9 @@ export function resetManualAircraft(
     return ac;
   });
 
-  const selectedId = state.selectedAircraftId || aircraftId;
+  const selectedId = sanitizedFleet.some(a => a.id === state.selectedAircraftId)
+    ? state.selectedAircraftId!
+    : aircraftId;
   const selectedAc = updatedFleet.find(a => a.id === selectedId) || updatedFleet[0];
   const anyTaxiing = updatedFleet.some(a => a.status === 'taxiing');
   const newLogs = appendLiveLog(state.liveEventLog, {
@@ -470,6 +566,7 @@ export function resetManualAircraft(
     isRunning: anyTaxiing,
     manualFleet: updatedFleet,
     aircraft: selectedAc,
+    selectedAircraftId: selectedId,
     liveEventLog: newLogs,
   };
 }
@@ -620,8 +717,9 @@ export function initSimulation(
   graph: AirportGraph = airportGraph,
 ): SimulationState {
   const blockedEdgeIds = buildBlockedEdgeIds(config, graph.edges);
-  const manualFleet = createDefaultManualFleet(graph, config);
-  const selectedAircraft = manualFleet.find(a => a.id === (config.callsign || 'VN001')) || manualFleet[0];
+  const manualFleet = createDefaultManualFleet(graph);
+  const selectedId = CANONICAL_FLEET_SPECS.some(s => s.id === config.callsign) ? config.callsign! : 'VN001';
+  const selectedAircraft = manualFleet.find(a => a.id === selectedId) || manualFleet[0];
 
   const trafficAircraft = spawnBackgroundTraffic(config, new Set(), graph);
   const effectiveSpeed = effectiveTaxiSpeedKts(config);
@@ -689,6 +787,11 @@ export function setIncidentEdge(
 
   return {
     ...state,
+    config: {
+      ...state.config,
+      incident: blocked ? (state.config.incident !== 'none' ? state.config.incident : 'blocked_taxiway') : (next.size === 0 ? 'none' : state.config.incident),
+      incidentEdgeId: blocked ? edgeId : null,
+    },
     blockedEdgeIds: next,
     warningMessage: blocked
       ? `Sự cố trên đường lăn [${edgeId}] — đang tính lại lộ trình…`
@@ -718,6 +821,11 @@ export function clearIncidents(
 
   return {
     ...state,
+    config: {
+      ...state.config,
+      incident: 'none',
+      incidentEdgeId: null,
+    },
     blockedEdgeIds: next,
     warningMessage: null,
     lightStates: activeAc ? computeLightStates(activeAc, next, graph) : {},
