@@ -371,8 +371,7 @@ export default function App() {
     <ErrorBoundary name="Ứng dụng mô phỏng sân bay" fallbackTitle="Đã xảy ra sự cố trong ứng dụng">
       <div className="w-full h-full min-h-screen bg-[#F8FAFC] text-[#202224] flex flex-col overflow-x-hidden">
         {/* ── 1. Cảnh báo giáo dục VAA ── */}
-        <header className="bg-[#08182E] border-b border-[#0C2444] text-[#93C5FD] text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0 flex items-center justify-center gap-2">
-          <span className="inline-block px-1.5 py-0.2 rounded bg-[#E6AF31] text-[#0C2444] text-[10px] font-black uppercase">VAA</span>
+        <header className="bg-[#08182E] border-b border-[#0C2444] text-[#93C5FD] text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0 flex items-center justify-center">
           <span>HỌC VIỆN HÀNG KHÔNG VIỆT NAM — MÔ PHỎNG GIÁO DỤC (KHÔNG DÙNG TRONG HOẠT ĐỘNG THỰC TẾ)</span>
         </header>
 
@@ -396,7 +395,7 @@ export default function App() {
           </div>
         )}
 
-        {/* ── 2. Thanh tiêu đề Header chuẩn VAA (Primary: #0c2444, Gold: #e6af31) ── */}
+        {/* ── 2. Thanh tiêu đề Header chuẩn VAA (Primary: #0c2444) ── */}
         <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#0C2444] border-b border-[#163660] text-white flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-2.5 min-w-0">
             {/* VAA Official Vector Logo */}
@@ -405,14 +404,12 @@ export default function App() {
             </div>
 
             <div className="flex flex-col min-w-0">
-              <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xs sm:text-sm text-[#E6AF31] tracking-wider">VAA</span>
-                <span className="text-gray-400 text-xs">|</span>
+              <div className="flex items-center gap-2">
                 <h1 className="text-xs sm:text-sm md:text-base font-bold text-white truncate">
                   <span className="hidden sm:inline">Mô Phỏng Mặt Đất Sân Bay</span>
                   <span className="sm:hidden">Mô Phỏng Sân Bay</span>
                 </h1>
-                <span className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#163660] text-[#E6AF31] border border-[#E6AF31]/30 font-bold">
+                <span className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#163660] text-[#93C5FD] border border-[#3B82F6]/30 font-semibold">
                   FtG Simulator
                 </span>
               </div>
