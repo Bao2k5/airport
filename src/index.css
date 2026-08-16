@@ -1,5 +1,17 @@
 @import "tailwindcss";
 
+:root {
+  --primary: #0c2444;
+  --primary-hover: #163660;
+  --brand-gold: #e6af31;
+  --foreground: #202224;
+  --muted-foreground: #64748b;
+  --card-border: #e4e4e7;
+  --background: #f8fafc;
+  --card: #ffffff;
+  --radius: 0.625rem;
+}
+
 *, *::before, *::after {
   box-sizing: border-box;
 }
@@ -10,9 +22,9 @@ html, body {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  background: #F4F6F9;
-  color: #172033;
-  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+  background: var(--background);
+  color: var(--foreground);
+  font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
 }
@@ -25,22 +37,22 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  background: #F4F6F9;
+  background: var(--background);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* Custom clean scrollbar for panels */
+/* Custom scrollbars matching thi.vaa.edu.vn */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #EEF2F6;
+  background: #f3f4f6;
 }
 ::-webkit-scrollbar-thumb {
-  background: #CBD5E1;
+  background: #d1d5db;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #94A3B8;
+  background: #9ca3af;
 }

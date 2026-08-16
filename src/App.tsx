@@ -4,6 +4,7 @@ import ControlPanel from './components/ControlPanel';
 import StatusPanel from './components/StatusPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import HuongDanModal from './components/HuongDanModal';
+import VaaLogo from './components/VaaLogo';
 import ErrorBoundary from './components/ErrorBoundary';
 import {
   initSimulation,
@@ -368,10 +369,10 @@ export default function App() {
 
   return (
     <ErrorBoundary name="Ứng dụng mô phỏng sân bay" fallbackTitle="Đã xảy ra sự cố trong ứng dụng">
-      <div className="w-full h-full min-h-screen bg-[#F4F6F9] text-[#172033] flex flex-col overflow-x-hidden">
+      <div className="w-full h-full min-h-screen bg-[#F8FAFC] text-[#202224] flex flex-col overflow-x-hidden">
         {/* ── 1. Cảnh báo giáo dục VAA ── */}
-        <header className="bg-[#0A1B36] border-b border-[#163363] text-[#BFDBFE] text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0 flex items-center justify-center gap-2">
-          <span className="inline-block px-1.5 py-0.2 rounded bg-[#1E3A8A] text-white text-[10px] font-extrabold">VAA</span>
+        <header className="bg-[#08182E] border-b border-[#0C2444] text-[#93C5FD] text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0 flex items-center justify-center gap-2">
+          <span className="inline-block px-1.5 py-0.2 rounded bg-[#E6AF31] text-[#0C2444] text-[10px] font-black uppercase">VAA</span>
           <span>HỌC VIỆN HÀNG KHÔNG VIỆT NAM — MÔ PHỎNG GIÁO DỤC (KHÔNG DÙNG TRONG HOẠT ĐỘNG THỰC TẾ)</span>
         </header>
 
@@ -395,31 +396,27 @@ export default function App() {
           </div>
         )}
 
-        {/* ── 2. Thanh tiêu đề Header chuẩn VAA ── */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[#0D254C] border-b border-[#193B70] text-white flex-shrink-0 shadow-sm">
+        {/* ── 2. Thanh tiêu đề Header chuẩn VAA (Primary: #0c2444, Gold: #e6af31) ── */}
+        <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 bg-[#0C2444] border-b border-[#163660] text-white flex-shrink-0 shadow-sm">
           <div className="flex items-center gap-2.5 min-w-0">
-            {/* VAA Wing Emblem SVG Logo */}
-            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1E3A8A] to-[#0D254C] p-1 flex items-center justify-center border border-[#3B82F6]/30 flex-shrink-0 shadow-2xs">
-              <svg viewBox="0 0 64 64" className="w-full h-full" fill="none">
-                <path d="M12 44L28 20L34 29L20 44H12Z" fill="#FFFFFF"/>
-                <path d="M26 44L42 16L52 30L34 44H26Z" fill="#25C6CB"/>
-                <path d="M16 48H48L52 52H12L16 48Z" fill="#E8A72B"/>
-              </svg>
+            {/* VAA Official Vector Logo */}
+            <div className="w-8 h-8 rounded-lg bg-[#163660] p-1 flex items-center justify-center border border-[#3B82F6]/30 flex-shrink-0 shadow-2xs">
+              <VaaLogo className="w-6 h-6" fill="#FFFFFF" />
             </div>
 
             <div className="flex flex-col min-w-0">
               <div className="flex items-center gap-1.5">
-                <span className="font-extrabold text-xs sm:text-sm text-[#E8A72B] tracking-wider">VAA</span>
+                <span className="font-extrabold text-xs sm:text-sm text-[#E6AF31] tracking-wider">VAA</span>
                 <span className="text-gray-400 text-xs">|</span>
                 <h1 className="text-xs sm:text-sm md:text-base font-bold text-white truncate">
                   <span className="hidden sm:inline">Mô Phỏng Mặt Đất Sân Bay</span>
                   <span className="sm:hidden">Mô Phỏng Sân Bay</span>
                 </h1>
-                <span className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173A73] text-[#93C5FD] border border-[#2563EB]/40 font-semibold">
+                <span className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#163660] text-[#E6AF31] border border-[#E6AF31]/30 font-bold">
                   FtG Simulator
                 </span>
               </div>
-              <span className="text-[10px] text-[#CBD5E1] truncate hidden sm:block">
+              <span className="text-[10px] text-[#CBD5E1] truncate hidden sm:block font-medium">
                 Học viện Hàng không Việt Nam · Hệ thống huấn luyện A-SMGCS & Follow-the-Green
               </span>
             </div>
@@ -538,7 +535,7 @@ export default function App() {
         {/* ── 3. Bố cục Desktop & Tablet (>= 768px) ── */}
         <div className="hidden md:flex flex-1 gap-3 p-3 overflow-hidden min-h-0">
           {/* Bản đồ sân bay bọc Error Boundary & Card sáng */}
-          <div className="flex-1 min-w-0 min-h-0 relative bg-white rounded-xl border border-[#E6ECF0] shadow-sm p-1 flex flex-col">
+          <div className="flex-1 min-w-0 min-h-0 relative bg-white rounded-[10px] border border-[#E4E4E7] shadow-xs p-1 flex flex-col">
             <ErrorBoundary name="Bản đồ sân bay" fallbackTitle="Lỗi hiển thị bản đồ">
               <AirportMap
                 state={simState}
@@ -556,7 +553,7 @@ export default function App() {
           <div className="w-80 lg:w-96 flex-shrink-0 flex flex-col gap-3 overflow-y-auto">
             <ErrorBoundary name="Thanh điều khiển bên phải" fallbackTitle="Lỗi bảng điều khiển">
               {/* Tab Switcher */}
-              <div className="flex bg-[#E2E8F0] p-1 rounded-xl">
+              <div className="flex bg-[#E4E4E7]/60 p-1 rounded-[10px]">
                 <button
                   data-testid="desktop-tab-control"
                   onClick={() => {
@@ -567,8 +564,8 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
                     desktopTab === 'control'
-                      ? 'bg-[#0D254C] text-white shadow-sm'
-                      : 'text-[#475569] hover:text-[#0D254C]'
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#475569] hover:text-[#0C2444]'
                   }`}
                 >
                   Điều khiển
@@ -578,8 +575,8 @@ export default function App() {
                   onClick={() => setDesktopTab('scenarios')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
                     desktopTab === 'scenarios'
-                      ? 'bg-[#0D254C] text-white shadow-sm'
-                      : 'text-[#475569] hover:text-[#0D254C]'
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#475569] hover:text-[#0C2444]'
                   }`}
                 >
                   Kịch bản mẫu
@@ -645,9 +642,9 @@ export default function App() {
           </div>
 
           {/* Mobile Bottom Dock / Bottom Sheet */}
-          <div className="w-full bg-white border-t border-[#E2E8F0] flex flex-col z-30 shadow-2xl flex-shrink-0">
+          <div className="w-full bg-white border-t border-[#E4E4E7] flex flex-col z-30 shadow-2xl flex-shrink-0">
             {/* Header Tab Bar của Mobile Bottom Sheet */}
-            <div className="flex items-center justify-between p-1.5 bg-[#F8FAFC] border-b border-[#E2E8F0]">
+            <div className="flex items-center justify-between p-1.5 bg-[#F8FAFC] border-b border-[#E4E4E7]">
               <div className="flex flex-1 gap-1">
                 <button
                   data-testid="mobile-tab-control"
@@ -660,8 +657,8 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
                     mobileTab === 'control' && sheetExpanded
-                      ? 'bg-[#0D254C] text-white shadow-sm'
-                      : 'text-[#64748B] hover:text-[#0D254C]'
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0C2444]'
                   }`}
                 >
                   Điều khiển
@@ -674,13 +671,13 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
                     mobileTab === 'status' && sheetExpanded
-                      ? 'bg-[#0D254C] text-white shadow-sm'
-                      : 'text-[#64748B] hover:text-[#0D254C]'
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0C2444]'
                   }`}
                 >
                   Trực tiếp
                   {simState.isRunning && (
-                    <span className="w-2 h-2 rounded-full bg-[#16845B] animate-ping ml-1" />
+                    <span className="w-2 h-2 rounded-full bg-[#00A544] animate-ping ml-1" />
                   )}
                 </button>
                 <button
@@ -691,8 +688,8 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
                     mobileTab === 'scenarios' && sheetExpanded
-                      ? 'bg-[#0D254C] text-white shadow-sm'
-                      : 'text-[#64748B] hover:text-[#0D254C]'
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0C2444]'
                   }`}
                 >
                   Kịch bản mẫu
@@ -702,7 +699,7 @@ export default function App() {
               {/* Nút Thu gọn / Mở rộng Bottom Sheet */}
               <button
                 onClick={() => setSheetExpanded(v => !v)}
-                className="ml-2 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] text-[#334155] text-xs font-bold border border-[#CBD5E1] transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                className="ml-2 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] text-[#202224] text-xs font-bold border border-[#E4E4E7] transition flex items-center gap-1 cursor-pointer shadow-2xs"
                 title={sheetExpanded ? 'Thu gọn bảng điều khiển' : 'Mở rộng bảng điều khiển'}
                 aria-label={sheetExpanded ? 'Thu gọn' : 'Mở rộng'}
               >
@@ -717,13 +714,13 @@ export default function App() {
                 className="flex items-center justify-between px-3 py-2 bg-[#F8FAFC] cursor-pointer hover:bg-[#F1F5F9] transition"
               >
                 <div className="flex items-center gap-2 font-mono text-xs">
-                  <span className="text-[#0D254C] font-bold">{activeAircraft?.callsign || 'VN001'}</span>
-                  <span className="text-[#CBD5E1]">|</span>
-                  <span className="text-[#16845B] font-bold">{activeAircraft?.speedKts.toFixed(0) || 0} kts</span>
-                  <span className="text-[#CBD5E1]">|</span>
-                  <span className="text-[#D97706] font-bold uppercase">{activeAircraft?.status || 'PARKED'}</span>
+                  <span className="text-[#0C2444] font-bold">{activeAircraft?.callsign || 'VN001'}</span>
+                  <span className="text-[#E4E4E7]">|</span>
+                  <span className="text-[#00A544] font-bold">{activeAircraft?.speedKts.toFixed(0) || 0} kts</span>
+                  <span className="text-[#E4E4E7]">|</span>
+                  <span className="text-[#E6AF31] font-bold uppercase">{activeAircraft?.status || 'PARKED'}</span>
                 </div>
-                <span className="text-xs text-[#1C67DA] font-bold flex items-center gap-1">
+                <span className="text-xs text-[#155DFC] font-bold flex items-center gap-1">
                   Chạm để mở rộng ▲
                 </span>
               </div>
@@ -731,7 +728,7 @@ export default function App() {
 
             {/* Nội dung Tab Panel */}
             {sheetExpanded && (
-              <div className="max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F4F6F9]">
+              <div className="max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F8FAFC]">
                 <ErrorBoundary name="Bảng điều khiển Mobile" fallbackTitle="Lỗi bảng điều khiển">
                   {mobileTab === 'control' && (
                     <>

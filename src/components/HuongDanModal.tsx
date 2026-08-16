@@ -1,6 +1,7 @@
 // Modal Hướng Dẫn Sử Dụng — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
 
 import { useEffect, type ReactNode } from 'react';
+import VaaLogo from './VaaLogo';
 
 interface Props {
   onClose: () => void;
@@ -21,16 +22,21 @@ export default function HuongDanModal({ onClose }: Props) {
       onClick={onClose}
     >
       <div
-        className="relative bg-white border border-[#E6ECF0] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden text-[#172033]"
+        className="relative bg-white border border-[#E4E4E7] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden text-[#202224]"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 bg-[#0D254C] text-white flex-shrink-0">
-          <div>
-            <h2 className="text-base sm:text-lg font-bold">Hướng dẫn sử dụng hệ thống</h2>
-            <p className="text-xs text-[#CBD5E1] mt-0.5">
-              Học viện Hàng không Việt Nam — Mô phỏng di chuyển mặt đất (Follow-the-Green)
-            </p>
+        <div className="flex items-center justify-between px-6 py-4 bg-[#0C2444] text-white flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="w-9 h-9 rounded-lg bg-[#163660] p-1.5 flex items-center justify-center border border-[#3B82F6]/30 shadow-2xs">
+              <VaaLogo className="w-full h-full" fill="#FFFFFF" />
+            </div>
+            <div>
+              <h2 className="text-base sm:text-lg font-bold">Hướng dẫn sử dụng hệ thống</h2>
+              <p className="text-xs text-[#CBD5E1] mt-0.5">
+                Học viện Hàng không Việt Nam — Mô phỏng di chuyển mặt đất (Follow-the-Green)
+              </p>
+            </div>
           </div>
           <button
             onClick={onClose}
