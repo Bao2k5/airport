@@ -446,8 +446,8 @@ export default function App() {
                 }}
                 className="bg-[#173A73] text-xs font-bold text-white rounded px-2 py-0.5 border border-[#3B82F6]/50 focus:outline-none focus:border-[#60A5FA] cursor-pointer"
               >
-                <option value="v1">Graph V1 (127 nodes)</option>
-                <option value="v2">Graph V2 (162 nodes)</option>
+                <option value="v1">Sân bay TSN (v1)</option>
+                <option value="v2">Sân bay TSN (v2)</option>
               </select>
             </div>
 

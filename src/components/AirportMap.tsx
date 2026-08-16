@@ -967,7 +967,7 @@ const STAND_PARKING_HEADINGS: Record<string, number> = {
   P3: 0,    // Stand 3: quay thẳng lên (North 0°)
   P4: 0,    // Stand 4: quay thẳng lên (North 0°)
   P5: 180,  // Stand 5: quay thẳng xuống (South 180°), quay đầu vào Stand 4
-  T49: 90,  // Stand 7: quay sang phải theo làn đỗ (East 90°)
+  T49: 270, // Stand 7: quay sang trái về hướng đường lăn (West 270°)
 };
 
 // ── Interpolate aircraft position along its route ──────────────────────────────

@@ -16,17 +16,17 @@ export interface GraphRegistryEntry {
 export const GRAPH_REGISTRY: Record<GraphId, GraphRegistryEntry> = {
   v1: {
     id: 'v1',
-    name: 'Mô hình Đồ thị Gốc (Graph V1 - Bản đồ cũ)',
-    shortName: 'Graph V1 (Cũ)',
-    description: 'Graph 127 nodes, 142 edges chuẩn của simulator ban đầu.',
+    name: 'Sân bay TSN (v1)',
+    shortName: 'Sân bay TSN (v1)',
+    description: 'Sân bay Tân Sơn Nhất - Mô hình V1 (127 nodes, 142 edges).',
     graph: airportGraph,
     bgImage: '/ref_full.png',
   },
   v2: {
     id: 'v2',
-    name: 'Mô hình Đồ thị Chuẩn Hóa V2 (Graph V2 - anhtren.png)',
-    shortName: 'Graph V2 (Mới)',
-    description: 'Graph 162 nodes, 166 edges khớp 100% với 44 nhánh raw trace trên ảnh anhtren.png.',
+    name: 'Sân bay TSN (v2)',
+    shortName: 'Sân bay TSN (v2)',
+    description: 'Sân bay Tân Sơn Nhất - Mô hình V2 (162 nodes, 166 edges).',
     graph: airportGraphV2,
     bgImage: '/anhtren.png',
   },
