@@ -529,10 +529,10 @@ export default function App() {
           </div>
         </div>
 
-        {/* ── 3. Bố cục Desktop & Tablet (>= 768px) ── */}
-        <div className="hidden md:flex flex-1 gap-3 p-3 overflow-hidden min-h-0">
-          {/* Bản đồ sân bay bọc Error Boundary & Card sáng */}
-          <div className="flex-1 min-w-0 min-h-0 relative bg-white rounded-[10px] border border-[#E4E4E7] shadow-xs p-1 flex flex-col">
+        {/* ── 3. Bố Cục Chính Hợp Nhất (Chỉ 1 Bản Đồ Duy Nhất Cho Mọi Viewport) ── */}
+        <main className="flex-1 flex flex-col md:flex-row gap-0 md:gap-3 p-0 md:p-3 overflow-hidden min-h-0 relative">
+          {/* Bản đồ sân bay tương tác chính — Duy nhất trong toàn bộ DOM */}
+          <div className="flex-1 w-full min-w-0 min-h-[220px] md:min-h-0 relative bg-white md:rounded-[10px] md:border md:border-[#E4E4E7] shadow-xs p-0 md:p-1 flex flex-col overflow-hidden">
             <ErrorBoundary name="Bản đồ sân bay" fallbackTitle="Lỗi hiển thị bản đồ">
               <AirportMap
                 state={simState}
@@ -546,8 +546,8 @@ export default function App() {
             </ErrorBoundary>
           </div>
 
-          {/* Thanh bên phải bọc Error Boundary */}
-          <div className="w-80 lg:w-96 flex-shrink-0 flex flex-col gap-3 overflow-y-auto">
+          {/* ── 3A. Bảng Điều Khiển Desktop & Tablet (>= 768px) ── */}
+          <aside className="hidden md:flex w-80 lg:w-96 flex-shrink-0 flex-col gap-3 overflow-y-auto">
             <ErrorBoundary name="Thanh điều khiển bên phải" fallbackTitle="Lỗi bảng điều khiển">
               {/* Tab Switcher */}
               <div className="flex bg-[#E4E4E7]/60 p-1 rounded-[10px]">
@@ -618,28 +618,10 @@ export default function App() {
                 </>
               )}
             </ErrorBoundary>
-          </div>
-        </div>
+          </aside>
 
-        {/* ── 4. Bố cục Điện Thoại Di Động (< 768px) ── */}
-        <div className="flex md:hidden flex-1 flex-col overflow-hidden relative min-h-0">
-          {/* Bản đồ chiếm toàn bộ chiều rộng màn hình */}
-          <div className="flex-1 w-full relative min-h-[220px]">
-            <ErrorBoundary name="Bản đồ sân bay (Mobile)" fallbackTitle="Lỗi hiển thị bản đồ">
-              <AirportMap
-                state={simState}
-                graph={currentGraph}
-                bgImage={currentGraphEntry.bgImage}
-                onSelectAircraft={handleSelectAircraft}
-                showPaths={showPaths}
-                showGrid={showGrid}
-                showGraphV2Overlay={showGraphV2Overlay}
-              />
-            </ErrorBoundary>
-          </div>
-
-          {/* Mobile Bottom Dock / Bottom Sheet */}
-          <div className="w-full bg-white border-t border-[#E4E4E7] flex flex-col z-30 shadow-2xl flex-shrink-0">
+          {/* ── 3B. Thanh Bảng Điều Khiển Mobile (< 768px) ── */}
+          <aside className="flex md:hidden w-full bg-white border-t border-[#E4E4E7] flex-col z-30 shadow-2xl flex-shrink-0">
             {/* Header Tab Bar của Mobile Bottom Sheet */}
             <div className="flex items-center justify-between p-1.5 bg-[#F8FAFC] border-b border-[#E4E4E7]">
               <div className="flex flex-1 gap-1">
@@ -769,10 +751,10 @@ export default function App() {
                 </ErrorBoundary>
               </div>
             )}
-          </div>
-        </div>
+          </aside>
+        </main>
 
-        {/* ── 5. Modal Hướng Dẫn ── */}
+        {/* ── 4. Modal Hướng Dẫn ── */}
         {showGuide && <HuongDanModal onClose={() => setShowGuide(false)} />}
       </div>
     </ErrorBoundary>
