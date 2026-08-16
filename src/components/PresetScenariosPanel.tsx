@@ -1,3 +1,5 @@
+// Bảng kịch bản mô phỏng mẫu — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
+
 import { useState, useMemo } from 'react';
 import type { ScenarioState, ScenarioObservation } from '../data/presetScenarios';
 import { getPresetScenarioDefs } from '../data/presetScenarios';
@@ -63,14 +65,14 @@ export default function PresetScenariosPanel({
   };
 
   return (
-    <div className="flex flex-col gap-3 p-3.5 sm:p-4 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200 shadow-md">
+    <div className="flex flex-col gap-3 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-white tracking-wide">
-          KỊCH BẢN MÔ PHỎNG
+      <div className="flex items-center justify-between border-b border-[#E6ECF0] pb-2.5">
+        <h2 className="text-xs sm:text-sm font-bold text-[#0D254C] tracking-wide uppercase">
+          Kịch bản mô phỏng huấn luyện
         </h2>
         {currentScenarioState && (
-          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded bg-blue-950 text-blue-300 border border-blue-800 font-bold">
+          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-[#EFF6FF] text-[#1C67DA] border border-[#BFDBFE] font-bold">
             {currentScenarioState.completed ? 'HOÀN TẤT' : 'ĐANG CHẠY'}
           </span>
         )}
@@ -80,11 +82,11 @@ export default function PresetScenariosPanel({
       {currentScenarioState && !showList && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-white text-sm">{currentScenarioState.title}</span>
+            <span className="font-bold text-[#0D254C] text-sm">{currentScenarioState.title}</span>
             {onExitScenario && (
               <button
                 onClick={onExitScenario}
-                className="text-xs font-semibold px-2.5 py-1 rounded-lg bg-gray-800 hover:bg-gray-700 text-gray-300 transition flex-shrink-0 cursor-pointer"
+                className="text-xs font-bold px-2.5 py-1 rounded-lg bg-[#F1F5F9] hover:bg-[#E2E8F0] text-[#334155] border border-[#CBD5E1] transition flex-shrink-0 cursor-pointer shadow-2xs"
               >
                 ✕ Thoát
               </button>
@@ -96,7 +98,7 @@ export default function PresetScenariosPanel({
             <button
               onClick={() => executeAction('rerun_scenario', () => onStartScenario(currentScenarioState.id))}
               disabled={getActionState('rerun_scenario').isPending}
-              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-600 active:bg-blue-800 disabled:bg-gray-700 text-white transition shadow-md min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-[#0D254C] hover:bg-[#173A73] active:bg-[#091B38] disabled:bg-[#E2E8F0] text-white transition shadow-sm min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>{getActionState('rerun_scenario').isPending ? '⏳' : '↺'}</span>
               {getActionState('rerun_scenario').isPending
@@ -107,7 +109,7 @@ export default function PresetScenariosPanel({
             </button>
             <button
               onClick={() => setShowList(true)}
-              className="flex-1 text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-xl bg-[#0d1318] border border-[#1e2838] hover:border-blue-600 text-gray-200 transition min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#334155] transition min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
             >
               Đổi kịch bản
             </button>
@@ -115,15 +117,15 @@ export default function PresetScenariosPanel({
 
           {/* ── TIÊU CHÍ KIỂM THỬ BẮT BUỘC (ĐIỀU CẦN QUAN SÁT RUNTIME) ── */}
           {currentObservations.length > 0 && (
-            <div className="p-3 bg-[#15120c] border border-amber-800/80 rounded-xl text-xs flex flex-col gap-2 shadow-sm">
+            <div className="p-3 bg-[#FFFBEB] border border-[#FCD34D] rounded-xl text-xs flex flex-col gap-2 shadow-2xs">
               <div className="flex items-center justify-between">
-                <div className="text-amber-400 font-bold tracking-wide">
-                  ĐIỀU CẦN QUAN SÁT (TIÊU CHÍ RUNTIME)
+                <div className="text-[#92400E] font-bold tracking-wider uppercase text-[11px]">
+                  Điều cần quan sát (Tiêu chí Đạt/Chưa đạt)
                 </div>
-                <span className={`font-mono text-[10px] px-2 py-0.5 rounded font-bold ${
+                <span className={`font-mono text-[10px] px-2 py-0.5 rounded-md font-bold ${
                   passedCount === totalCount
-                    ? 'bg-emerald-950 text-emerald-300 border border-emerald-700'
-                    : 'bg-amber-950 text-amber-300 border border-amber-700'
+                    ? 'bg-[#F0FDF4] text-[#16845B] border border-[#86EFAC]'
+                    : 'bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]'
                 }`}>
                   {passedCount}/{totalCount} ĐẠT
                 </span>
@@ -136,12 +138,12 @@ export default function PresetScenariosPanel({
                   return (
                     <div
                       key={obs.id || idx}
-                      className={`p-2 rounded-lg border flex flex-col gap-1 transition ${
+                      className={`p-2.5 rounded-lg border flex flex-col gap-1 transition ${
                         isPass
-                          ? 'bg-emerald-950/40 border-emerald-700/80 text-emerald-200'
+                          ? 'bg-[#F0FDF4] border-[#86EFAC] text-[#166534]'
                           : isFail
-                          ? 'bg-red-950/50 border-red-700/80 text-red-200'
-                          : 'bg-[#1e1710] border-amber-900/60 text-amber-200/90'
+                          ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
+                          : 'bg-white border-[#FDE68A] text-[#78350F]'
                       }`}
                     >
                       <div className="flex items-start justify-between gap-2">
@@ -149,22 +151,22 @@ export default function PresetScenariosPanel({
                           <span className="font-bold flex-shrink-0">{idx + 1}.</span>
                           <span className="font-medium text-[11px]">{obs.text}</span>
                         </div>
-                        <span className={`px-1.5 py-0.5 rounded text-[10px] font-bold font-mono flex-shrink-0 flex items-center gap-0.5 ${
+                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono flex-shrink-0 flex items-center gap-0.5 ${
                           isPass
-                            ? 'bg-emerald-800 text-emerald-100'
+                            ? 'bg-[#16845B] text-white'
                             : isFail
-                            ? 'bg-red-800 text-red-100'
-                            : 'bg-amber-900/80 text-amber-200'
+                            ? 'bg-[#D32F2F] text-white'
+                            : 'bg-[#E8A72B] text-white'
                         }`}>
                           {isPass ? 'ĐẠT' : isFail ? 'SAI' : 'CHƯA ĐẠT'}
                         </span>
                       </div>
 
                       {obs.evidence && (
-                        <div className="font-mono text-[10px] pl-4 text-gray-400 bg-[#0d1017] p-1 rounded border border-[#1e2838]/60 flex items-center justify-between">
+                        <div className="font-mono text-[10px] pl-2 text-[#64748B] bg-[#F8FAFC] p-1 rounded border border-[#E2E8F0] flex items-center justify-between mt-1">
                           <span className="truncate">Bằng chứng: {obs.evidence}</span>
                           {obs.checkedAtSeconds != null && (
-                            <span className="text-gray-500 font-bold ml-1 flex-shrink-0">
+                            <span className="text-[#94A3B8] font-bold ml-1 flex-shrink-0">
                               [{obs.checkedAtSeconds.toFixed(1)}s]
                             </span>
                           )}
@@ -179,11 +181,11 @@ export default function PresetScenariosPanel({
 
           {/* Box THÁCH THỨC */}
           {activeDef.challenges && activeDef.challenges.length > 0 && (
-            <div className="p-3 bg-[#0d1726] border border-blue-800/60 rounded-xl text-xs flex flex-col gap-1.5 shadow-sm">
-              <div className="text-blue-400 font-bold tracking-wide">
-                THÁCH THỨC VẬN HÀNH
+            <div className="p-3 bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl text-xs flex flex-col gap-1.5 shadow-2xs">
+              <div className="text-[#1E40AF] font-bold tracking-wider uppercase text-[11px]">
+                Thách thức vận hành
               </div>
-              <ul className="list-disc list-inside space-y-1 text-blue-200/90 leading-relaxed pl-1">
+              <ul className="list-disc list-inside space-y-1 text-[#1E3A8A] leading-relaxed pl-1">
                 {activeDef.challenges.map((c, i) => (
                   <li key={i}>{c}</li>
                 ))}
@@ -195,10 +197,10 @@ export default function PresetScenariosPanel({
           {latestEvent && (
             <div className={`p-2.5 rounded-lg border text-xs leading-relaxed ${
               latestEvent.severity === 'critical'
-                ? 'bg-red-950/60 border-red-800/80 text-red-200'
+                ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
                 : latestEvent.severity === 'warning'
-                ? 'bg-amber-950/60 border-amber-800/80 text-amber-200'
-                : 'bg-blue-950/60 border-blue-800/80 text-blue-200'
+                ? 'bg-[#FFFBEB] border-[#FCD34D] text-[#92400E]'
+                : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1E40AF]'
             }`}>
               <span className="font-mono font-bold mr-1">[{formatTime(latestEvent.atSeconds)}]</span>
               <span>{latestEvent.message}</span>
@@ -206,26 +208,26 @@ export default function PresetScenariosPanel({
           )}
 
           {/* Tình huống chi tiết */}
-          <div className="text-xs text-gray-300 border-t border-[#1e2838] pt-2">
-            <span className="text-gray-400 font-semibold">Tình huống: </span>
+          <div className="text-xs text-[#475569] border-t border-[#E6ECF0] pt-2">
+            <span className="text-[#0D254C] font-bold">Tình huống: </span>
             <span className="leading-relaxed">{activeDef.situation}</span>
           </div>
 
           {/* Event Log Timeline */}
-          <div className="border-t border-[#1e2838] pt-2.5 flex flex-col gap-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
-              NHẬT KÝ SỰ KIỆN ({currentScenarioState.events.length})
+          <div className="border-t border-[#E6ECF0] pt-2.5 flex flex-col gap-2">
+            <div className="text-xs font-bold uppercase tracking-wider text-[#0D254C]">
+              Nhật ký sự kiện ({currentScenarioState.events.length})
             </div>
-            <div className="flex flex-col gap-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1 font-mono text-[11px] bg-[#0a0e14] p-2 rounded-xl border border-[#1e2838]">
+            <div className="flex flex-col gap-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1 font-mono text-[11px] bg-[#F8FAFC] p-2.5 rounded-xl border border-[#E2E8F0]">
               {currentScenarioState.events.slice().reverse().map((evt: any, idx: number) => (
-                <div key={idx} className="flex items-start gap-1.5 text-gray-300">
-                  <span className="text-gray-500 font-bold flex-shrink-0">[{formatTime(evt.atSeconds)}]</span>
+                <div key={idx} className="flex items-start gap-1.5 text-[#334155]">
+                  <span className="text-[#64748B] font-bold flex-shrink-0">[{formatTime(evt.atSeconds)}]</span>
                   <span className={
                     evt.severity === 'critical'
-                      ? 'text-red-400 font-bold'
+                      ? 'text-[#D32F2F] font-bold'
                       : evt.severity === 'warning'
-                      ? 'text-amber-400 font-semibold'
-                      : 'text-gray-300'
+                      ? 'text-[#D97706] font-semibold'
+                      : 'text-[#334155]'
                   }>
                     {evt.message}
                   </span>
@@ -239,12 +241,12 @@ export default function PresetScenariosPanel({
       {/* ── DANH SÁCH 7 CARD KỊCH BẢN MẪU (CHẾ ĐỘ CHỌN) ── */}
       {(!currentScenarioState || showList) && (
         <div className="flex flex-col gap-3">
-          <div className="flex items-center justify-between text-xs text-gray-400 font-semibold uppercase tracking-wider">
-            <span>DANH SÁCH KỊCH BẢN ({defs.length})</span>
+          <div className="flex items-center justify-between text-xs text-[#0D254C] font-bold uppercase tracking-wider">
+            <span>Danh sách kịch bản ({defs.length})</span>
             {showList && currentScenarioState && (
               <button
                 onClick={() => setShowList(false)}
-                className="text-xs text-cyan-400 hover:text-cyan-300 font-bold underline cursor-pointer"
+                className="text-xs text-[#1C67DA] hover:underline font-bold cursor-pointer"
               >
                 Trở lại kịch bản đang chạy
               </button>
@@ -265,33 +267,33 @@ export default function PresetScenariosPanel({
                   onClick={() => handleCardClick(def.id)}
                   className={`relative p-3.5 rounded-xl border transition-all duration-200 ease-out cursor-pointer flex flex-col gap-2 group ${
                     isSelected
-                      ? 'bg-[#131d2c] border-blue-500 shadow-lg ring-1 ring-blue-500/50 md:scale-[1.02] z-20'
-                      : 'bg-[#0d1318] border-[#1e2838] hover:border-gray-600 hover:bg-[#101720] md:hover:scale-[1.02] md:hover:z-10'
+                      ? 'bg-white border-[#1C67DA] shadow-md ring-2 ring-[#1C67DA]/30 md:scale-[1.01] z-20'
+                      : 'bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#CBD5E1] hover:bg-white md:hover:scale-[1.01] md:hover:z-10'
                   }`}
                 >
                   {/* Tiêu đề & Header Card */}
                   <div className="flex items-start justify-between gap-2">
                     <div className="flex flex-col gap-0.5 flex-1 min-w-0">
                       <div className="flex items-center gap-2">
-                        <span className="text-[11px] font-mono font-bold text-blue-400 uppercase tracking-wider">
+                        <span className="text-[11px] font-mono font-bold text-[#1C67DA] uppercase tracking-wider">
                           Kịch bản {idx + 1}
                         </span>
-                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-black/50 text-gray-400 border border-gray-800">
+                        <span className="text-[10px] font-mono px-1.5 py-0.2 rounded bg-white text-[#475569] border border-[#CBD5E1] font-semibold">
                           {acCount} tàu bay
                         </span>
                       </div>
-                      <h3 className="font-bold text-white text-xs sm:text-sm leading-snug group-hover:text-cyan-300 transition">
+                      <h3 className="font-bold text-[#0D254C] text-xs sm:text-sm leading-snug group-hover:text-[#1C67DA] transition">
                         {def.title}
                       </h3>
                     </div>
 
                     <div className="flex items-center gap-1 flex-shrink-0">
                       {isRunningThis ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-amber-950 text-amber-300 border border-amber-700 font-bold animate-pulse">
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#FEF3C7] text-[#92400E] border border-[#FCD34D] font-bold animate-pulse">
                           Đang chạy
                         </span>
                       ) : isSelected ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded bg-blue-600 text-white font-bold">
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#0D254C] text-white font-bold">
                           Đang chọn
                         </span>
                       ) : null}
@@ -299,24 +301,24 @@ export default function PresetScenariosPanel({
                   </div>
 
                   {/* Teaser thu gọn (1 dòng) */}
-                  <p className={`text-xs text-gray-400 leading-relaxed ${isExpanded ? 'line-clamp-2' : 'line-clamp-1'}`}>
+                  <p className={`text-xs text-[#5A6A80] leading-relaxed ${isExpanded ? 'line-clamp-2' : 'line-clamp-1'}`}>
                     {def.teaser}
                   </p>
 
                   {/* ── NỘI DUNG MỞ RỘNG (KHI CHỌN HOẶC MỞ RỘNG CARD) ── */}
                   {isExpanded && (
-                    <div className="flex flex-col gap-2.5 pt-2 mt-1 border-t border-[#1e2838]/80 animate-fadeIn">
+                    <div className="flex flex-col gap-2.5 pt-2 mt-1 border-t border-[#E6ECF0]">
                       {/* Tình huống chi tiết */}
-                      <div className="text-xs bg-[#090d14] p-2.5 rounded-lg border border-[#1e2838]/60 text-gray-300 leading-relaxed">
-                        <strong className="text-white block mb-1">Tình huống:</strong>
+                      <div className="text-xs bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0] text-[#334155] leading-relaxed">
+                        <strong className="text-[#0D254C] block mb-1">Tình huống:</strong>
                         {def.situation}
                       </div>
 
                       {/* Thách thức vận hành */}
                       {def.challenges && def.challenges.length > 0 && (
-                        <div className="text-xs text-blue-300 bg-[#0b1320] p-2 rounded-lg border border-blue-900/60 leading-relaxed">
-                          <strong className="text-blue-200 block mb-1">Thách thức:</strong>
-                          <ul className="list-disc list-inside space-y-0.5 text-blue-200/90 pl-0.5">
+                        <div className="text-xs text-[#1E40AF] bg-[#EFF6FF] p-2 rounded-lg border border-[#BFDBFE] leading-relaxed">
+                          <strong className="text-[#1E3A8A] block mb-1">Thách thức:</strong>
+                          <ul className="list-disc list-inside space-y-0.5 text-[#1E3A8A] pl-0.5">
                             {def.challenges.slice(0, 2).map((c, i) => (
                               <li key={i}>{c}</li>
                             ))}
@@ -337,7 +339,7 @@ export default function PresetScenariosPanel({
                             });
                           }}
                           disabled={getActionState('start_scenario').isPending}
-                          className="w-full py-2.5 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-700 text-white font-bold text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer min-h-[42px]"
+                          className="w-full py-2.5 px-4 rounded-xl bg-[#0D254C] hover:bg-[#173A73] active:bg-[#091B38] disabled:bg-[#E2E8F0] text-white font-bold text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                         >
                           <span>{getActionState('start_scenario').isPending ? '⏳' : '▶'}</span>
                           {getActionState('start_scenario').isPending

@@ -1,4 +1,4 @@
-// Bảng điều khiển mô phỏng — hỗ trợ cấu hình tàu bay, hãng hàng không (6 Livery) và hạm đội 6 máy bay độc lập.
+// Bảng điều khiển mô phỏng — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
 
 import React from 'react';
 import { airportGraph } from '../data/airportGraph';
@@ -90,14 +90,15 @@ export default function ControlPanel({
   }, [graph]);
 
   return (
-    <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200">
+    <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
       {/* Cấu hình tàu bay */}
       <Section title={`Cấu hình tàu bay: ${currentCallsign}`}>
         {/* ── Danh sách chọn tàu bay ── */}
         {manualFleet.length > 0 && (
-          <div className="flex flex-col gap-1.5 bg-[#0a0e14] p-2 rounded-xl border border-[#1e2838]">
-            <div className="px-1">
-              <span className="text-xs font-semibold text-gray-300">Chọn tàu bay:</span>
+          <div className="flex flex-col gap-1.5 bg-[#F8FAFC] p-2.5 rounded-xl border border-[#E2E8F0]">
+            <div className="px-1 flex items-center justify-between">
+              <span className="text-xs font-bold text-[#0D254C] uppercase tracking-wider">Chọn tàu bay (Đội bay 6 chiếc):</span>
+              <span className="text-[11px] font-mono text-[#64748B]">Bấm chọn để điều phối</span>
             </div>
             <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
               {manualFleet.map(ac => {
@@ -112,25 +113,25 @@ export default function ControlPanel({
                     type="button"
                     data-testid={`fleet-${ac.id}`}
                     onClick={() => onSelectAircraft?.(ac.id)}
-                    className={`flex flex-col items-start p-2 rounded-lg border text-left transition min-h-[58px] cursor-pointer ${
+                    className={`flex flex-col items-start p-2.5 rounded-lg border text-left transition min-h-[62px] cursor-pointer ${
                       isSelected
-                        ? 'bg-[#152336] border-cyan-400 text-white shadow-md ring-2 ring-cyan-500/50'
-                        : 'bg-[#0f141c] border-[#1f2937] text-gray-400 hover:text-gray-200 hover:border-gray-600'
+                        ? 'bg-[#EFF6FF] border-[#1C67DA] text-[#0D254C] shadow-sm ring-2 ring-[#1C67DA]/30'
+                        : 'bg-white border-[#E2E8F0] text-[#334155] hover:border-[#94A3B8] hover:bg-[#F1F5F9]'
                     }`}
                   >
                     <div className="flex items-center justify-between w-full">
-                      <span className="font-bold text-xs" style={{ color: isSelected ? '#38bdf8' : aDef.accentColor }}>
+                      <span className="font-bold text-xs" style={{ color: isSelected ? '#1C67DA' : aDef.accentColor }}>
                         {ac.callsign}
                       </span>
-                      <span className="text-[9px] px-1 py-0.5 rounded bg-black/50 text-gray-300 uppercase font-semibold">
+                      <span className="text-[9px] px-1 py-0.5 rounded bg-[#E2E8F0] text-[#475569] uppercase font-bold">
                         {ac.airlineCode}
                       </span>
                     </div>
-                    <div className="text-[10px] text-gray-400 truncate w-full mt-1">
+                    <div className="text-[10px] text-[#64748B] truncate w-full mt-1 font-mono">
                       {ac.currentNodeId} → {ac.targetNodeId}
                     </div>
-                    <div className="text-[10px] font-bold mt-1 flex items-center gap-1" style={{ color: isTaxiing ? '#22c55e' : (isHolding ? '#ef4444' : '#9ca3af') }}>
-                      <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isTaxiing ? '#22c55e' : (isHolding ? '#ef4444' : '#9ca3af') }} />
+                    <div className="text-[10px] font-bold mt-1 flex items-center gap-1" style={{ color: isTaxiing ? '#16845B' : (isHolding ? '#D32F2F' : '#64748B') }}>
+                      <span className="inline-block w-1.5 h-1.5 rounded-full" style={{ backgroundColor: isTaxiing ? '#16845B' : (isHolding ? '#D32F2F' : '#94A3B8') }} />
                       {ac.status.toUpperCase()}
                     </div>
                   </button>
@@ -141,13 +142,13 @@ export default function ControlPanel({
         )}
 
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-400 font-medium">Số hiệu chuyến bay</label>
+          <label className="text-xs text-[#475569] font-medium">Số hiệu chuyến bay</label>
           <input
             type="text"
             value={currentCallsign}
             onChange={e => onConfigChange({ callsign: e.target.value.toUpperCase() })}
             maxLength={8}
-            className="bg-[#0d1318] border border-[#1e2838] text-gray-100 rounded-lg px-3 py-2 min-h-[42px] text-xs sm:text-sm font-mono uppercase focus:outline-none focus:border-cyan-400"
+            className="bg-white border border-[#CBD5E1] text-[#172033] rounded-lg px-3 py-2 min-h-[42px] text-xs sm:text-sm font-mono uppercase focus:outline-none focus:border-[#1C67DA] focus:ring-1 focus:ring-[#1C67DA]"
             placeholder="VN001"
           />
         </div>
@@ -166,7 +167,7 @@ export default function ControlPanel({
 
         {/* Dropdown Hãng hàng không / Livery */}
         <div className="flex flex-col gap-1">
-          <label className="text-xs text-gray-400 font-semibold">Hãng hàng không / Livery</label>
+          <label className="text-xs text-[#475569] font-medium">Hãng hàng không / Livery</label>
           <select
             value={currentAirlineCode}
             onChange={e => {
@@ -175,7 +176,7 @@ export default function ControlPanel({
                 airlineCode: code,
               });
             }}
-            className="bg-[#0d1318] border border-[#1e2838] text-gray-100 rounded-lg px-3 py-2 min-h-[42px] text-xs sm:text-sm focus:outline-none focus:border-cyan-400 cursor-pointer"
+            className="bg-white border border-[#CBD5E1] text-[#172033] rounded-lg px-3 py-2 min-h-[42px] text-xs sm:text-sm focus:outline-none focus:border-[#1C67DA] focus:ring-1 focus:ring-[#1C67DA] cursor-pointer"
           >
             <option value="VJ">Vietjet Air (VJ)</option>
             <option value="VN">Vietnam Airlines (VN)</option>
@@ -187,8 +188,8 @@ export default function ControlPanel({
         </div>
 
         {/* Livery Preview Card */}
-        <div className="flex items-center gap-3 p-2 bg-[#090d14] rounded-lg border border-[#1e2838]">
-          <div className="w-16 h-10 bg-black/40 rounded flex items-center justify-center p-1 border border-gray-800">
+        <div className="flex items-center gap-3 p-2.5 bg-[#F8FAFC] rounded-lg border border-[#E2E8F0]">
+          <div className="w-16 h-10 bg-white rounded flex items-center justify-center p-1 border border-[#E2E8F0] shadow-2xs">
             <img
               src={currentAirline.asset}
               alt={currentAirline.name}
@@ -196,14 +197,14 @@ export default function ControlPanel({
             />
           </div>
           <div className="flex flex-col">
-            <span className="text-xs font-bold text-white">{currentAirline.name}</span>
-            <span className="text-[10px] text-gray-400 font-mono">Mã hãng: {currentAirline.code}</span>
+            <span className="text-xs font-bold text-[#172033]">{currentAirline.name}</span>
+            <span className="text-[11px] text-[#64748B] font-mono">Mã ICAO/IATA: {currentAirline.code}</span>
           </div>
         </div>
       </Section>
 
       {/* Tuyến đường */}
-      <Section title="Tuyến đường">
+      <Section title="Tuyến đường khai thác">
         <LabeledSelect
           label="Điểm xuất phát"
           value={currentStartNodeId}
@@ -218,17 +219,17 @@ export default function ControlPanel({
         />
       </Section>
 
-      {/* Môi trường */}
-      <Section title="Môi trường">
+      {/* Môi trường & Khí tượng */}
+      <Section title="Điều kiện khí tượng & môi trường">
         <LabeledSelect
           label="Thời tiết"
           value={config.weather}
           onChange={v => onConfigChange({ weather: v as SimulationConfig['weather'] })}
           options={[
-            { value: 'clear',        label: 'Quang đãng' },
+            { value: 'clear',        label: 'Quang đãng (VMC)' },
             { value: 'rain',         label: 'Mưa (giảm 30% tốc độ)' },
-            { value: 'fog',          label: 'Sương mù (giảm 55% tốc độ)' },
-            { value: 'thunderstorm', label: 'Bão (giảm 65% tốc độ)' },
+            { value: 'fog',          label: 'Sương mù / LVC (giảm 55% tốc độ)' },
+            { value: 'thunderstorm', label: 'Dông bão (giảm 65% tốc độ)' },
           ]}
         />
         <LabeledSelect
@@ -242,43 +243,42 @@ export default function ControlPanel({
           ]}
         />
         <LabeledSelect
-          label="Lưu lượng giao thông"
+          label="Mật độ giao thông"
           value={config.trafficLevel}
           onChange={v => onConfigChange({ trafficLevel: v as SimulationConfig['trafficLevel'] })}
           options={[
             { value: 'low',    label: 'Thấp' },
-            { value: 'medium', label: 'Trung bình (giảm 25% tốc độ)' },
-            { value: 'high',   label: 'Cao (giảm 45% tốc độ)' },
+            { value: 'medium', label: 'Trung bình' },
+            { value: 'high',   label: 'Cao' },
           ]}
         />
       </Section>
 
-      {/* Tốc độ */}
-      <Section title="Tốc độ lăn bánh">
+      {/* Tốc độ lăn */}
+      <Section title="Tốc độ lăn bánh tiêu chuẩn">
         <div className="flex items-center gap-3">
           <input
             type="range" min={3} max={30} step={1}
             value={config.taxiSpeedKts}
             onChange={e => onConfigChange({ taxiSpeedKts: Number(e.target.value) })}
-            className="flex-1 accent-green-500 min-h-[36px]"
+            className="flex-1 accent-[#1C67DA] min-h-[36px] cursor-pointer"
           />
-          <span className="w-16 text-right text-green-400 font-mono font-bold text-sm">
+          <span className="w-16 text-right text-[#1C67DA] font-mono font-bold text-sm">
             {config.taxiSpeedKts} kts
           </span>
         </div>
       </Section>
 
-      {/* Sự cố động (A-SMGCS / SMAN) */}
-      <Section title="Sự cố trên đường lăn (động)">
-        <p className="text-xs text-gray-400 leading-relaxed -mt-0.5">
-          Tạo sự cố ngay khi máy bay đang lăn — hệ thống sẽ tự chạy lại Dijkstra
-          từ vị trí hiện tại để tìm đường vòng, không khởi động lại.
+      {/* Sự cố trên đường lăn */}
+      <Section title="Mô phỏng sự cố đường lăn (A-SMGCS)">
+        <p className="text-xs text-[#5A6A80] leading-relaxed -mt-0.5">
+          Tạo sự cố khi máy bay đang lăn — hệ thống tự động tính toán lại lộ trình vòng qua Dijkstra từ vị trí hiện tại.
         </p>
 
         <button
           onClick={() => executeAction('trigger_incident', onTriggerIncident)}
           disabled={!isRunning || getActionState('trigger_incident').isPending}
-          className="w-full bg-orange-700 hover:bg-orange-600 active:bg-orange-800 disabled:bg-gray-800 disabled:text-gray-600 text-white text-xs sm:text-sm font-semibold px-4 py-2.5 rounded-xl transition min-h-[44px] flex items-center justify-center gap-2 shadow cursor-pointer"
+          className="w-full bg-[#D32F2F] hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition min-h-[44px] flex items-center justify-center gap-2 shadow-sm cursor-pointer"
         >
           <span>{getActionState('trigger_incident').isPending ? '⏳' : '⚠'}</span>
           {getActionState('trigger_incident').isPending
@@ -288,58 +288,58 @@ export default function ControlPanel({
             : 'Tạo sự cố trên tuyến phía trước'}
         </button>
 
-        <div className="flex items-center gap-2.5 min-h-[36px]">
+        <div className="flex items-center gap-2.5 min-h-[34px]">
           <input
             id="autoincidents"
             type="checkbox"
             checked={autoIncidents}
             onChange={onToggleAutoIncidents}
-            className="w-4 h-4 accent-orange-500 cursor-pointer"
+            className="w-4 h-4 accent-[#1C67DA] cursor-pointer"
           />
-          <label htmlFor="autoincidents" className="text-xs sm:text-sm text-gray-300 cursor-pointer select-none">
-            Sự cố tự động (mỗi 4 giây khi đang lăn)
+          <label htmlFor="autoincidents" className="text-xs sm:text-sm text-[#334155] cursor-pointer select-none">
+            Sự cố ngẫu nhiên (mỗi 4 giây khi đang lăn)
           </label>
         </div>
 
-        <div className="flex items-center gap-2.5 min-h-[36px]">
+        <div className="flex items-center gap-2.5 min-h-[34px]">
           <input
             id="autoreroute"
             type="checkbox"
             checked={config.autoReroute}
             onChange={e => onConfigChange({ autoReroute: e.target.checked })}
-            className="w-4 h-4 accent-green-500 cursor-pointer"
+            className="w-4 h-4 accent-[#16845B] cursor-pointer"
           />
-          <label htmlFor="autoreroute" className="text-xs sm:text-sm text-gray-300 cursor-pointer select-none">
+          <label htmlFor="autoreroute" className="text-xs sm:text-sm text-[#334155] cursor-pointer select-none">
             Tự động tìm đường vòng (Dijkstra) khi bị chặn
           </label>
         </div>
 
-        <div className="flex items-center justify-between mt-1">
-          <span className="text-xs text-gray-400">
-            Đoạn bị chặn: <span className="text-red-400 font-mono font-bold text-sm">{blockedCount}</span>
+        <div className="flex items-center justify-between mt-1 bg-[#F8FAFC] p-2 rounded-lg border border-[#E2E8F0]">
+          <span className="text-xs text-[#5A6A80]">
+            Số đoạn bị chặn: <span className="text-[#D32F2F] font-mono font-bold text-sm">{blockedCount}</span>
           </span>
           <button
             onClick={() => executeAction('clear_incidents', onClearIncidents)}
             disabled={blockedCount === 0 || getActionState('clear_incidents').isPending}
-            className="text-xs text-cyan-400 hover:text-cyan-300 underline disabled:text-gray-600 disabled:no-underline font-semibold py-1 px-2 cursor-pointer"
+            className="text-xs text-[#1C67DA] hover:text-[#0D254C] hover:underline disabled:text-[#94A3B8] disabled:no-underline font-bold py-1 px-2 cursor-pointer"
           >
             {getActionState('clear_incidents').isPending
               ? 'Đang xử lý…'
               : getActionState('clear_incidents').canRetry
               ? 'Thử lại xóa'
-              : 'Xóa sự cố'}
+              : 'Giải tỏa sự cố'}
           </button>
         </div>
       </Section>
 
       {/* Nút điều khiển */}
-      <div className="flex flex-col gap-2.5 mt-2">
+      <div className="flex flex-col gap-2.5 mt-2 border-t border-[#E6ECF0] pt-3">
         {!isRunning && !isPaused && routeStatus === 'pending' && (
           <button
             data-testid="accept-route-btn"
             onClick={() => executeAction('accept_route', onAcceptRoute)}
             disabled={!canStart || getActionState('accept_route').isPending}
-            className="w-full bg-blue-700 hover:bg-blue-600 active:bg-blue-800 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-2.5 rounded-xl transition text-sm min-h-[46px] flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            className="w-full bg-[#0D254C] hover:bg-[#173A73] active:bg-[#091B38] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-md cursor-pointer"
           >
             <span>{getActionState('accept_route').isPending ? '⏳' : '✓'}</span>
             {getActionState('accept_route').isPending
@@ -356,7 +356,7 @@ export default function ControlPanel({
             data-testid="start-aircraft-btn"
             onClick={() => executeAction('start', onStart)}
             disabled={!canStart || getActionState('start').isPending}
-            className="w-full bg-green-600 hover:bg-green-500 active:bg-green-700 disabled:bg-gray-700 disabled:text-gray-500 text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] shadow-lg flex items-center justify-center gap-2 cursor-pointer"
+            className="w-full bg-[#16845B] hover:bg-[#116646] active:bg-[#0D4D34] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] shadow-md flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>{getActionState('start').isPending ? '⏳' : '▶'}</span>
             {getActionState('start').isPending
@@ -371,7 +371,7 @@ export default function ControlPanel({
           <button
             onClick={() => executeAction('pause', onPause)}
             disabled={getActionState('pause').isPending}
-            className="w-full bg-yellow-600 hover:bg-yellow-500 active:bg-yellow-700 disabled:bg-gray-700 text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            className="w-full bg-[#E8A72B] hover:bg-[#D49520] active:bg-[#B87D14] disabled:bg-[#E2E8F0] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-md cursor-pointer"
           >
             <span>{getActionState('pause').isPending ? '⏳' : (isPaused ? '▶' : '⏸')}</span>
             {getActionState('pause').isPending
@@ -388,7 +388,7 @@ export default function ControlPanel({
           <button
             onClick={() => executeAction('pause', onPause)}
             disabled={getActionState('pause').isPending}
-            className="w-full bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-700 text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-lg cursor-pointer"
+            className="w-full bg-[#1C67DA] hover:bg-[#1558BC] active:bg-[#0F4499] disabled:bg-[#E2E8F0] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-md cursor-pointer"
           >
             <span>{getActionState('pause').isPending ? '⏳' : '▶'}</span>
             {getActionState('pause').isPending
@@ -403,7 +403,7 @@ export default function ControlPanel({
           data-testid="reset-aircraft-btn"
           onClick={() => executeAction('reset', onReset)}
           disabled={getActionState('reset').isPending}
-          className="w-full bg-gray-700 hover:bg-gray-600 active:bg-gray-800 disabled:bg-gray-800 text-white font-bold py-2.5 rounded-xl transition text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer"
+          className="w-full bg-white hover:bg-[#F1F5F9] active:bg-[#E2E8F0] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] text-[#334155] border border-[#CBD5E1] font-bold py-2.5 rounded-xl transition text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
         >
           <span>{getActionState('reset').isPending ? '⏳' : '↺'}</span>
           {getActionState('reset').isPending
@@ -412,7 +412,6 @@ export default function ControlPanel({
             ? 'Thử lại đặt lại'
             : `Đặt lại máy bay: ${selectedAircraft?.callsign || selectedAircraftId}`}
         </button>
-
       </div>
     </div>
   );
@@ -422,7 +421,9 @@ export default function ControlPanel({
 function Section({ title, children }: { title: string; children: React.ReactNode }) {
   return (
     <div className="flex flex-col gap-2">
-      <div className="text-xs uppercase tracking-widest text-[#4a5a6e] border-b border-[#1e2838] pb-1 font-semibold">{title}</div>
+      <div className="text-xs uppercase tracking-wider text-[#0D254C] border-b border-[#E6ECF0] pb-1 font-bold">
+        {title}
+      </div>
       {children}
     </div>
   );
@@ -441,11 +442,11 @@ function LabeledSelect({
 }) {
   return (
     <div className="flex flex-col gap-1">
-      <label className="text-xs text-gray-400 font-medium">{label}</label>
+      <label className="text-xs text-[#475569] font-medium">{label}</label>
       <select
         value={value}
         onChange={e => onChange(e.target.value)}
-        className="bg-[#0d1318] border border-[#1e2838] text-gray-100 rounded-lg px-3 py-2 min-h-[42px] text-xs sm:text-sm focus:outline-none focus:border-cyan-400 cursor-pointer"
+        className="bg-white border border-[#CBD5E1] text-[#172033] rounded-lg px-3 py-2 min-h-[42px] text-xs sm:text-sm focus:outline-none focus:border-[#1C67DA] focus:ring-1 focus:ring-[#1C67DA] cursor-pointer"
       >
         {options.map(o => (
           <option key={o.value} value={o.value}>{o.label}</option>

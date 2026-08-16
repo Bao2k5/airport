@@ -1,3 +1,5 @@
+// Bảng thông tin tình huống khai thác — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
+
 import type { SimulationState, AirportGraph } from '../types';
 import { airportGraph } from '../data/airportGraph';
 
@@ -10,38 +12,38 @@ const INCIDENT_INFO: Record<string, { title: string; desc: string; color: string
   none: {
     title: 'Hoạt động bình thường',
     desc: 'Không có sự cố trên các tuyến lăn. Toàn bộ lộ trình thông thoáng theo tín hiệu đèn dẫn đường xanh.',
-    color: 'text-emerald-400',
-    badgeBg: 'bg-emerald-950/80 text-emerald-300 border-emerald-800',
+    color: 'text-[#16845B]',
+    badgeBg: 'bg-[#F0FDF4] text-[#16845B] border-[#86EFAC]',
   },
   blocked_taxiway: {
     title: 'Đường lăn bị chặn',
     desc: 'Có chướng ngại vật hoặc phương tiện chặn đường lăn phía trước. Hệ thống kích hoạt vạch dừng hoặc tính toán lộ trình vòng qua Dijkstra.',
-    color: 'text-amber-400',
-    badgeBg: 'bg-amber-950/80 text-amber-300 border-amber-800',
+    color: 'text-[#D97706]',
+    badgeBg: 'bg-[#FEF3C7] text-[#B45309] border-[#FCD34D]',
   },
   vehicle_crossing: {
     title: 'Phương tiện cắt ngang',
     desc: 'Xe mặt đất đang băng qua đường lăn. Vạch dừng màu đỏ được bật tại giao lộ để ngăn ngừa va chạm.',
-    color: 'text-yellow-400',
-    badgeBg: 'bg-yellow-950/80 text-yellow-300 border-yellow-800',
+    color: 'text-[#D97706]',
+    badgeBg: 'bg-[#FEF3C7] text-[#B45309] border-[#FCD34D]',
   },
   runway_incursion: {
     title: 'Nguy cơ xâm phạm đường băng',
     desc: 'Cảnh báo nguy cơ xâm nhập đường cất hạ cánh trái phép. Tạm dừng toàn bộ di chuyển tại các điểm chờ lân cận.',
-    color: 'text-red-400',
-    badgeBg: 'bg-red-950/80 text-red-300 border-red-800',
+    color: 'text-[#D32F2F]',
+    badgeBg: 'bg-[#FEF2F2] text-[#D32F2F] border-[#FCA5A5]',
   },
   low_visibility: {
     title: 'Tầm nhìn hạn chế (LVC)',
     desc: 'Quy trình khai thác tầm nhìn thấp đang áp dụng. Bắt buộc tuân thủ nghiêm ngặt hệ thống đèn Follow-the-Green.',
-    color: 'text-blue-400',
-    badgeBg: 'bg-blue-950/80 text-blue-300 border-blue-800',
+    color: 'text-[#1C67DA]',
+    badgeBg: 'bg-[#EFF6FF] text-[#1C67DA] border-[#BFDBFE]',
   },
   aircraft_stopped_ahead: {
     title: 'Máy bay dừng phía trước',
     desc: 'Tàu bay phía trước tạm dừng lăn bánh. Tàu bay phía sau kích hoạt vạch dừng giữ khoảng cách an toàn.',
-    color: 'text-orange-400',
-    badgeBg: 'bg-orange-950/80 text-orange-300 border-orange-800',
+    color: 'text-[#D97706]',
+    badgeBg: 'bg-[#FEF3C7] text-[#B45309] border-[#FCD34D]',
   },
 };
 
@@ -77,84 +79,84 @@ export default function ScenarioPanel({ state, graph = airportGraph }: Props) {
   const recentLogs = (state.liveEventLog || []).slice(-4).reverse();
 
   return (
-    <div className="flex flex-col gap-3 p-3.5 sm:p-4 bg-[#111620] rounded-xl border border-[#1e2838] text-sm text-gray-200 shadow-md">
+    <div className="flex flex-col gap-3 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
       {/* Header */}
-      <div className="flex items-center justify-between">
-        <h2 className="text-base font-bold text-white tracking-wide">
-          THÔNG TIN TÌNH HUỐNG
+      <div className="flex items-center justify-between border-b border-[#E6ECF0] pb-2.5">
+        <h2 className="text-xs sm:text-sm font-bold text-[#0D254C] tracking-wide uppercase">
+          Thông tin tình huống khai thác
         </h2>
-        <span className={`text-[11px] font-mono px-2.5 py-0.5 rounded border font-bold ${info.badgeBg}`}>
+        <span className={`text-[11px] font-mono px-2.5 py-0.5 rounded-md border font-bold ${info.badgeBg}`}>
           {info.title}
         </span>
       </div>
 
       {/* Cảnh báo mới nhất (nếu có sự cố hoặc warning) */}
       {state.warningMessage && hasDynamicIncident && (
-        <div className="bg-red-950/80 border border-red-500/80 text-red-100 rounded-xl px-3 py-2 text-xs font-semibold leading-relaxed animate-pulse flex items-start gap-2 shadow-md">
-          <span className="text-sm font-bold text-red-400">⚠</span>
+        <div className="bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-xl px-3.5 py-2 text-xs font-semibold leading-relaxed flex items-start gap-2 shadow-2xs">
+          <span className="text-sm font-bold text-[#D32F2F]">⚠</span>
           <span>{state.warningMessage}</span>
         </div>
       )}
 
       {/* Thẻ mô tả tình huống chi tiết */}
-      <div className="bg-[#0d1318] rounded-xl p-3 border border-[#1e2838] flex flex-col gap-1.5">
+      <div className="bg-[#F8FAFC] rounded-xl p-3 border border-[#E2E8F0] flex flex-col gap-1">
         <div className={`font-bold text-xs sm:text-sm ${info.color}`}>
           {info.title}
         </div>
-        <div className="text-xs text-gray-300 leading-relaxed">
+        <div className="text-xs text-[#475569] leading-relaxed">
           {info.desc}
         </div>
       </div>
 
       {/* Bảng thông số giám sát chi tiết */}
       <div className="grid grid-cols-2 gap-2 text-xs">
-        <div className="bg-[#0a0e14] p-2 rounded-lg border border-[#1e2838] flex flex-col">
-          <span className="text-[10px] text-gray-400 uppercase font-semibold">Tàu bay ảnh hưởng</span>
-          <span className="font-mono font-bold text-cyan-300 mt-0.5">
+        <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0] flex flex-col">
+          <span className="text-[10px] text-[#64748B] uppercase font-semibold">Tàu bay ảnh hưởng</span>
+          <span className="font-mono font-bold text-[#0D254C] mt-0.5">
             {hasDynamicIncident ? (activeAircraft?.callsign || 'VN001') : 'Không có (Bình thường)'}
           </span>
         </div>
 
-        <div className="bg-[#0a0e14] p-2 rounded-lg border border-[#1e2838] flex flex-col">
-          <span className="text-[10px] text-gray-400 uppercase font-semibold">Đoạn đường sự cố</span>
-          <span className="font-mono font-bold text-amber-300 mt-0.5">
+        <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0] flex flex-col">
+          <span className="text-[10px] text-[#64748B] uppercase font-semibold">Đoạn đường sự cố</span>
+          <span className="font-mono font-bold text-[#D97706] mt-0.5">
             {incidentEdgeId ? `[${incidentEdgeId}]` : 'Không có'}
           </span>
         </div>
 
-        <div className="bg-[#0a0e14] p-2 rounded-lg border border-[#1e2838] flex flex-col">
-          <span className="text-[10px] text-gray-400 uppercase font-semibold">Đoạn bị chặn động</span>
-          <span className="font-mono font-bold text-red-400 mt-0.5">
+        <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0] flex flex-col">
+          <span className="text-[10px] text-[#64748B] uppercase font-semibold">Đoạn bị chặn động</span>
+          <span className="font-mono font-bold text-[#D32F2F] mt-0.5">
             {dynamicBlockedCount} đoạn
           </span>
         </div>
 
-        <div className="bg-[#0a0e14] p-2 rounded-lg border border-[#1e2838] flex flex-col">
-          <span className="text-[10px] text-gray-400 uppercase font-semibold">Tìm đường vòng (Dijkstra)</span>
-          <span className={`font-semibold mt-0.5 ${state.config.autoReroute ? 'text-emerald-400' : 'text-gray-500'}`}>
-            {state.config.autoReroute ? 'Đang bật' : 'Đang tắt'}
+        <div className="bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0] flex flex-col">
+          <span className="text-[10px] text-[#64748B] uppercase font-semibold">Đường vòng (Dijkstra)</span>
+          <span className={`font-bold mt-0.5 ${state.config.autoReroute ? 'text-[#16845B]' : 'text-[#64748B]'}`}>
+            {state.config.autoReroute ? 'Đang kích hoạt' : 'Tắt'}
           </span>
         </div>
       </div>
 
       {/* Nhật ký sự kiện liên quan */}
       {recentLogs.length > 0 && (
-        <div className="flex flex-col gap-1.5 border-t border-[#1e2838] pt-2.5">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-gray-400">
+        <div className="flex flex-col gap-1.5 border-t border-[#E6ECF0] pt-2.5">
+          <div className="text-[11px] font-bold uppercase tracking-wider text-[#0D254C]">
             Nhật ký sự cố & điều phối
           </div>
-          <div className="flex flex-col gap-1 max-h-28 overflow-y-auto pr-1 bg-[#0a0e14] p-2 rounded-lg border border-[#1e2838] font-mono text-[11px]">
+          <div className="flex flex-col gap-1 max-h-28 overflow-y-auto pr-1 bg-[#F8FAFC] p-2 rounded-lg border border-[#E2E8F0] font-mono text-[11px]">
             {recentLogs.map((log) => (
               <div key={log.id} className="flex items-start gap-1.5 leading-snug">
-                <span className="text-gray-500 font-bold flex-shrink-0">
+                <span className="text-[#64748B] font-bold flex-shrink-0">
                   [{Math.floor(log.atSeconds)}s]
                 </span>
                 <span className={
                   log.severity === 'warning'
-                    ? 'text-amber-400 font-medium'
+                    ? 'text-[#D97706] font-medium'
                     : log.severity === 'critical'
-                    ? 'text-red-400 font-bold'
-                    : 'text-gray-300'
+                    ? 'text-[#D32F2F] font-bold'
+                    : 'text-[#334155]'
                 }>
                   {log.message}
                 </span>
@@ -165,14 +167,14 @@ export default function ScenarioPanel({ state, graph = airportGraph }: Props) {
       )}
 
       {/* Hệ thống đèn Follow-the-Green */}
-      <div className="border-t border-[#1e2838] pt-2.5 flex flex-col gap-1.5">
-        <div className="text-[11px] uppercase tracking-wider text-[#4a5a6e] font-semibold">
+      <div className="border-t border-[#E6ECF0] pt-2.5 flex flex-col gap-1.5">
+        <div className="text-[11px] uppercase tracking-wider text-[#0D254C] font-bold">
           Hệ thống đèn dẫn đường (Follow-the-Green)
         </div>
-        <div className="flex flex-col gap-1 text-xs">
-          <LightItem color="bg-emerald-500" label="Xanh lá" desc="Đoạn đường giải phóng — máy bay được phép lăn bánh." />
-          <LightItem color="bg-red-500" label="Đỏ" desc="Vạch dừng / chướng ngại vật — cấm vượt qua." />
-          <LightItem color="bg-gray-600" label="Tắt" desc="Đoạn đường ngoài lộ trình được cấp phép." />
+        <div className="flex flex-col gap-1.5 text-xs">
+          <LightItem color="bg-[#16845B]" label="Xanh lá" desc="Đoạn đường giải phóng — máy bay được phép lăn bánh." />
+          <LightItem color="bg-[#D32F2F]" label="Đỏ" desc="Vạch dừng / chướng ngại vật — cấm vượt qua." />
+          <LightItem color="bg-[#94A3B8]" label="Tắt" desc="Đoạn đường ngoài lộ trình được cấp phép." />
         </div>
       </div>
     </div>
@@ -183,8 +185,8 @@ function LightItem({ color, label, desc }: { color: string; label: string; desc:
   return (
     <div className="flex items-start gap-2">
       <span className={`w-2.5 h-2.5 mt-1 rounded-full flex-shrink-0 ${color}`} />
-      <span className="text-gray-300 leading-snug">
-        <strong className="text-white">{label}:</strong> {desc}
+      <span className="text-[#475569] leading-snug">
+        <strong className="text-[#172033]">{label}:</strong> {desc}
       </span>
     </div>
   );

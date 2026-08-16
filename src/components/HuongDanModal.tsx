@@ -1,4 +1,4 @@
-// Modal Hướng Dẫn Sử Dụng — 100% khớp bản Vercel demo
+// Modal Hướng Dẫn Sử Dụng — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
 
 import { useEffect, type ReactNode } from 'react';
 
@@ -17,24 +17,24 @@ export default function HuongDanModal({ onClose }: Props) {
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm p-4"
+      className="fixed inset-0 z-50 flex items-center justify-center bg-black/60 backdrop-blur-xs p-4"
       onClick={onClose}
     >
       <div
-        className="relative bg-[#111620] border border-[#1e2838] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden text-gray-200"
+        className="relative bg-white border border-[#E6ECF0] rounded-2xl shadow-2xl w-full max-w-2xl max-h-[90vh] flex flex-col overflow-hidden text-[#172033]"
         onClick={e => e.stopPropagation()}
       >
         {/* Header */}
-        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-800 flex-shrink-0">
+        <div className="flex items-center justify-between px-6 py-4 bg-[#0D254C] text-white flex-shrink-0">
           <div>
-            <h2 className="text-lg font-bold text-white">Hướng dẫn sử dụng</h2>
-            <p className="text-xs text-gray-500 mt-0.5">
-              Mô phỏng di chuyển mặt đất sân bay giáo dục
+            <h2 className="text-base sm:text-lg font-bold">Hướng dẫn sử dụng hệ thống</h2>
+            <p className="text-xs text-[#CBD5E1] mt-0.5">
+              Học viện Hàng không Việt Nam — Mô phỏng di chuyển mặt đất (Follow-the-Green)
             </p>
           </div>
           <button
             onClick={onClose}
-            className="text-gray-400 hover:text-white transition text-2xl leading-none px-2"
+            className="text-gray-300 hover:text-white transition text-2xl leading-none px-2 cursor-pointer"
             aria-label="Đóng"
           >
             ×
@@ -42,94 +42,58 @@ export default function HuongDanModal({ onClose }: Props) {
         </div>
 
         {/* Content */}
-        <div className="overflow-y-auto px-6 py-5 flex flex-col gap-6 text-sm text-gray-300">
+        <div className="overflow-y-auto px-6 py-5 flex flex-col gap-6 text-sm text-[#334155]">
           {/* Section 1 */}
-          <Section title="1. Giới thiệu">
+          <Section title="1. Giới thiệu tổng quan">
             <p>
-              Đây là phần mềm <strong className="text-white">mô phỏng di chuyển mặt đất sân bay</strong> dành cho mục đích giáo dục. Hệ thống minh họa khái niệm <strong className="text-green-400">Đèn Dẫn Đường Xanh (Follow-the-Greens / SMGCS)</strong> — công nghệ dẫn đường trực quan giúp phi công lăn bánh an toàn theo lộ trình được cấp phép, đặc biệt hữu ích trong điều kiện tầm nhìn kém hoặc sân bay có mật độ cao.
+              Đây là hệ thống <strong className="text-[#0D254C]">mô phỏng di chuyển mặt đất sân bay</strong> phục vụ đào tạo và nghiên cứu. Hệ thống mô phỏng công nghệ <strong className="text-[#16845B]">Đèn Dẫn Đường Xanh (Follow-the-Green / A-SMGCS)</strong> — giải pháp dẫn dắt tàu bay trực quan theo tuyến lăn được kiểm soát viên không lưu cấp phép.
             </p>
             <Alert type="warning">
-              Phần mềm này <strong>KHÔNG phải</strong> hệ thống kiểm soát không lưu thực tế. Mọi dữ liệu sân bay chỉ mang tính minh họa.
+              Hệ thống dùng cho mục đích học thuật và mô phỏng giáo dục. Không sử dụng trong điều hành bay thực tế.
             </Alert>
           </Section>
 
           {/* Section 2 */}
-          <Section title="2. Các bước thực hiện">
+          <Section title="2. Quy trình thao tác">
             <ol className="flex flex-col gap-2 list-none">
-              <StepItem n={1} title="Chọn tuyến đường">
-                Trong mục <em>Điều Khiển Mô Phỏng</em>, chọn <strong className="text-white">Điểm xuất phát</strong> (ô đỗ, sân đỗ…) và <strong className="text-white">Điểm đến</strong> (điểm chờ đường băng, ô đỗ…). Hệ thống tự tính lộ trình tối ưu bằng thuật toán Dijkstra.
+              <StepItem n={1} title="Chọn tàu bay & Tuyến lăn">
+                Trong bảng <em>Điều khiển</em>, chọn 1 trong 6 tàu bay, cấu hình <strong className="text-[#0D254C]">Điểm xuất phát</strong> và <strong className="text-[#0D254C]">Điểm đến</strong>.
               </StepItem>
-              <StepItem n={2} title="Thiết lập môi trường">
-                Chọn <strong className="text-white">Thời tiết</strong>, <strong className="text-white">Thời điểm trong ngày</strong> và <strong className="text-white">Lưu lượng giao thông</strong>. Mỗi yếu tố ảnh hưởng đến tốc độ lăn bánh thực tế.
+              <StepItem n={2} title="Thiết lập môi trường & Tốc độ">
+                Tùy chỉnh thời tiết, thời điểm và tốc độ lăn bánh chuẩn (3–30 knot).
               </StepItem>
-              <StepItem n={3} title="Điều chỉnh tốc độ">
-                Kéo thanh trượt <strong className="text-white">Tốc độ lăn bánh</strong> (3–30 knot). Tốc độ thực tế được tính sau khi áp dụng hệ số thời tiết và lưu lượng.
+              <StepItem n={3} title="Chấp thuận tuyến & Khởi chạy">
+                Nhấn <strong className="text-[#1C67DA]">Chấp nhận tuyến</strong> rồi nhấn <strong className="text-[#16845B]">Cho lăn bánh</strong> để bắt đầu.
               </StepItem>
-              <StepItem n={4} title="Thêm tình huống sự cố (tùy chọn)">
-                Chọn loại <strong className="text-white">Sự cố</strong> và <strong className="text-white">Đoạn đường bị ảnh hưởng</strong>. Bật <strong className="text-white">Tự động tìm đường vòng</strong> để hệ thống tự tìm lộ trình thay thế khi gặp sự cố.
-              </StepItem>
-              <StepItem n={5} title="Chạy mô phỏng">
-                Nhấn <strong className="text-green-400">Bắt đầu</strong> để khởi chạy. Dùng <strong className="text-yellow-400">Tạm dừng</strong> / <strong className="text-blue-400">Tiếp tục</strong> hoặc <strong className="text-gray-300">Đặt lại</strong> bất cứ lúc nào.
+              <StepItem n={4} title="Thực hành xử lý sự cố">
+                Tạo sự cố đường lăn hoặc chuyển sang tab <strong className="text-[#0D254C]">Kịch bản mẫu</strong> để quan sát 7 tình huống điều phối phức tạp.
               </StepItem>
             </ol>
           </Section>
 
           {/* Section 3 */}
-          <Section title="3. Đọc bản đồ sân bay">
-            <div className="grid grid-cols-2 gap-2">
-              <GridBadge color="bg-slate-400" label="Đường băng" desc="Hai đường băng song song: 07L/25R (trên) và 07R/25L (dưới)" />
-              <GridBadge color="bg-slate-600" label="Đường lăn" desc="Các đường lăn kết nối sân đỗ với đường băng (A, B, C, D)" />
-              <GridBadge color="bg-amber-500" label="Điểm giữ chờ (Hold)" desc="Vị trí máy bay dừng chờ lệnh vào đường băng" />
-              <GridBadge color="bg-green-500" label="Ô đỗ (Stand)" desc="Stand 1–8: vị trí đỗ của máy bay tại sân" />
-              <GridBadge color="bg-amber-400" label="Điểm xuất phát" desc="Vị trí bắt đầu của máy bay trong mô phỏng" />
-              <GridBadge color="bg-green-400" label="Điểm đến" desc="Vị trí mục tiêu cần đến" />
-            </div>
-          </Section>
-
-          {/* Section 4 */}
-          <Section title="4. Hệ thống đèn dẫn đường">
+          <Section title="3. Hệ thống đèn tín hiệu (Follow-the-Green)">
             <div className="flex flex-col gap-2">
-              <LightBadge color="bg-green-500" label="Xanh lá — Đường đã giải phóng">
-                Các đoạn đường phía trước máy bay (trong vùng nhìn trước 4 đoạn) được đèn xanh chiếu sáng. Phi công được phép lăn bánh qua các đoạn này.
+              <LightBadge color="bg-[#16845B]" label="Xanh lá — Đoạn đường thông thoáng">
+                Các đoạn đường phía trước máy bay được cấp phép lăn bánh an toàn.
               </LightBadge>
-              <LightBadge color="bg-red-500" label="Đỏ — Vạch dừng / Bị chặn">
-                Đoạn đường đang bị sự cố, đóng cửa hoặc bị hạn chế. Máy bay phải dừng trước vạch này.
+              <LightBadge color="bg-[#D32F2F]" label="Đỏ — Vạch dừng (Stop Bar) / Chướng ngại vật">
+                Vạch dừng kích hoạt, cấm tàu bay vượt qua cho đến khi được cấp phép tiếp.
               </LightBadge>
-              <LightBadge color="bg-gray-600" label="Tắt — Không thuộc lộ trình">
-                Đoạn đường không nằm trong lộ trình hiện tại hoặc đã được đi qua.
+              <LightBadge color="bg-[#94A3B8]" label="Tắt — Ngoài tuyến cấp phép">
+                Các đoạn đường lăn không nằm trong lộ trình đã phân bổ.
               </LightBadge>
             </div>
-          </Section>
-
-          {/* Section 5 */}
-          <Section title="5. Các loại sự cố">
-            <div className="flex flex-col gap-2 text-xs">
-              <IncidentBadge icon="🚧" name="Đường lăn bị chặn" desc="Vật cản vật lý trên đường lăn. Máy bay giữ nguyên hoặc tìm đường vòng." />
-              <IncidentBadge icon="🚗" name="Phương tiện cắt ngang" desc="Xe mặt đất đi qua đường lăn. Kích hoạt vạch dừng trên đoạn bị ảnh hưởng." />
-              <IncidentBadge icon="⚠" name="Nguy cơ xâm phạm đường băng" desc="Máy bay vào đường băng trái phép. Toàn bộ di chuyển lân cận bị đình chỉ." />
-              <IncidentBadge icon="🌫" name="Tầm nhìn hạn chế" desc="Quy trình SMGCS kích hoạt. Tốc độ giảm, đèn xanh trở nên thiết yếu." />
-              <IncidentBadge icon="✈" name="Máy bay dừng phía trước" desc="Máy bay kế trước bất động trên đường lăn. Phải giữ khoảng cách an toàn." />
-            </div>
-          </Section>
-
-          {/* Section 6 */}
-          <Section title="6. Ghi chú kỹ thuật">
-            <ul className="list-disc list-inside flex flex-col gap-1 text-xs text-gray-400">
-              <li>Tốc độ mô phỏng nhanh hơn thực tế <strong className="text-gray-300">8×</strong> để dễ quan sát.</li>
-              <li>Thuật toán tìm đường: <strong className="text-gray-300">Dijkstra</strong> theo tổng chiều dài đoạn đường (mét).</li>
-              <li>Thay đổi cấu hình khi đang chạy sẽ <strong className="text-gray-300">đặt lại</strong> mô phỏng về trạng thái ban đầu.</li>
-              <li>Nhấn <kbd className="bg-gray-700 px-1.5 py-0.5 rounded text-gray-200 font-mono">Esc</kbd> để đóng cửa sổ này.</li>
-            </ul>
           </Section>
         </div>
 
         {/* Footer */}
-        <div className="flex justify-end px-6 py-3 border-t border-gray-800 flex-shrink-0">
+        <div className="flex justify-end px-6 py-3 border-t border-[#E6ECF0] bg-[#F8FAFC] flex-shrink-0">
           <button
             onClick={onClose}
-            className="bg-gray-700 hover:bg-gray-600 text-white text-sm font-semibold px-5 py-2 rounded-lg transition"
+            className="bg-[#0D254C] hover:bg-[#173A73] text-white text-sm font-bold px-5 py-2 rounded-xl transition cursor-pointer shadow-sm"
           >
-            Đóng
+            Đóng hướng dẫn
           </button>
         </div>
       </div>
@@ -139,66 +103,42 @@ export default function HuongDanModal({ onClose }: Props) {
 
 function Section({ title, children }: { title: string; children: ReactNode }) {
   return (
-    <div className="flex flex-col gap-3">
-      <h3 className="text-sm font-bold text-white border-b border-gray-800 pb-1">{title}</h3>
+    <div className="flex flex-col gap-2">
+      <h3 className="text-xs uppercase tracking-wider font-bold text-[#0D254C] border-b border-[#E6ECF0] pb-1">{title}</h3>
       {children}
     </div>
   );
 }
 
-function Alert({ type, children }: { type: 'warning' | 'info'; children: ReactNode }) {
-  const styles = {
-    warning: 'bg-amber-950/60 border-amber-700 text-amber-200',
-    info: 'bg-blue-950/60 border-blue-700 text-blue-200',
-  }[type];
-  return <div className={`border rounded-lg px-3 py-2 text-xs ${styles}`}>{children}</div>;
+function Alert({ children }: { type?: 'warning' | 'info'; children: ReactNode }) {
+  return (
+    <div className="p-3 rounded-xl border bg-[#FFFBEB] border-[#FCD34D] text-[#92400E] text-xs leading-relaxed">
+      {children}
+    </div>
+  );
 }
 
 function StepItem({ n, title, children }: { n: number; title: string; children: ReactNode }) {
   return (
-    <li className="flex gap-3">
-      <span className="flex-shrink-0 w-6 h-6 rounded-full bg-green-700 text-white text-xs flex items-center justify-center font-bold mt-0.5">
+    <li className="flex items-start gap-2.5 p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+      <span className="w-5 h-5 rounded-full bg-[#0D254C] text-white font-bold text-xs flex items-center justify-center flex-shrink-0 mt-0.5">
         {n}
       </span>
-      <div>
-        <div className="font-semibold text-white mb-0.5">{title}</div>
-        <div className="text-gray-400 text-xs">{children}</div>
+      <div className="flex flex-col gap-0.5">
+        <strong className="text-[#0D254C] text-xs">{title}</strong>
+        <span className="text-xs text-[#475569]">{children}</span>
       </div>
     </li>
   );
 }
 
-function GridBadge({ color, label, desc }: { color: string; label: string; desc: string }) {
-  return (
-    <div className="flex items-start gap-2 text-xs">
-      <span className={`w-3 h-3 rounded mt-0.5 flex-shrink-0 ${color}`} />
-      <div>
-        <div className="text-white font-semibold">{label}</div>
-        <div className="text-gray-500">{desc}</div>
-      </div>
-    </div>
-  );
-}
-
 function LightBadge({ color, label, children }: { color: string; label: string; children: ReactNode }) {
   return (
-    <div className="flex items-start gap-3 bg-gray-800 rounded-lg p-3">
-      <span className={`w-4 h-4 rounded-full flex-shrink-0 mt-0.5 ${color}`} />
-      <div>
-        <div className="text-white font-semibold text-xs mb-0.5">{label}</div>
-        <div className="text-gray-400 text-xs">{children}</div>
-      </div>
-    </div>
-  );
-}
-
-function IncidentBadge({ icon, name, desc }: { icon: string; name: string; desc: string }) {
-  return (
-    <div className="flex items-start gap-2">
-      <span className="flex-shrink-0 w-5 text-center">{icon}</span>
-      <div>
-        <span className="text-gray-200 font-semibold">{name}: </span>
-        <span className="text-gray-400">{desc}</span>
+    <div className="flex items-start gap-2 p-2 rounded-lg bg-[#F8FAFC] border border-[#E2E8F0]">
+      <span className={`w-3 h-3 rounded-full flex-shrink-0 mt-1 ${color}`} />
+      <div className="flex flex-col">
+        <strong className="text-xs text-[#172033]">{label}</strong>
+        <span className="text-xs text-[#64748B]">{children}</span>
       </div>
     </div>
   );

@@ -368,15 +368,16 @@ export default function App() {
 
   return (
     <ErrorBoundary name="Ứng dụng mô phỏng sân bay" fallbackTitle="Đã xảy ra sự cố trong ứng dụng">
-      <div className="w-full h-full min-h-screen bg-[#0c0f12] text-gray-100 flex flex-col overflow-x-hidden">
-        {/* ── 1. Cảnh báo giáo dục ── */}
-        <header className="bg-amber-950 border-b border-amber-800 text-amber-200 text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0">
-          CHỈ DÙNG CHO MỤC ĐÍCH GIÁO DỤC — KHÔNG SỬ DỤNG TRONG HOẠT ĐỘNG HÀNG KHÔNG THỰC TẾ
+      <div className="w-full h-full min-h-screen bg-[#F4F6F9] text-[#172033] flex flex-col overflow-x-hidden">
+        {/* ── 1. Cảnh báo giáo dục VAA ── */}
+        <header className="bg-[#0A1B36] border-b border-[#163363] text-[#BFDBFE] text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0 flex items-center justify-center gap-2">
+          <span className="inline-block px-1.5 py-0.2 rounded bg-[#1E3A8A] text-white text-[10px] font-extrabold">VAA</span>
+          <span>HỌC VIỆN HÀNG KHÔNG VIỆT NAM — MÔ PHỎNG GIÁO DỤC (KHÔNG DÙNG TRONG HOẠT ĐỘNG THỰC TẾ)</span>
         </header>
 
         {/* ── Watchdog Recovery Bar (Khi loop bị nghẽn) ── */}
         {watchdogStalled && (
-          <div className="bg-amber-900 border-b border-amber-600 text-amber-100 px-4 py-2 text-xs flex items-center justify-between z-50 shadow-lg flex-shrink-0 animate-pulse">
+          <div className="bg-[#FFFBEB] border-b border-[#FCD34D] text-[#92400E] px-4 py-2 text-xs flex items-center justify-between z-50 shadow-sm flex-shrink-0 animate-pulse">
             <span className="font-semibold flex items-center gap-1.5">
               <span>⚠️</span> Mô phỏng bị gián đoạn vòng lặp. Vị trí và tuyến đường đã được bảo toàn.
             </span>
@@ -387,28 +388,48 @@ export default function App() {
                 setWatchdogStalled(false);
                 setSimState(prev => ({ ...prev, isRunning: true, isPaused: false }));
               }}
-              className="px-3.5 py-1.5 bg-amber-600 hover:bg-amber-500 active:bg-amber-700 text-white font-bold rounded-lg transition text-xs shadow cursor-pointer min-h-[36px] flex items-center gap-1"
+              className="px-3.5 py-1.5 bg-[#D97706] hover:bg-[#B45309] text-white font-bold rounded-lg transition text-xs shadow-sm cursor-pointer min-h-[36px] flex items-center gap-1"
             >
               <span>▶</span> Tiếp tục mô phỏng
             </button>
           </div>
         )}
 
-        {/* ── 2. Thanh tiêu đề Header ── */}
-        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[#111620] border-b border-[#1e2838] flex-shrink-0">
-          <div className="flex items-center gap-2 min-w-0">
-            <img src="/logotruong.png" alt="Logo" className="w-6 h-6 object-contain inline-block rounded-sm flex-shrink-0" />
-            <h1 className="text-xs sm:text-sm md:text-base font-bold text-white truncate">
-              <span className="hidden sm:inline">Mô Phỏng Di Chuyển Mặt Đất Sân Bay</span>
-              <span className="sm:hidden">Mô Phỏng Sân Bay</span>
-            </h1>
+        {/* ── 2. Thanh tiêu đề Header chuẩn VAA ── */}
+        <div className="flex items-center justify-between gap-2 px-3 py-2 bg-[#0D254C] border-b border-[#193B70] text-white flex-shrink-0 shadow-sm">
+          <div className="flex items-center gap-2.5 min-w-0">
+            {/* VAA Wing Emblem SVG Logo */}
+            <div className="w-8 h-8 rounded-lg bg-gradient-to-br from-[#1E3A8A] to-[#0D254C] p-1 flex items-center justify-center border border-[#3B82F6]/30 flex-shrink-0 shadow-2xs">
+              <svg viewBox="0 0 64 64" className="w-full h-full" fill="none">
+                <path d="M12 44L28 20L34 29L20 44H12Z" fill="#FFFFFF"/>
+                <path d="M26 44L42 16L52 30L34 44H26Z" fill="#25C6CB"/>
+                <path d="M16 48H48L52 52H12L16 48Z" fill="#E8A72B"/>
+              </svg>
+            </div>
+
+            <div className="flex flex-col min-w-0">
+              <div className="flex items-center gap-1.5">
+                <span className="font-extrabold text-xs sm:text-sm text-[#E8A72B] tracking-wider">VAA</span>
+                <span className="text-gray-400 text-xs">|</span>
+                <h1 className="text-xs sm:text-sm md:text-base font-bold text-white truncate">
+                  <span className="hidden sm:inline">Mô Phỏng Mặt Đất Sân Bay</span>
+                  <span className="sm:hidden">Mô Phỏng Sân Bay</span>
+                </h1>
+                <span className="hidden lg:inline-block text-[10px] font-mono px-1.5 py-0.5 rounded bg-[#173A73] text-[#93C5FD] border border-[#2563EB]/40 font-semibold">
+                  FtG Simulator
+                </span>
+              </div>
+              <span className="text-[10px] text-[#CBD5E1] truncate hidden sm:block">
+                Học viện Hàng không Việt Nam · Hệ thống huấn luyện A-SMGCS & Follow-the-Green
+              </span>
+            </div>
           </div>
 
           {/* Bộ chọn Đồ thị & Nút Hành Động */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            {/* Bộ chọn Model/Graph (Bảo toàn Graph V2 khi chọn, không âm thầm fallback) */}
-            <div className="flex items-center gap-1 bg-[#0a0e14] px-2 py-1 rounded-lg border border-[#223044]">
-              <span className="text-[11px] text-gray-400 font-medium hidden md:inline">Mô hình:</span>
+            {/* Bộ chọn Model/Graph */}
+            <div className="flex items-center gap-1 bg-[#0A1B36] px-2 py-1 rounded-lg border border-[#1E3A8A]">
+              <span className="text-[11px] text-[#93C5FD] font-medium hidden md:inline">Mô hình:</span>
               <select
                 value={selectedGraphId}
                 onChange={(e) => {
@@ -429,21 +450,21 @@ export default function App() {
                     setSimState(initSimulation(nextConfig, newGraph));
                   }
                 }}
-                className="bg-[#151c28] text-xs font-semibold text-cyan-300 rounded px-1.5 py-0.5 border border-cyan-500/40 focus:outline-none focus:border-cyan-400 cursor-pointer"
+                className="bg-[#173A73] text-xs font-bold text-white rounded px-2 py-0.5 border border-[#3B82F6]/50 focus:outline-none focus:border-[#60A5FA] cursor-pointer"
               >
                 <option value="v1">Graph V1 (127 nodes)</option>
                 <option value="v2">Graph V2 (162 nodes)</option>
               </select>
             </div>
 
-            {/* Desktop Overlay Toggles (Hidden on mobile < 768px) */}
+            {/* Desktop Overlay Toggles */}
             <div className="hidden md:flex items-center gap-1.5">
               <button
                 onClick={() => setShowGraphV2Overlay(v => !v)}
-                className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
                   showGraphV2Overlay
-                    ? 'bg-cyan-600 hover:bg-cyan-500 text-white border-cyan-400'
-                    : 'bg-[#151c28] hover:bg-[#1e2838] text-gray-300 border-[#223044]'
+                    ? 'bg-[#1C67DA] text-white border-[#3B82F6]'
+                    : 'bg-[#173A73] hover:bg-[#1E4A8E] text-[#CBD5E1] border-[#1E3A8A]'
                 }`}
                 title="Bật/Tắt hiển thị lớp phủ mạng lưới Graph V2"
               >
@@ -452,8 +473,8 @@ export default function App() {
               
               <button
                 onClick={() => setShowGrid(v => !v)}
-                className={`flex items-center gap-1 text-xs font-semibold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  showGrid ? 'bg-red-500 hover:bg-red-400 text-black border-red-400' : 'bg-[#151c28] hover:bg-[#1e2838] text-gray-400 border-[#223044]'
+                className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                  showGrid ? 'bg-[#E8A72B] text-black border-[#FDE047]' : 'bg-[#173A73] hover:bg-[#1E4A8E] text-[#CBD5E1] border-[#1E3A8A]'
                 }`}
                 title="Lưới tọa độ"
               >
@@ -462,8 +483,8 @@ export default function App() {
 
               <button
                 onClick={() => setShowPaths(v => !v)}
-                className={`flex items-center gap-1 text-xs font-semibold px-2 py-1 rounded-lg border transition cursor-pointer ${
-                  showPaths ? 'bg-amber-500 hover:bg-amber-400 text-black border-amber-400' : 'bg-[#151c28] hover:bg-[#1e2838] text-gray-400 border-[#223044]'
+                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg border transition cursor-pointer ${
+                  showPaths ? 'bg-[#16845B] text-white border-[#86EFAC]' : 'bg-[#173A73] hover:bg-[#1E4A8E] text-[#CBD5E1] border-[#1E3A8A]'
                 }`}
                 title="Tất cả tuyến đường"
               >
@@ -475,27 +496,27 @@ export default function App() {
             <div className="relative md:hidden">
               <button
                 onClick={() => setShowMobileMapMenu(v => !v)}
-                className="px-2 py-1 rounded-lg bg-[#151c28] border border-[#223044] text-gray-300 text-xs font-semibold flex items-center gap-1"
+                className="px-2 py-1 rounded-lg bg-[#173A73] border border-[#1E3A8A] text-white text-xs font-bold flex items-center gap-1"
               >
                 <span>⚙ Lớp phủ</span>
               </button>
               {showMobileMapMenu && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-[#111620] border border-[#223044] rounded-xl p-2 shadow-2xl z-50 flex flex-col gap-1.5">
+                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-[#CBD5E1] rounded-xl p-2 shadow-2xl z-50 flex flex-col gap-1.5 text-[#172033]">
                   <button
                     onClick={() => { setShowGraphV2Overlay(v => !v); setShowMobileMapMenu(false); }}
-                    className="text-left text-xs p-1.5 rounded hover:bg-[#1f293d] text-gray-200"
+                    className="text-left text-xs p-1.5 rounded hover:bg-[#F1F5F9] font-medium"
                   >
                     {showGraphV2Overlay ? '✓ Ẩn Overlay V2' : '🌐 Hiện Overlay V2'}
                   </button>
                   <button
                     onClick={() => { setShowGrid(v => !v); setShowMobileMapMenu(false); }}
-                    className="text-left text-xs p-1.5 rounded hover:bg-[#1f293d] text-gray-200"
+                    className="text-left text-xs p-1.5 rounded hover:bg-[#F1F5F9] font-medium"
                   >
                     {showGrid ? '✓ Tắt Lưới Grid' : '📐 Hiện Lưới Grid'}
                   </button>
                   <button
                     onClick={() => { setShowPaths(v => !v); setShowMobileMapMenu(false); }}
-                    className="text-left text-xs p-1.5 rounded hover:bg-[#1f293d] text-gray-200"
+                    className="text-left text-xs p-1.5 rounded hover:bg-[#F1F5F9] font-medium"
                   >
                     {showPaths ? '✓ Tắt Hiện Tuyến Paths' : '🛣 Hiện Tuyến Paths'}
                   </button>
@@ -506,7 +527,7 @@ export default function App() {
             {/* Nút Hướng dẫn */}
             <button
               onClick={() => setShowGuide(true)}
-              className="flex items-center gap-1 bg-blue-700 hover:bg-blue-600 active:bg-blue-800 text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition shadow-sm cursor-pointer"
+              className="flex items-center gap-1 bg-[#1C67DA] hover:bg-[#1558BC] active:bg-[#0F4499] text-white text-xs font-bold px-2.5 py-1.5 rounded-lg transition shadow-sm cursor-pointer"
             >
               <span className="leading-none font-bold">?</span>
               <span className="hidden sm:inline">Hướng dẫn</span>
@@ -516,8 +537,8 @@ export default function App() {
 
         {/* ── 3. Bố cục Desktop & Tablet (>= 768px) ── */}
         <div className="hidden md:flex flex-1 gap-3 p-3 overflow-hidden min-h-0">
-          {/* Bản đồ sân bay bọc Error Boundary */}
-          <div className="flex-1 min-w-0 min-h-0 relative">
+          {/* Bản đồ sân bay bọc Error Boundary & Card sáng */}
+          <div className="flex-1 min-w-0 min-h-0 relative bg-white rounded-xl border border-[#E6ECF0] shadow-sm p-1 flex flex-col">
             <ErrorBoundary name="Bản đồ sân bay" fallbackTitle="Lỗi hiển thị bản đồ">
               <AirportMap
                 state={simState}
@@ -535,7 +556,7 @@ export default function App() {
           <div className="w-80 lg:w-96 flex-shrink-0 flex flex-col gap-3 overflow-y-auto">
             <ErrorBoundary name="Thanh điều khiển bên phải" fallbackTitle="Lỗi bảng điều khiển">
               {/* Tab Switcher */}
-              <div className="flex bg-[#111620] p-1 rounded-xl border border-[#1e2838]">
+              <div className="flex bg-[#E2E8F0] p-1 rounded-xl">
                 <button
                   data-testid="desktop-tab-control"
                   onClick={() => {
@@ -546,8 +567,8 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
                     desktopTab === 'control'
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#0D254C] text-white shadow-sm'
+                      : 'text-[#475569] hover:text-[#0D254C]'
                   }`}
                 >
                   Điều khiển
@@ -557,8 +578,8 @@ export default function App() {
                   onClick={() => setDesktopTab('scenarios')}
                   className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
                     desktopTab === 'scenarios'
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'text-gray-400 hover:text-white'
+                      ? 'bg-[#0D254C] text-white shadow-sm'
+                      : 'text-[#475569] hover:text-[#0D254C]'
                   }`}
                 >
                   Kịch bản mẫu
@@ -624,9 +645,9 @@ export default function App() {
           </div>
 
           {/* Mobile Bottom Dock / Bottom Sheet */}
-          <div className="w-full bg-[#111620] border-t border-[#1e2838] flex flex-col z-30 shadow-2xl flex-shrink-0">
+          <div className="w-full bg-white border-t border-[#E2E8F0] flex flex-col z-30 shadow-2xl flex-shrink-0">
             {/* Header Tab Bar của Mobile Bottom Sheet */}
-            <div className="flex items-center justify-between p-1.5 bg-[#0a0e14] border-b border-[#1e2838]">
+            <div className="flex items-center justify-between p-1.5 bg-[#F8FAFC] border-b border-[#E2E8F0]">
               <div className="flex flex-1 gap-1">
                 <button
                   data-testid="mobile-tab-control"
@@ -639,8 +660,8 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
                     mobileTab === 'control' && sheetExpanded
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'text-gray-400 hover:text-gray-200'
+                      ? 'bg-[#0D254C] text-white shadow-sm'
+                      : 'text-[#64748B] hover:text-[#0D254C]'
                   }`}
                 >
                   Điều khiển
@@ -653,13 +674,13 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
                     mobileTab === 'status' && sheetExpanded
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'text-gray-400 hover:text-gray-200'
+                      ? 'bg-[#0D254C] text-white shadow-sm'
+                      : 'text-[#64748B] hover:text-[#0D254C]'
                   }`}
                 >
                   Trực tiếp
                   {simState.isRunning && (
-                    <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping ml-1" />
+                    <span className="w-2 h-2 rounded-full bg-[#16845B] animate-ping ml-1" />
                   )}
                 </button>
                 <button
@@ -670,8 +691,8 @@ export default function App() {
                   }}
                   className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
                     mobileTab === 'scenarios' && sheetExpanded
-                      ? 'bg-blue-600 text-white shadow'
-                      : 'text-gray-400 hover:text-gray-200'
+                      ? 'bg-[#0D254C] text-white shadow-sm'
+                      : 'text-[#64748B] hover:text-[#0D254C]'
                   }`}
                 >
                   Kịch bản mẫu
@@ -681,7 +702,7 @@ export default function App() {
               {/* Nút Thu gọn / Mở rộng Bottom Sheet */}
               <button
                 onClick={() => setSheetExpanded(v => !v)}
-                className="ml-2 px-2.5 py-1.5 rounded-lg bg-[#151c28] hover:bg-[#1e2838] text-gray-300 text-xs font-bold border border-[#223044] transition flex items-center gap-1 cursor-pointer"
+                className="ml-2 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] text-[#334155] text-xs font-bold border border-[#CBD5E1] transition flex items-center gap-1 cursor-pointer shadow-2xs"
                 title={sheetExpanded ? 'Thu gọn bảng điều khiển' : 'Mở rộng bảng điều khiển'}
                 aria-label={sheetExpanded ? 'Thu gọn' : 'Mở rộng'}
               >
@@ -693,16 +714,16 @@ export default function App() {
             {!sheetExpanded && (
               <div
                 onClick={() => setSheetExpanded(true)}
-                className="flex items-center justify-between px-3 py-2 bg-[#111620] cursor-pointer hover:bg-[#151c28] transition"
+                className="flex items-center justify-between px-3 py-2 bg-[#F8FAFC] cursor-pointer hover:bg-[#F1F5F9] transition"
               >
                 <div className="flex items-center gap-2 font-mono text-xs">
-                  <span className="text-cyan-300 font-bold">{activeAircraft?.callsign || 'VN001'}</span>
-                  <span className="text-gray-500">|</span>
-                  <span className="text-green-400 font-semibold">{activeAircraft?.speedKts.toFixed(0) || 0} kts</span>
-                  <span className="text-gray-500">|</span>
-                  <span className="text-amber-400 font-bold uppercase">{activeAircraft?.status || 'PARKED'}</span>
+                  <span className="text-[#0D254C] font-bold">{activeAircraft?.callsign || 'VN001'}</span>
+                  <span className="text-[#CBD5E1]">|</span>
+                  <span className="text-[#16845B] font-bold">{activeAircraft?.speedKts.toFixed(0) || 0} kts</span>
+                  <span className="text-[#CBD5E1]">|</span>
+                  <span className="text-[#D97706] font-bold uppercase">{activeAircraft?.status || 'PARKED'}</span>
                 </div>
-                <span className="text-xs text-blue-400 font-semibold flex items-center gap-1">
+                <span className="text-xs text-[#1C67DA] font-bold flex items-center gap-1">
                   Chạm để mở rộng ▲
                 </span>
               </div>
@@ -710,7 +731,7 @@ export default function App() {
 
             {/* Nội dung Tab Panel */}
             {sheetExpanded && (
-              <div className="max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3">
+              <div className="max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F4F6F9]">
                 <ErrorBoundary name="Bảng điều khiển Mobile" fallbackTitle="Lỗi bảng điều khiển">
                   {mobileTab === 'control' && (
                     <>
