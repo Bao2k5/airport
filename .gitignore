@@ -25,5 +25,6 @@ dist-ssr
 
 .vercel
 scratch/
+test_screenshots/
 *.backup*
 *.proposed.json

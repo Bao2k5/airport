@@ -8,10 +8,11 @@
 //      - Full route from start to destination is rendered clearly in Cyan (#00e5ff, #0284c7).
 //      - Independent aircraft movement and markers for all fleet instances.
 
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { airportGraph, SVG_WIDTH, SVG_HEIGHT } from '../data/airportGraph';
 import AirportLighting from './AirportLighting';
 import { getAirlineDef } from '../data/airlineTypes';
+import { loadImageWithRetry, type AssetLoadState } from '../utils/assetLoader';
 import type { AirportGraph, Aircraft, SimulationState } from '../types';
 
 interface Props {
@@ -29,7 +30,7 @@ const BG_OUTER = '#0c0f12';
 const GUIDANCE_WINDOW_PX = 100;
 const GUIDANCE_MAX_NODES = 4;
 
-export default function AirportMap({
+function AirportMap({
   state,
   graph = airportGraph,
   bgImage = '/anhtren.png',
@@ -47,6 +48,27 @@ export default function AirportMap({
   const isFog = state.config.weather === 'fog';
   const isRain = state.config.weather === 'rain';
   const isThunderstorm = state.config.weather === 'thunderstorm';
+
+  // ── Asset Loading & Retry State ──────────────────────────────────────────
+  const [bgLoadState, setBgLoadState] = useState<AssetLoadState>({
+    status: 'loading',
+    retryCount: 0,
+    maxRetries: 3,
+  });
+
+  const loadBg = useCallback((src: string) => {
+    loadImageWithRetry(src, {
+      maxRetries: 3,
+      initialDelayMs: 500,
+      onStatusChange: (s) => setBgLoadState(s),
+    }).catch(err => {
+      console.warn('[AirportMap] Image load failed:', err);
+    });
+  }, []);
+
+  useEffect(() => {
+    loadBg(bgImage);
+  }, [bgImage, loadBg]);
 
   // ── Continuous animation clock for Follow-the-Green pulsing ──────────────────
   const [animPhase, setAnimPhase] = useState(0);
@@ -68,70 +90,127 @@ export default function AirportMap({
     };
   }, [state.isRunning, state.isPaused]);
 
-  // ── Pan / zoom (viewBox-based) ────────────────────────────────────────────────
+  // ── Pan / zoom (viewBox-based with 1-finger drag & 2-finger pinch zoom) ──
   const svgRef = useRef<SVGSVGElement | null>(null);
   const [view, setView] = useState({ x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT });
   const [dragging, setDragging] = useState(false);
-  const drag = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
+  const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
+  const dragRef = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
+  const pinchRef = useRef<{ initialDist: number; lastDist: number; lastView: { x: number; y: number; w: number; h: number } } | null>(null);
+
   const ASPECT = SVG_HEIGHT / SVG_WIDTH;
   const MIN_W = SVG_WIDTH * 0.12;
   const MAX_W = SVG_WIDTH;
 
-  const clampView = (v: { x: number; y: number; w: number; h: number }) => {
+  const clampView = useCallback((v: { x: number; y: number; w: number; h: number }) => {
     const w = Math.min(MAX_W, Math.max(MIN_W, v.w));
     const h = w * ASPECT;
     const x = Math.min(SVG_WIDTH - w, Math.max(0, v.x));
     const y = Math.min(SVG_HEIGHT - h, Math.max(0, v.y));
     return { x, y, w, h };
-  };
+  }, [ASPECT, MIN_W, MAX_W]);
 
-  const zoomAt = (clientX: number, clientY: number, factor: number) => {
+  const zoomAt = useCallback((clientX: number, clientY: number, factor: number) => {
     const svg = svgRef.current;
     if (!svg) return;
     const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
     setView(v => {
       const w = Math.min(MAX_W, Math.max(MIN_W, v.w * factor));
       const h = w * ASPECT;
-      const fx = (clientX - rect.left) / rect.width;
-      const fy = (clientY - rect.top) / rect.height;
+      const fx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const fy = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
       const sx = v.x + fx * v.w;
       const sy = v.y + fy * v.h;
       return clampView({ x: sx - fx * w, y: sy - fy * h, w, h });
     });
-  };
+  }, [clampView, ASPECT, MIN_W, MAX_W]);
 
   useEffect(() => {
     const svg = svgRef.current;
     if (!svg) return;
     const onWheel = (e: WheelEvent) => {
       e.preventDefault();
-      zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1 / 1.15 : 1.15);
+      zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1 / 1.2 : 1.2);
     };
     svg.addEventListener('wheel', onWheel, { passive: false });
     return () => svg.removeEventListener('wheel', onWheel);
-  }, []);
+  }, [zoomAt]);
 
   const onPointerDown = (e: React.PointerEvent<SVGSVGElement>) => {
-    if (e.button !== 0) return;
-    drag.current = { px: e.clientX, py: e.clientY, vx: view.x, vy: view.y };
-    setDragging(true);
-    svgRef.current?.setPointerCapture(e.pointerId);
+    if (e.button !== 0 && e.pointerType === 'mouse') return;
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
+    try {
+      (e.target as Element)?.setPointerCapture?.(e.pointerId);
+    } catch {
+      // Ignore if pointer capture fails
+    }
+
+    if (pointersRef.current.size === 1) {
+      dragRef.current = { px: e.clientX, py: e.clientY, vx: view.x, vy: view.y };
+      pinchRef.current = null;
+      setDragging(true);
+    } else if (pointersRef.current.size === 2) {
+      const pts = Array.from(pointersRef.current.values());
+      const dist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      pinchRef.current = {
+        initialDist: dist,
+        lastDist: dist,
+        lastView: { ...view },
+      };
+      dragRef.current = null;
+      setDragging(false);
+    }
   };
+
   const onPointerMove = (e: React.PointerEvent<SVGSVGElement>) => {
-    const d = drag.current;
+    if (!pointersRef.current.has(e.pointerId)) return;
+    pointersRef.current.set(e.pointerId, { x: e.clientX, y: e.clientY });
     const svg = svgRef.current;
-    if (!d || !svg) return;
+    if (!svg) return;
     const rect = svg.getBoundingClientRect();
-    setView(v => clampView({
-      ...v,
-      x: d.vx - (e.clientX - d.px) / rect.width * v.w,
-      y: d.vy - (e.clientY - d.py) / rect.height * v.h,
-    }));
+    if (rect.width <= 0 || rect.height <= 0) return;
+
+    if (pointersRef.current.size === 1 && dragRef.current) {
+      const d = dragRef.current;
+      const dx = (e.clientX - d.px) / rect.width * view.w;
+      const dy = (e.clientY - d.py) / rect.height * view.h;
+      setView(v => clampView({
+        ...v,
+        x: d.vx - dx,
+        y: d.vy - dy,
+      }));
+    } else if (pointersRef.current.size === 2 && pinchRef.current) {
+      const pts = Array.from(pointersRef.current.values());
+      const currDist = Math.hypot(pts[0].x - pts[1].x, pts[0].y - pts[1].y);
+      if (currDist > 10 && pinchRef.current.lastDist > 10) {
+        const midX = (pts[0].x + pts[1].x) / 2;
+        const midY = (pts[0].y + pts[1].y) / 2;
+        const factor = pinchRef.current.lastDist / currDist;
+        zoomAt(midX, midY, factor);
+        pinchRef.current.lastDist = currDist;
+      }
+    }
   };
-  const endDrag = (e: React.PointerEvent<SVGSVGElement>) => {
-    drag.current = null;
-    setDragging(false);
-    try { svgRef.current?.releasePointerCapture(e.pointerId); } catch { /* noop */ }
+
+  const onPointerUp = (e: React.PointerEvent<SVGSVGElement>) => {
+    pointersRef.current.delete(e.pointerId);
+    try {
+      (e.target as Element)?.releasePointerCapture?.(e.pointerId);
+    } catch {
+      // Ignore
+    }
+
+    if (pointersRef.current.size === 1) {
+      const remaining = Array.from(pointersRef.current.values())[0];
+      dragRef.current = { px: remaining.x, py: remaining.y, vx: view.x, vy: view.y };
+      pinchRef.current = null;
+      setDragging(true);
+    } else if (pointersRef.current.size === 0) {
+      dragRef.current = null;
+      pinchRef.current = null;
+      setDragging(false);
+    }
   };
 
   const zoomed = view.w < SVG_WIDTH - 0.5;
@@ -148,7 +227,7 @@ export default function AirportMap({
 
   return (
     <div
-      className="relative w-full h-full rounded-xl overflow-hidden border border-[#223044]"
+      className="relative w-full h-full rounded-xl overflow-hidden border border-[#223044] touch-none select-none"
       style={{ background: isNight ? '#0a0e18' : isAfternoon ? '#dfc98a' : BG_OUTER }}
     >
       {isAfternoon && (
@@ -186,11 +265,32 @@ export default function AirportMap({
         </>
       )}
 
+      {/* ── Asset Retry & Error Overlays ── */}
+      {bgLoadState.status === 'retrying' && (
+        <div className="absolute top-3 left-3 z-30 bg-amber-950/90 border border-amber-600/80 text-amber-200 text-xs px-3 py-1.5 rounded-lg shadow-lg flex items-center gap-2">
+          <span className="w-2 h-2 rounded-full bg-amber-400 animate-ping" />
+          <span>{bgLoadState.errorMessage || `Đang thử tải lại ảnh nền... (Lần ${bgLoadState.retryCount}/${bgLoadState.maxRetries})`}</span>
+        </div>
+      )}
+
+      {bgLoadState.status === 'error' && (
+        <div className="absolute top-3 left-3 z-30 bg-red-950/95 border border-red-600 text-red-100 text-xs p-2.5 rounded-xl shadow-2xl flex items-center gap-2 max-w-sm">
+          <span>⚠️</span>
+          <span className="flex-1 font-semibold">{bgLoadState.errorMessage || 'Không thể tải ảnh nền bản đồ.'}</span>
+          <button
+            onClick={() => loadBg(bgImage)}
+            className="px-2.5 py-1 bg-red-800 hover:bg-red-700 active:bg-red-900 text-white font-bold rounded-lg transition min-h-[36px] flex items-center gap-1 cursor-pointer"
+          >
+            ↺ Thử lại
+          </button>
+        </div>
+      )}
+
       <svg
         ref={svgRef}
         viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
         className="w-full h-full"
-        preserveAspectRatio="none"
+        preserveAspectRatio="xMidYMid meet"
         shapeRendering="geometricPrecision"
         style={{
           fontFamily: 'Arial, Helvetica, sans-serif',
@@ -199,8 +299,9 @@ export default function AirportMap({
         }}
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
-        onPointerUp={endDrag}
-        onPointerLeave={endDrag}
+        onPointerUp={onPointerUp}
+        onPointerCancel={onPointerUp}
+        onPointerLeave={onPointerUp}
       >
         <defs>
           <filter id="glow-aircraft" x="-50%" y="-50%" width="200%" height="200%">
@@ -472,29 +573,32 @@ export default function AirportMap({
         })}
       </svg>
 
-      {/* ── Zoom controls ─────────────────────────────────────────────── */}
-      <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1 select-none">
+      {/* ── Zoom controls (Touch-friendly min 44x44px) ───────────────── */}
+      <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1.5 select-none">
         <button
           onClick={() => {
             const r = svgRef.current!.getBoundingClientRect();
             zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1 / 1.4);
           }}
-          className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-lg font-bold leading-none border border-gray-600 shadow"
+          className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-xl bg-gray-900/90 hover:bg-gray-700 active:bg-blue-600 text-white text-xl font-bold leading-none border border-gray-600 shadow-xl backdrop-blur flex items-center justify-center transition cursor-pointer"
           title="Phóng to"
+          aria-label="Phóng to"
         >+</button>
         <button
           onClick={() => {
             const r = svgRef.current!.getBoundingClientRect();
             zoomAt(r.left + r.width / 2, r.top + r.height / 2, 1.4);
           }}
-          className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-lg font-bold leading-none border border-gray-600 shadow"
+          className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-xl bg-gray-900/90 hover:bg-gray-700 active:bg-blue-600 text-white text-xl font-bold leading-none border border-gray-600 shadow-xl backdrop-blur flex items-center justify-center transition cursor-pointer"
           title="Thu nhỏ"
+          aria-label="Thu nhỏ"
         >−</button>
         {zoomed && (
           <button
             onClick={() => setView({ x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT })}
-            className="w-8 h-8 rounded-md bg-gray-900/80 hover:bg-gray-700 text-white text-xs font-bold leading-none border border-gray-600 shadow"
+            className="w-11 h-11 min-h-[44px] min-w-[44px] rounded-xl bg-gray-900/90 hover:bg-gray-700 active:bg-blue-600 text-white text-sm font-bold leading-none border border-gray-600 shadow-xl backdrop-blur flex items-center justify-center transition cursor-pointer"
             title="Xem toàn bộ"
+            aria-label="Xem toàn bộ"
           >⤢</button>
         )}
       </div>
@@ -801,20 +905,25 @@ function AircraftIcon({
 
   return (
     <g transform={`translate(${x},${y})`}>
+      {/* Invisible broad touch hit area for easy tapping on mobile */}
+      <circle cx={0} cy={0} r={34 * scale} fill="transparent" pointerEvents="all" />
+
       {isSelected && (
         <g>
-          <circle cx={0} cy={0} r={28 * scale} fill="rgba(56, 189, 248, 0.2)" stroke="#38bdf8" strokeWidth={2.5} strokeDasharray="5,3" opacity={0.95} />
-          <circle cx={0} cy={0} r={33 * scale} fill="none" stroke="#00e5ff" strokeWidth={1} opacity={0.6} />
+          {/* Distinct high-contrast glowing halo for selected aircraft */}
+          <circle cx={0} cy={0} r={30 * scale} fill="rgba(56, 189, 248, 0.28)" stroke="#38bdf8" strokeWidth={2.8} strokeDasharray="6,4" opacity={0.95} />
+          <circle cx={0} cy={0} r={38 * scale} fill="none" stroke="#00e5ff" strokeWidth={1.8} opacity={0.8} />
+          <circle cx={0} cy={0} r={22 * scale} fill="rgba(0, 229, 255, 0.15)" stroke="#67e8f9" strokeWidth={1.2} />
         </g>
       )}
       {isEmergency && (
-        <circle cx={0} cy={0} r={26 * scale} fill="none" stroke="#ef4444" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+        <circle cx={0} cy={0} r={28 * scale} fill="none" stroke="#ef4444" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
       )}
       {isDeviated && (
-        <circle cx={0} cy={0} r={26 * scale} fill="none" stroke="#f97316" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+        <circle cx={0} cy={0} r={28 * scale} fill="none" stroke="#f97316" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
       )}
       {isRadioFailure && (
-        <circle cx={0} cy={0} r={26 * scale} fill="none" stroke="#c084fc" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+        <circle cx={0} cy={0} r={28 * scale} fill="none" stroke="#c084fc" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
       )}
       <g transform={`rotate(${rotationDeg})`} filter="url(#glow-aircraft)">
         <image
@@ -893,3 +1002,5 @@ function getPositionForAircraft(aircraft: Aircraft | null, graph: AirportGraph =
 
   return null;
 }
+
+export default memo(AirportMap);

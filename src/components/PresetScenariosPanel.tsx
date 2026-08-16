@@ -2,6 +2,7 @@ import { useState } from 'react';
 import type { ScenarioState, ScenarioObservation } from '../data/presetScenarios';
 import { getPresetScenarioDefs } from '../data/presetScenarios';
 import { airportGraph } from '../data/airportGraph';
+import { useActionLock } from '../utils/useActionLock';
 import type { AirportGraph, SimulationState } from '../types';
 
 interface Props {
@@ -19,6 +20,7 @@ export default function PresetScenariosPanel({
   onExitScenario,
   graph = airportGraph,
 }: Props) {
+  const { executeAction, getActionState } = useActionLock(2000);
   const [showList, setShowList] = useState(false);
   const [selectedId, setSelectedId] = useState<string>('emergency_priority');
 
@@ -73,16 +75,22 @@ export default function PresetScenariosPanel({
           {/* Action controls */}
           <div className="flex gap-2">
             <button
-              onClick={() => onStartScenario(currentScenarioState.id)}
-              className="flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-blue-700 hover:bg-blue-600 text-white transition shadow-sm"
+              onClick={() => executeAction('rerun_scenario', () => onStartScenario(currentScenarioState.id))}
+              disabled={getActionState('rerun_scenario').isPending}
+              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-blue-700 hover:bg-blue-600 active:bg-blue-800 disabled:bg-gray-700 text-white transition shadow-md min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              ↺ Chạy lại
+              <span>{getActionState('rerun_scenario').isPending ? '⏳' : '↺'}</span>
+              {getActionState('rerun_scenario').isPending
+                ? 'Đang xử lý…'
+                : getActionState('rerun_scenario').canRetry
+                ? 'Thử lại'
+                : 'Chạy lại'}
             </button>
             <button
               onClick={() => setShowList(true)}
-              className="flex-1 text-xs font-semibold px-2.5 py-1.5 rounded-lg bg-[#0d1318] border border-[#1e2838] hover:border-blue-600 text-gray-200 transition"
+              className="flex-1 text-xs sm:text-sm font-semibold px-3 py-2.5 rounded-xl bg-[#0d1318] border border-[#1e2838] hover:border-blue-600 text-gray-200 transition min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
-              ≡ Đổi kịch bản
+              <span>≡</span> Đổi kịch bản
             </button>
           </div>
 
@@ -189,7 +197,7 @@ export default function PresetScenariosPanel({
             <div className="text-xs font-bold uppercase tracking-wider text-gray-400">
               NHẬT KÝ SỰ KIỆN ({currentScenarioState.events.length})
             </div>
-            <div className="flex flex-col gap-1.5 max-h-40 overflow-y-auto pr-1 font-mono text-[11px]">
+            <div className="flex flex-col gap-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1 font-mono text-[11px] bg-[#0a0e14] p-2 rounded-xl border border-[#1e2838]">
               {currentScenarioState.events.slice().reverse().map((evt: any, idx: number) => (
                 <div key={idx} className="flex items-start gap-1.5 text-gray-300">
                   <span className="text-gray-500 font-bold flex-shrink-0">[{formatTime(evt.atSeconds)}]</span>
@@ -222,16 +230,16 @@ export default function PresetScenariosPanel({
                 <div
                   key={def.id}
                   onClick={() => setSelectedId(def.id)}
-                  className={`p-3 rounded-xl border cursor-pointer transition flex flex-col gap-1.5 ${
+                  className={`p-3 rounded-xl border cursor-pointer transition flex flex-col gap-1.5 min-h-[56px] ${
                     isSelected
-                      ? 'bg-blue-950/40 border-blue-500 shadow-md'
+                      ? 'bg-blue-950/50 border-blue-500 shadow-md ring-1 ring-blue-500/50'
                       : 'bg-[#0d1318] border-[#1e2838] hover:border-gray-600'
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <span className="font-bold text-white text-xs">{def.title}</span>
+                    <span className="font-bold text-white text-xs sm:text-sm">{def.title}</span>
                     {isSelected && (
-                      <span className="text-[10px] px-1.5 py-0.2 rounded bg-blue-600 text-white font-bold">
+                      <span className="text-[10px] px-2 py-0.5 rounded bg-blue-600 text-white font-bold">
                         Đang chọn
                       </span>
                     )}
@@ -242,20 +250,26 @@ export default function PresetScenariosPanel({
             })}
           </div>
 
-          <div className="flex gap-2 pt-2 border-t border-[#1e2838]">
+          <div className="flex gap-2 pt-2 pb-1 border-t border-[#1e2838] sticky bottom-0 bg-[#111620] z-10">
             <button
-              onClick={() => {
+              onClick={() => executeAction('start_scenario', async () => {
                 setShowList(false);
                 onStartScenario(selectedId);
-              }}
-              className="flex-1 py-2 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs transition shadow-md"
+              })}
+              disabled={getActionState('start_scenario').isPending}
+              className="flex-1 py-3 px-4 rounded-xl bg-blue-600 hover:bg-blue-500 active:bg-blue-700 disabled:bg-gray-700 text-white font-bold text-sm transition shadow-lg min-h-[48px] flex items-center justify-center gap-2 cursor-pointer"
             >
-              ▶ Bắt đầu mô phỏng kịch bản này
+              <span>{getActionState('start_scenario').isPending ? '⏳' : '▶'}</span>
+              {getActionState('start_scenario').isPending
+                ? 'Đang xử lý…'
+                : getActionState('start_scenario').canRetry
+                ? 'Thử lại bắt đầu'
+                : 'Bắt đầu mô phỏng kịch bản này'}
             </button>
             {showList && currentScenarioState && (
               <button
                 onClick={() => setShowList(false)}
-                className="py-2 px-3 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs transition"
+                className="py-2.5 px-3.5 rounded-xl bg-gray-800 hover:bg-gray-700 text-gray-300 font-bold text-xs sm:text-sm transition min-h-[44px] flex items-center justify-center cursor-pointer"
               >
                 Quay lại
               </button>
