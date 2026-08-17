@@ -422,6 +422,7 @@ function AirportMap({
               animPhase={animPhase}
               isScenario={isScenario}
               isSelected={ac.id === (state.selectedAircraftId || state.aircraft?.id)}
+              blockedEdgeIds={state.blockedEdgeIds}
             />
           ))}
         </g>
@@ -601,6 +602,7 @@ interface GuidanceDot {
 function computeSegmentedGuidanceDots(
   aircraft: Aircraft,
   graph: AirportGraph,
+  blockedEdgeIds: Set<string> = new Set(),
 ): { activeDots: GuidanceDot[]; previewDots: GuidanceDot[] } | null {
   if (!aircraft.assignedRoute || aircraft.assignedRoute.length < 2) return null;
   if (aircraft.routeEdgeIndex >= aircraft.assignedRoute.length - 1) return null;
@@ -608,6 +610,16 @@ function computeSegmentedGuidanceDots(
   const fromNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex]);
   const toNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 1]);
   if (!fromNode || !toNode) return null;
+
+  const currentEdge = graph.edges.find(
+    e => (e.fromNodeId === fromNode.id && e.toNodeId === toNode.id) ||
+         (e.bidirectional && e.fromNodeId === toNode.id && e.toNodeId === fromNode.id)
+  );
+
+  // If current edge is blocked, extinguish guidance
+  if (currentEdge && blockedEdgeIds.has(currentEdge.id)) {
+    return null;
+  }
 
   const dx = toNode.x - fromNode.x;
   const dy = toNode.y - fromNode.y;
@@ -634,19 +646,27 @@ function computeSegmentedGuidanceDots(
   if (prog >= 0.75 && aircraft.routeEdgeIndex + 1 < aircraft.assignedRoute.length - 1) {
     const nextToNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 2]);
     if (nextToNode) {
-      const ndx = nextToNode.x - toNode.x;
-      const ndy = nextToNode.y - toNode.y;
-      const nextEdgePixelLen = Math.hypot(ndx, ndy) || 1;
-      const nextDotCount = Math.max(1, Math.round(nextEdgePixelLen / 16));
-      const maxPreviewCount = Math.min(3, Math.max(1, Math.ceil(nextDotCount * 0.25)));
+      const nextEdge = graph.edges.find(
+        e => (e.fromNodeId === toNode.id && e.toNodeId === nextToNode.id) ||
+             (e.bidirectional && e.fromNodeId === nextToNode.id && e.toNodeId === toNode.id)
+      );
 
-      for (let i = 1; i <= maxPreviewCount; i++) {
-        const r = i / nextDotCount;
-        previewDots.push({
-          x: toNode.x + ndx * r,
-          y: toNode.y + ndy * r,
-          isPreview: true,
-        });
+      // Only show preview if next edge is NOT blocked
+      if (!nextEdge || !blockedEdgeIds.has(nextEdge.id)) {
+        const ndx = nextToNode.x - toNode.x;
+        const ndy = nextToNode.y - toNode.y;
+        const nextEdgePixelLen = Math.hypot(ndx, ndy) || 1;
+        const nextDotCount = Math.max(1, Math.round(nextEdgePixelLen / 16));
+        const maxPreviewCount = Math.min(3, Math.max(1, Math.ceil(nextDotCount * 0.25)));
+
+        for (let i = 1; i <= maxPreviewCount; i++) {
+          const r = i / nextDotCount;
+          previewDots.push({
+            x: toNode.x + ndx * r,
+            y: toNode.y + ndy * r,
+            isPreview: true,
+          });
+        }
       }
     }
   }
@@ -658,15 +678,17 @@ function computeSegmentedGuidanceDots(
 function FollowTheGreenRenderer({
   aircraft,
   graph,
-  animPhase: _animPhase,
+  animPhase = 0,
   isScenario = false,
   isSelected = false,
+  blockedEdgeIds = new Set(),
 }: {
   aircraft: Aircraft;
   graph: AirportGraph;
   animPhase?: number;
   isScenario?: boolean;
   isSelected?: boolean;
+  blockedEdgeIds?: Set<string>;
 }) {
   // STRICT RULE: Do not show guidance when aircraft is parked, arrived, departed, or before starting in manual mode
   if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed') {
@@ -676,7 +698,7 @@ function FollowTheGreenRenderer({
     return null;
   }
 
-  const guidance = computeSegmentedGuidanceDots(aircraft, graph);
+  const guidance = computeSegmentedGuidanceDots(aircraft, graph, blockedEdgeIds);
   if (!guidance || (guidance.activeDots.length === 0 && guidance.previewDots.length === 0)) return null;
 
   return (
@@ -689,25 +711,33 @@ function FollowTheGreenRenderer({
       }}
     >
       {/* 1. Active Edge Guidance Dots (In front of aircraft nose) */}
-      {guidance.activeDots.map((dot, idx) => (
-        <g key={`ftg-act-${aircraft.id}-${idx}`} className="guidance-dot">
-          {/* Outer radial halo circle */}
-          <circle cx={dot.x} cy={dot.y} r={6.5} fill="url(#neon-lead-green)" />
-          {/* Main green body */}
-          <circle cx={dot.x} cy={dot.y} r={3.0} fill="#22c55e" />
-          {/* Bright core center */}
-          <circle cx={dot.x} cy={dot.y} r={1.3} fill="#f0fff6" />
-        </g>
-      ))}
+      {guidance.activeDots.map((dot, idx) => {
+        const phase = animPhase * 3 + idx * 0.45;
+        const pulse = 0.86 + 0.18 * Math.sin(phase);
+        return (
+          <g key={`ftg-act-${aircraft.id}-${idx}`} className="guidance-dot">
+            {/* Outer radial halo circle */}
+            <circle cx={dot.x} cy={dot.y} r={6.5 * pulse} fill="url(#neon-lead-green)" opacity={0.92} />
+            {/* Main green body */}
+            <circle cx={dot.x} cy={dot.y} r={3.0 * pulse} fill="#22c55e" />
+            {/* Bright core center */}
+            <circle cx={dot.x} cy={dot.y} r={1.3} fill="#f0fff6" />
+          </g>
+        );
+      })}
 
       {/* 2. Next Edge Preview Dots (When progressOnEdge >= 0.75, first 2-3 dots) */}
-      {guidance.previewDots.map((dot, idx) => (
-        <g key={`ftg-prev-${aircraft.id}-${idx}`} opacity={0.65} className="guidance-dot-preview">
-          <circle cx={dot.x} cy={dot.y} r={5.5} fill="url(#neon-lead-green)" />
-          <circle cx={dot.x} cy={dot.y} r={2.5} fill="#22c55e" />
-          <circle cx={dot.x} cy={dot.y} r={1.1} fill="#f0fff6" />
-        </g>
-      ))}
+      {guidance.previewDots.map((dot, idx) => {
+        const phase = animPhase * 3 + (idx + 4) * 0.45;
+        const pulse = 0.85 + 0.15 * Math.sin(phase);
+        return (
+          <g key={`ftg-prev-${aircraft.id}-${idx}`} opacity={0.65} className="guidance-dot-preview">
+            <circle cx={dot.x} cy={dot.y} r={5.5 * pulse} fill="url(#neon-lead-green)" />
+            <circle cx={dot.x} cy={dot.y} r={2.5 * pulse} fill="#22c55e" />
+            <circle cx={dot.x} cy={dot.y} r={1.1} fill="#f0fff6" />
+          </g>
+        );
+      })}
     </g>
   );
 }
