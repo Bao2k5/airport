@@ -26,7 +26,8 @@ export type AircraftStatus =
   | 'holding'
   | 'stopped'
   | 'arrived'
-  | 'departed';
+  | 'departed'
+  | 'queued';
 
 export type WeatherCondition = 'clear' | 'rain' | 'fog' | 'thunderstorm';
 
@@ -94,6 +95,8 @@ export interface Aircraft {
   deviated?: boolean;
   holdReason?: string;
   releaseAtSeconds?: number;
+  queueOrder?: number;
+  queueRunway?: 'NORTH' | 'SOUTH';
   role?: string;
   scenarioLabel?: string;
 }

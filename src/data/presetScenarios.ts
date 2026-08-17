@@ -27,6 +27,8 @@ export interface ScenarioAircraft {
   deviated?: boolean;
   holdReason?: 'stop-bar' | 'separation' | 'deviation';
   heldSeconds?: number;
+  queueOrder?: number;
+  queueRunway?: 'NORTH' | 'SOUTH';
 }
 
 export interface ScenarioEvent {
@@ -65,6 +67,13 @@ export interface ScenarioState {
   completed: boolean;
 }
 
+export interface QueuedAircraftEntry {
+  id: string;
+  runway: 'NORTH' | 'SOUTH';
+  order: number;
+  releaseDelaySeconds?: number;
+}
+
 export interface PresetScenarioDef {
   id: string;
   title: string;
@@ -72,11 +81,13 @@ export interface PresetScenarioDef {
   situation: string;
   challenges: string[];
   watchFor: string[];
+  aircraftQueue?: QueuedAircraftEntry[];
   observations?: ScenarioObservation[];
   setup: (graph?: AirportGraph) => {
     weather: 'clear' | 'fog' | 'thunderstorm';
     aircraft: ScenarioAircraft[];
     triggers: ScenarioTrigger[];
+    aircraftQueue?: QueuedAircraftEntry[];
     observations?: ScenarioObservation[];
   };
 }
@@ -91,6 +102,8 @@ export function createScenarioAircraft(
     priority?: number;
     label?: string;
     releaseAtSeconds?: number;
+    queueOrder?: number;
+    queueRunway?: 'NORTH' | 'SOUTH';
   },
   graph: AirportGraph = airportGraph
 ): ScenarioAircraft | null {
@@ -101,6 +114,8 @@ export function createScenarioAircraft(
   }
   const edges = routeToEdges(route, graph.edges) ?? [];
   const airlineDef = getAirlineDef(opts.callsign);
+  const isQueued = Boolean(opts.queueOrder && opts.queueOrder > 1);
+
   return {
     id: opts.id,
     callsign: opts.callsign,
@@ -112,7 +127,7 @@ export function createScenarioAircraft(
     currentEdgeId: edges[0] ?? null,
     progressOnEdge: 0,
     speedKts: 30,
-    status: 'taxiing',
+    status: isQueued ? 'queued' : 'taxiing',
     assignedRoute: route,
     routeEdgeIndex: 0,
     role: opts.role,
@@ -120,6 +135,8 @@ export function createScenarioAircraft(
     clearedRoute: route,
     scenarioLabel: opts.label,
     releaseAtSeconds: opts.releaseAtSeconds,
+    queueOrder: opts.queueOrder,
+    queueRunway: opts.queueRunway,
   };
 }
 

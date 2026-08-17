@@ -103,6 +103,26 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
 
   const blockedEdgeIds = getBlockedEdgeIds(config, graph);
 
+  const initialLogs: any[] = [
+    {
+      id: `sc_init_${scenarioId}`,
+      atSeconds: 0,
+      message: `Khởi chạy kịch bản: ${def.title}`,
+      severity: 'info',
+    },
+  ];
+
+  for (const ac of aircraft) {
+    if (ac.status === 'taxiing' && (!ac.queueOrder || ac.queueOrder === 1)) {
+      initialLogs.push({
+        id: `release_${ac.id}_0`,
+        atSeconds: 0,
+        message: `[AIRCRAFT_RELEASED] ${ac.callsign}`,
+        severity: 'info',
+      });
+    }
+  }
+
   return {
     aircraft: null,
     trafficAircraft: [],
@@ -116,14 +136,7 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
     lightStates: computeScenarioLightStates(aircraft, blockedEdgeIds, graph),
     blockedEdgeIds,
     runwayOccupancy: { NORTH: null, SOUTH: null },
-    liveEventLog: [
-      {
-        id: `sc_init_${scenarioId}`,
-        atSeconds: 0,
-        message: `Khởi chạy kịch bản: ${def.title}`,
-        severity: 'info',
-      },
-    ],
+    liveEventLog: initialLogs,
     scenario: scenarioState,
     scenarioAircraft: aircraft,
   };
@@ -138,6 +151,15 @@ function logScenarioEvent(state: SimulationState, msg: string, severity: 'info' 
       ...state.scenario,
       events: [...state.scenario.events, evt],
     },
+    liveEventLog: [
+      ...(state.liveEventLog || []),
+      {
+        id: `sc_evt_${state.elapsedSeconds}_${Math.random().toString(36).slice(2, 6)}`,
+        atSeconds: state.elapsedSeconds,
+        message: msg,
+        severity,
+      },
+    ],
   };
 }
 
@@ -161,8 +183,10 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
     }
   }
 
+  const clearedRunways: { corridor: 'NORTH' | 'SOUTH'; callsign: string; order?: number }[] = [];
+
   const scenarioAircraft = state.scenarioAircraft.map((ac: ScenarioAircraft) => {
-    if (ac.status === 'departed' || ac.status === 'arrived') return ac;
+    if (ac.status === 'departed' || ac.status === 'arrived' || ac.status === 'queued') return ac;
 
     // Check release delay
     if (ac.releaseAtSeconds !== undefined && elapsed < ac.releaseAtSeconds) {
@@ -210,6 +234,7 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
     if (currentCorridor && !targetCorridor) {
       if (currentOccupancy[currentCorridor] === ac.id) {
         currentOccupancy[currentCorridor] = null;
+        clearedRunways.push({ corridor: currentCorridor, callsign: ac.callsign, order: ac.queueOrder });
       }
     }
 
@@ -241,6 +266,10 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
       // Advance to next edge in route
       const nextIndex = ac.routeEdgeIndex + 1;
       if (nextIndex >= routeEdges.length) {
+        if (currentCorridor && currentOccupancy[currentCorridor] === ac.id) {
+          currentOccupancy[currentCorridor] = null;
+          clearedRunways.push({ corridor: currentCorridor, callsign: ac.callsign, order: ac.queueOrder });
+        }
         return {
           ...ac,
           routeEdgeIndex: nextIndex,
@@ -269,6 +298,30 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
     runwayOccupancy: currentOccupancy,
     elapsedSeconds: elapsed,
   };
+
+  // ── SEQUENTIAL AIRCRAFT RELEASE AFTER RUNWAY_CLEARED ──
+  for (const cleared of clearedRunways) {
+    nextState = logScenarioEvent(nextState, `[RUNWAY_CLEARED] ${cleared.corridor} by ${cleared.callsign}`, 'info');
+
+    // Find next queued aircraft for this runway
+    const nextInQueue = nextState.scenarioAircraft?.find(
+      (a: any) => a.status === 'queued' && (a.queueRunway === cleared.corridor || !a.queueRunway)
+    );
+
+    if (nextInQueue) {
+      nextState.scenarioAircraft = nextState.scenarioAircraft?.map((a: any) => {
+        if (a.id === nextInQueue.id) {
+          return {
+            ...a,
+            status: 'taxiing',
+            speedKts: 15,
+          };
+        }
+        return a;
+      });
+      nextState = logScenarioEvent(nextState, `[AIRCRAFT_RELEASED] ${nextInQueue.callsign}`, 'info');
+    }
+  }
 
   // Run pending scenario triggers
   if (nextState.scenario) {

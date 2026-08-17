@@ -215,6 +215,7 @@ function AirportMap({
 
   const allActiveAircraft: Aircraft[] = isScenario
     ? (state.scenarioAircraft ?? []).filter((ac: any) => {
+        if (ac.status === 'queued' || ac.hidden) return false;
         if (ac.releaseAtSeconds !== undefined && state.elapsedSeconds < ac.releaseAtSeconds) return false;
         if (ac.status === 'departed' || ac.status === 'arrived') return false;
         return true;
