@@ -273,7 +273,7 @@ export function createDefaultManualFleet(
       targetNodeId: spec.destId,
       currentEdgeId: routeEdgeIds ? routeEdgeIds[0] : null,
       progressOnEdge: 0,
-      speedKts: 15,
+      speedKts: 0,
       status: 'parked' as const,
       isMoving: false,
       routeVisible: false,
@@ -589,10 +589,10 @@ export type RunwayCorridor = 'NORTH' | 'SOUTH' | null;
 
 export function getRunwayCorridor(edgeId: string | null | undefined, nodeId?: string | null): RunwayCorridor {
   if (edgeId) {
-    if (edgeId.startsWith('RWY1_SEG_') || edgeId.includes('07L') || edgeId.includes('25R')) return 'NORTH';
-    if (edgeId.startsWith('RWY2_SEG_') || edgeId.includes('07R') || edgeId.includes('25L')) return 'SOUTH';
+    if (edgeId.startsWith('RWY1_SEG_')) return 'NORTH';
+    if (edgeId.startsWith('RWY2_SEG_')) return 'SOUTH';
   }
-  if (nodeId) {
+  if (nodeId && !edgeId) {
     if (['RWY07L_THR', 'RWY25R_THR', 'R1_W4', 'R1_MID_V2', 'R1_NS_ENTRY_V2', 'R1_NS'].includes(nodeId)) return 'NORTH';
     if (['RWY07R_THR', 'RWY25L_THR', 'R2_W11_ENTRY_V2', 'R2_W7', 'R2_W6_EXIT_V2', 'R2_W5', 'R2_W3', 'R2_NS2_V2', 'R2_E1_EXIT_V2', 'R2_E4', 'R2_W6_CROSS'].includes(nodeId)) return 'SOUTH';
   }

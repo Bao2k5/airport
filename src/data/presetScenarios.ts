@@ -2,6 +2,7 @@ import type { AircraftStatus, AirportGraph, AirlineCode } from '../types';
 import { airportGraph } from './airportGraph';
 import { getAirlineDef } from './airlineTypes';
 import { findPath, routeToEdges } from '../simulation/pathfinding';
+import { recalculateRoutePreservingProgress } from '../simulation/scenarioRunner';
 
 export interface ScenarioAircraft {
   id: string;
@@ -114,6 +115,7 @@ export function createScenarioAircraft(
   }
   const edges = routeToEdges(route, graph.edges) ?? [];
   const airlineDef = getAirlineDef(opts.callsign);
+  const isWaiting = Boolean(opts.releaseAtSeconds && opts.releaseAtSeconds > 0);
   const isQueued = Boolean(opts.queueOrder && opts.queueOrder > 1);
 
   return {
@@ -127,7 +129,7 @@ export function createScenarioAircraft(
     currentEdgeId: edges[0] ?? null,
     progressOnEdge: 0,
     speedKts: 30,
-    status: isQueued ? 'queued' : 'taxiing',
+    status: isQueued ? 'queued' : (isWaiting ? 'waiting' : 'taxiing'),
     assignedRoute: route,
     routeEdgeIndex: 0,
     role: opts.role,
@@ -163,6 +165,33 @@ export function findMostUsedEdge(aircraftList: ScenarioAircraft[], graph: Airpor
   return bestEdge;
 }
 
+export function generateDeviatedRoute(clearedRoute: string[], graph: AirportGraph = airportGraph): string[] | null {
+  if (clearedRoute.length < 4) return null;
+  const destination = clearedRoute[clearedRoute.length - 1];
+  for (let n = 1; n <= clearedRoute.length - 2; n++) {
+    const current = clearedRoute[n];
+    const nextExpected = clearedRoute[n + 1];
+    const prev = clearedRoute[n - 1];
+
+    const connectedEdges = graph.edges.filter(
+      e => (e.fromNodeId === current || (e.bidirectional && e.toNodeId === current))
+    );
+    for (const edge of connectedEdges) {
+      if (edge.type === 'runway') continue;
+      const neighbor = edge.fromNodeId === current ? edge.toNodeId : edge.fromNodeId;
+      if (neighbor === nextExpected || neighbor === prev) continue;
+
+      const prefix = clearedRoute.slice(0, n + 1);
+      const subRoute = findPath(graph, neighbor, destination, new Set([edge.id]));
+      if (subRoute && subRoute.length > 1) {
+        return [...prefix, ...subRoute];
+      }
+      return [...prefix, neighbor];
+    }
+  }
+  return null;
+}
+
 export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Record<string, PresetScenarioDef> {
   return {
     // ── KỊCH BẢN 1 ─────────────────────────────────────────────────────────────
@@ -182,23 +211,18 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         'Trong bảng Đội bay: VN9999 luôn "LĂN BÁNH", các tàu bay khác chuyển sang "GIỮ NGUYÊN".'
       ],
       setup: (g = graph) => {
-        const fromEmg = g.nodes.some(n => n.id === 'RWY07R_THR') ? 'RWY07R_THR' : g.nodes[0].id;
-        const toEmg = g.nodes.some(n => n.id === 'DOM_S1') ? 'DOM_S1' : (g.nodes.some(n => n.id === 'P1') ? 'P1' : g.nodes[1].id);
-        const from2 = g.nodes.some(n => n.id === 'DOM_S3') ? 'DOM_S3' : (g.nodes.some(n => n.id === 'P2') ? 'P2' : g.nodes[2].id);
-        const to2 = g.nodes.some(n => n.id === 'H07R') ? 'H07R' : (g.nodes.some(n => n.id === 'RWY07R_THR') ? 'RWY07R_THR' : g.nodes[0].id);
-
         const aircraft = filterNonNull([
-          createScenarioAircraft({ id: 'S1', callsign: 'VN9999', from: fromEmg, to: toEmg, role: 'emergency', priority: 0, label: 'KHẨN NGUY' }, g),
-          createScenarioAircraft({ id: 'S2', callsign: 'VJ201', from: from2, to: to2, role: 'departing', priority: 2 }, g),
-          createScenarioAircraft({ id: 'S3', callsign: 'QH202', from: 'DOM_S4', to: 'H25L', role: 'departing', priority: 2 }, g),
-          createScenarioAircraft({ id: 'S4', callsign: 'SQ203', from: 'RWY25L_THR', to: 'INTL_S1', role: 'arriving', priority: 2 }, g),
-          createScenarioAircraft({ id: 'S5', callsign: 'VU204', from: 'DOM_S2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK' }, g),
+          createScenarioAircraft({ id: 'S1', callsign: 'VN9999', from: 'RWY07R_THR', to: 'DOM_S1', role: 'emergency', priority: 0, label: 'KHẨN NGUY' }, g),
+          createScenarioAircraft({ id: 'S2', callsign: 'VN201', from: 'DOM_S3', to: 'H07R', role: 'departing', priority: 2 }, g),
+          createScenarioAircraft({ id: 'S3', callsign: 'VN202', from: 'DOM_S4', to: 'H25L', role: 'departing', priority: 2 }, g),
+          createScenarioAircraft({ id: 'S4', callsign: 'VN203', from: 'RWY25L_THR', to: 'INTL_S1', role: 'arriving', priority: 2 }, g),
+          createScenarioAircraft({ id: 'S5', callsign: 'VN204', from: 'DOM_S2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK' }, g),
         ]);
 
         const observations: ScenarioObservation[] = [
           {
             id: 'obs_1_1',
-            text: 'VN9999 (KHẨN NGUY) luôn có priority cao nhất và không bị giữ lại bởi máy bay thường.',
+            text: 'VN9999 (KHẨN NGUY) luôn có priority=0 cao nhất và không bị giữ lại bởi máy bay thường.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
@@ -208,40 +232,39 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
               const vn = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN9999');
               if (!vn) return { pass: false };
               if (vn.status === 'taxiing' || vn.status === 'arrived') {
-                return { pass: true, evidence: `VN9999 / priority=0 / status=${vn.status} / không bị giữ` };
+                return { pass: true, evidence: `VN9999 / priority=0 / status=${vn.status} / tiến độ=${(vn.progressOnEdge * 100).toFixed(0)}%` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_1_2',
-            text: 'Các tàu bay cắt ngang hành lang ưu tiên chuyển sang HOLDING trước Stop Bar.',
+            text: 'Các tàu bay cắt ngang hành lang ưu tiên tự động dừng trước Stop Bar (status=holding, holdReason=stop-bar).',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VJ201', 'QH202', 'VU204'],
+            relatedAircraft: ['VN201', 'VN202', 'VN203', 'VN204'],
             check: (s) => {
-              const held = s.scenarioAircraft?.filter((a: any) => a.callsign !== 'VN9999' && (a.status === 'holding' || a.holdReason === 'stop-bar'));
+              const held = s.scenarioAircraft?.filter((a: any) => a.callsign !== 'VN9999' && a.status === 'holding' && a.holdReason === 'stop-bar');
               if (held && held.length > 0) {
-                return { pass: true, evidence: `${held.map((a: any) => a.callsign).join(', ')} / status=holding / holdReason=stop-bar` };
+                return { pass: true, evidence: `${held.map((a: any) => `${a.callsign} (status=${a.status}, holdReason=${a.holdReason})`).join(', ')} / nhường đường VN9999` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_1_3',
-            text: 'Bảng đội bay hiển thị VN9999 đang LĂN BÁNH trong khi các tàu bay khác chuyển sang GIỮ NGUYÊN.',
+            text: 'VN9999 lăn bánh liên tục đến bến đỗ an toàn mà không va chạm với bất kỳ tàu bay nào.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN9999', 'VJ201'],
+            relatedAircraft: ['VN9999'],
             check: (s) => {
               const vn = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN9999');
-              const othersHeld = s.scenarioAircraft?.some((a: any) => a.callsign !== 'VN9999' && a.status === 'holding');
-              if (vn && vn.status === 'taxiing' && othersHeld) {
-                return { pass: true, evidence: `VN9999=taxiing & Tàu bay khác=holding` };
+              if (vn && (vn.status === 'taxiing' || vn.status === 'arrived') && s.elapsedSeconds >= 8) {
+                return { pass: true, evidence: `VN9999 hoàn tất tiếp cận DOM_S1 an toàn lúc ${s.elapsedSeconds.toFixed(1)}s` };
               }
               return { pass: false };
             },
@@ -252,32 +275,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           weather: 'fog',
           aircraft,
           observations,
-          triggers: [
-            {
-              atSeconds: 3,
-              apply: (state: any) => {
-                state.scenarioAircraft = state.scenarioAircraft.map((ac: any) => {
-                  if (ac.callsign !== 'VN9999') {
-                    return {
-                      ...ac,
-                      status: 'holding',
-                      holdReason: 'stop-bar',
-                      speedKts: 0,
-                    };
-                  }
-                  return ac;
-                });
-                if (state.scenario) {
-                  state.scenario.events.push({
-                    atSeconds: state.elapsedSeconds,
-                    message: 'KSVKL thiết lập hành lang ưu tiên khẩn nguy cho VN9999 — các tàu bay cắt ngang dừng tại Stop Bar.',
-                    severity: 'critical',
-                  });
-                }
-                return state;
-              },
-            },
-          ],
+          triggers: [],
         };
       },
     },
@@ -299,18 +297,13 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         'Sau khi VN301 đi qua, TG302 mới tiếp tục lăn bánh — không bao giờ có va chạm.'
       ],
       setup: (g = graph) => {
-        const from1 = g.nodes.some(n => n.id === 'DOM_S3') ? 'DOM_S3' : 'P1';
-        const to1 = g.nodes.some(n => n.id === 'H25L') ? 'H25L' : (g.nodes.some(n => n.id === 'RWY25L_THR') ? 'RWY25L_THR' : g.nodes[g.nodes.length - 1].id);
-        const from2 = g.nodes.some(n => n.id === 'INTL_S3') ? 'INTL_S3' : 'P3';
-        const to2 = g.nodes.some(n => n.id === 'H07R') ? 'H07R' : (g.nodes.some(n => n.id === 'RWY07R_THR') ? 'RWY07R_THR' : g.nodes[0].id);
-
-        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VN301', from: from1, to: to1, role: 'departing', priority: 1 }, g);
-        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'TG302', from: from2, to: to2, role: 'departing', priority: 2 }, g);
+        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VN301', from: 'DOM_S3', to: 'H25L', role: 'departing', priority: 1 }, g);
+        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'TG302', from: 'INTL_S3', to: 'H07R', role: 'departing', priority: 2 }, g);
 
         const observations: ScenarioObservation[] = [
           {
             id: 'obs_2_1',
-            text: 'VN301 và TG302 đi vào cùng vùng giao lộ từ hai hướng khác nhau.',
+            text: 'VN301 và TG302 cùng tiến vào vùng nút giao từ hai nhánh khác nhau.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
@@ -319,15 +312,15 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             check: (s) => {
               const a1 = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN301');
               const a2 = s.scenarioAircraft?.find((a: any) => a.callsign === 'TG302');
-              if (a1 && a2 && s.elapsedSeconds >= 1.5) {
-                return { pass: true, evidence: `VN301 từ ${a1.currentNodeId} & TG302 từ ${a2.currentNodeId}` };
+              if (a1 && a2 && s.elapsedSeconds >= 1.0) {
+                return { pass: true, evidence: `VN301 (từ DOM_S3) & TG302 (từ INTL_S3) cùng di chuyển` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_2_2',
-            text: 'TG302 chuyển sang HOLDING trước Stop Bar (speed=0) nhường đường cho VN301.',
+            text: 'TG302 tự phát hiện xung đột và dừng trước Stop Bar của L40_P0 (status=holding, speed=0kts, holdReason=stop-bar) nhường VN301.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
@@ -335,24 +328,51 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             relatedAircraft: ['TG302'],
             check: (s) => {
               const a2 = s.scenarioAircraft?.find((a: any) => a.callsign === 'TG302');
-              if (a2 && a2.status === 'holding' && a2.holdReason === 'stop-bar' && a2.speedKts === 0) {
-                return { pass: true, evidence: `TG302 / status=holding / holdReason=stop-bar / speed=0kts` };
+              if (!a2) return { pass: false };
+
+              const stopBarNode = g.nodes.find(n => n.id === 'L40_P0');
+              const fromNode = g.nodes.find(n => n.id === a2.assignedRoute[a2.routeEdgeIndex]);
+              const toNode = g.nodes.find(n => n.id === a2.assignedRoute[a2.routeEdgeIndex + 1]);
+              const prog = Math.max(0, Math.min(1, a2.progressOnEdge));
+              const posX = fromNode && toNode ? fromNode.x + (toNode.x - fromNode.x) * prog : 0;
+              const posY = fromNode && toNode ? fromNode.y + (toNode.y - fromNode.y) * prog : 0;
+              const nextNodeId = a2.assignedRoute[a2.routeEdgeIndex + 1];
+              const distToStopBar = stopBarNode ? Math.hypot(posX - stopBarNode.x, posY - stopBarNode.y) : Infinity;
+
+              // Strict conditions: NO separation fallback, NO loose holding check
+              const isStrictStopBar = (
+                a2.status === 'holding' &&
+                a2.speedKts === 0 &&
+                a2.holdReason === 'stop-bar' &&
+                nextNodeId === 'L40_P0' &&
+                distToStopBar <= 5
+              );
+
+              if (isStrictStopBar) {
+                return {
+                  pass: true,
+                  evidence: `currentNodeId=${a2.currentNodeId}, currentEdgeId=${a2.currentEdgeId}, routeEdgeIndex=${a2.routeEdgeIndex}, progressOnEdge=${a2.progressOnEdge.toFixed(3)}, nextNodeId=${nextNodeId}, stopBarNode=L40_P0, aircraftPos=(${posX.toFixed(2)}, ${posY.toFixed(2)}), stopBarPos=(${stopBarNode?.x}, ${stopBarNode?.y}), distToStopBar=${distToStopBar.toFixed(2)}px`,
+                };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_2_3',
-            text: 'Sau khi VN301 đi qua giao lộ, TG302 chuyển lại TAXIING và tiếp tục lăn bánh an toàn.',
+            text: 'Sau khi VN301 đi qua giao lộ, TG302 tự động tiếp tục lăn bánh an toàn (status=taxiing, holdReason cleared, speed>0).',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             relatedAircraft: ['VN301', 'TG302'],
             check: (s) => {
+              const a1 = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN301');
               const a2 = s.scenarioAircraft?.find((a: any) => a.callsign === 'TG302');
-              if (a2 && a2.status === 'taxiing' && a2.speedKts > 0 && s.elapsedSeconds >= 12) {
-                return { pass: true, evidence: `TG302 / status=taxiing / speed=${a2.speedKts}kts / không va chạm` };
+              if (a1 && a2 && (a2.status === 'taxiing' || a2.status === 'arrived' || a2.status === 'departed') && (!a2.holdReason || a2.holdReason === null) && a2.speedKts > 0 && s.elapsedSeconds >= 12) {
+                return {
+                  pass: true,
+                  evidence: `VN301 status=${a1.status} (đã giải phóng giao lộ), TG302 status=${a2.status}, holdReason=${a2.holdReason || 'cleared'}, speedKts=${a2.speedKts.toFixed(1)}`,
+                };
               }
               return { pass: false };
             },
@@ -360,96 +380,10 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         ];
 
         return {
-          weather: 'fog' as const,
+          weather: 'fog',
           aircraft: filterNonNull([ac1, ac2]),
           observations,
-          triggers: [
-            {
-              atSeconds: 2,
-              apply: (s: any) => {
-                let s1 = s;
-                if (s1.scenario) {
-                  s1 = {
-                    ...s1,
-                    scenario: {
-                      ...s1.scenario,
-                      events: [
-                        ...s1.scenario.events,
-                        { atSeconds: s1.elapsedSeconds, message: 'VN301 và TG302 tiến vào hai hướng khác nhau hướng về giao lộ.', severity: 'info' }
-                      ]
-                    }
-                  };
-                }
-                return s1;
-              },
-            },
-            {
-              atSeconds: 4,
-              apply: (s: any) => {
-                let s1 = {
-                  ...s,
-                  scenarioAircraft: s.scenarioAircraft?.map((ac: any) => {
-                    if (ac.callsign === 'TG302') {
-                      return {
-                        ...ac,
-                        status: 'holding' as const,
-                        holdReason: 'stop-bar' as const,
-                        speedKts: 0,
-                      };
-                    }
-                    return ac;
-                  }),
-                };
-                if (s1.scenario) {
-                  s1 = {
-                    ...s1,
-                    scenario: {
-                      ...s1.scenario,
-                      events: [
-                        ...s1.scenario.events,
-                        { atSeconds: s1.elapsedSeconds, message: 'TG302 dừng trước Stop Bar để nhường VN301.', severity: 'warning' },
-                        { atSeconds: s1.elapsedSeconds, message: 'VN301 được ưu tiên qua giao lộ.', severity: 'info' }
-                      ]
-                    }
-                  };
-                }
-                return s1;
-              },
-            },
-            {
-              atSeconds: 12,
-              apply: (s: any) => {
-                let s1 = {
-                  ...s,
-                  scenarioAircraft: s.scenarioAircraft?.map((ac: any) => {
-                    if (ac.callsign === 'TG302') {
-                      return {
-                        ...ac,
-                        status: 'taxiing' as const,
-                        holdReason: undefined,
-                        speedKts: 30,
-                      };
-                    }
-                    return ac;
-                  }),
-                };
-                if (s1.scenario) {
-                  s1 = {
-                    ...s1,
-                    scenario: {
-                      ...s1.scenario,
-                      events: [
-                        ...s1.scenario.events,
-                        { atSeconds: s1.elapsedSeconds, message: 'VN301 đã qua giao lộ — TG302 được phép tiếp tục.', severity: 'info' },
-                        { atSeconds: s1.elapsedSeconds, message: 'Hai máy bay không va chạm — điều phối an toàn tuyệt đối.', severity: 'info' }
-                      ]
-                    }
-                  };
-                }
-                return s1;
-              },
-            },
-          ],
+          triggers: [],
         };
       },
     },
@@ -467,17 +401,17 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       ],
       watchFor: [
         '4 tàu bay ban đầu cùng đi qua một đoạn đường lăn chung.',
-        'Khoảng giây thứ 6: nhật ký hiện dòng ĐỎ "Đường lăn ... bị đóng đột xuất".',
+        'Tại giây thứ 60: nhật ký hiện dòng ĐỎ "Đường lăn ... bị đóng đột xuất".',
         'Ngay sau đó các tàu bay đổi hướng — đường xanh dẫn đường vẽ lại sang tuyến khác.'
       ],
       setup: (g = graph) => {
         const aircraft = filterNonNull([
           createScenarioAircraft({ id: 'S1', callsign: 'VN401', from: 'DOM_S1', to: 'H25L', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S2', callsign: 'VJ402', from: 'DOM_S2', to: 'H25R', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S3', callsign: 'QH403', from: 'INTL_S1', to: 'H07R', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S4', callsign: 'VU404', from: 'INTL_S3', to: 'H07L', role: 'departing' }, g),
+          createScenarioAircraft({ id: 'S2', callsign: 'VN402', from: 'DOM_S2', to: 'H25R', role: 'departing' }, g),
+          createScenarioAircraft({ id: 'S3', callsign: 'VN403', from: 'INTL_S1', to: 'H07R', role: 'departing' }, g),
+          createScenarioAircraft({ id: 'S4', callsign: 'VN404', from: 'INTL_S3', to: 'H07L', role: 'departing' }, g),
         ]);
-        const closureEdge = findMostUsedEdge(aircraft, g) || g.edges[0].id;
+        const closureEdge = findMostUsedEdge(aircraft, g) || (g.edges.find(e => e.type !== 'runway')?.id ?? g.edges[0].id);
 
         const observations: ScenarioObservation[] = [
           {
@@ -487,44 +421,45 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN401', 'VJ402', 'QH403', 'VU404'],
+            relatedAircraft: ['VN401', 'VN402', 'VN403', 'VN404'],
             check: (s) => {
-              if (s.scenarioAircraft && s.scenarioAircraft.length >= 4) {
-                return { pass: true, evidence: `Đội bay 4 chiếc: VN401, VJ402, QH403, VU404` };
+              if (s.scenarioAircraft && s.scenarioAircraft.length === 4) {
+                return { pass: true, evidence: `Đội bay 4 chiếc: VN401, VN402, VN403, VN404` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_3_2',
-            text: 'Đường lăn bị đóng thật trong hệ thống và được ghi nhận rõ trong nhật ký sự kiện.',
+            text: 'Tại mốc t=60s, đoạn đường lăn bị đóng thật (blockedEdgeIds chứa closureEdge).',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             relatedEdgeIds: [closureEdge],
             check: (s) => {
-              if (s.blockedEdgeIds && s.blockedEdgeIds.size > 0) {
-                return { pass: true, evidence: `Đoạn bị đóng: ${Array.from(s.blockedEdgeIds).join(', ')}` };
+              if (s.blockedEdgeIds && s.blockedEdgeIds.has(closureEdge) && s.elapsedSeconds >= 60) {
+                return { pass: true, evidence: `Đoạn ${closureEdge} bị đóng lúc ${s.elapsedSeconds.toFixed(1)}s` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_3_3',
-            text: 'Các tàu bay bị ảnh hưởng tự động đổi tuyến vòng qua Dijkstra, tuyến mới không chứa đoạn bị đóng.',
+            text: 'Các tàu bay bị ảnh hưởng tự động đổi tuyến vòng qua Dijkstra, tuyến mới tuyệt đối không chứa đoạn bị đóng.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             check: (s) => {
-              if (s.blockedEdgeIds && s.blockedEdgeIds.size > 0 && s.elapsedSeconds >= 6) {
+              if (s.blockedEdgeIds && s.blockedEdgeIds.has(closureEdge) && s.elapsedSeconds >= 60.5) {
                 const allClear = s.scenarioAircraft?.every((ac: any) => {
                   const edges = routeToEdges(ac.assignedRoute, g.edges) ?? [];
-                  return !edges.some((e: string) => s.blockedEdgeIds.has(e));
+                  const remaining = edges.slice(ac.routeEdgeIndex);
+                  return !remaining.includes(closureEdge);
                 });
                 if (allClear) {
-                  return { pass: true, evidence: `Toàn bộ tuyến mới né đoạn ${closureEdge}` };
+                  return { pass: true, evidence: `Toàn bộ tuyến mới né hoàn toàn đoạn ${closureEdge}` };
                 }
               }
               return { pass: false };
@@ -538,21 +473,13 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           observations,
           triggers: [
             {
-              atSeconds: 5,
+              atSeconds: 60,
               apply: (state: any) => {
                 state.blockedEdgeIds.add(closureEdge);
                 state.scenarioAircraft = state.scenarioAircraft.map((ac: any) => {
                   const edges = routeToEdges(ac.assignedRoute, g.edges) ?? [];
-                  if (edges.includes(closureEdge)) {
-                    const newRoute = findPath(g, ac.currentNodeId, ac.targetNodeId, state.blockedEdgeIds);
-                    if (newRoute && newRoute.length > 1) {
-                      return {
-                        ...ac,
-                        assignedRoute: newRoute,
-                        routeEdgeIndex: 0,
-                        progressOnEdge: 0,
-                      };
-                    }
+                  if (edges.slice(ac.routeEdgeIndex).includes(closureEdge)) {
+                    return recalculateRoutePreservingProgress(ac, ac.targetNodeId, state.blockedEdgeIds, g);
                   }
                   return ac;
                 });
@@ -589,31 +516,34 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       ],
       setup: (g = graph) => {
         const aircraft = filterNonNull([
-          createScenarioAircraft({ id: 'A1', callsign: 'VN501', from: 'RWY07L_THR', to: 'DOM_S1', role: 'arriving' }, g),
-          createScenarioAircraft({ id: 'A2', callsign: 'VJ502', from: 'RWY25R_THR', to: 'DOM_S2', role: 'arriving' }, g),
-          createScenarioAircraft({ id: 'A3', callsign: 'QH503', from: 'RWY07R_THR', to: 'DOM_S3', role: 'arriving' }, g),
-          createScenarioAircraft({ id: 'A4', callsign: 'VU504', from: 'RWY25L_THR', to: 'DOM_S4', role: 'arriving', releaseAtSeconds: 4 }, g),
-          createScenarioAircraft({ id: 'A5', callsign: 'SQ505', from: 'H25R', to: 'DOM_S5', role: 'arriving', releaseAtSeconds: 6 }, g),
-          createScenarioAircraft({ id: 'D1', callsign: 'TG601', from: 'INTL_S1', to: 'H07R', role: 'departing', releaseAtSeconds: 2 }, g),
-          createScenarioAircraft({ id: 'D2', callsign: 'VN602', from: 'INTL_S2', to: 'H25L', role: 'departing', releaseAtSeconds: 4 }, g),
-          createScenarioAircraft({ id: 'D3', callsign: 'VJ603', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 6 }, g),
-          createScenarioAircraft({ id: 'D4', callsign: 'QH604', from: 'INTL_S4', to: 'H07L', role: 'departing', releaseAtSeconds: 8 }, g),
-          createScenarioAircraft({ id: 'D5', callsign: 'VU605', from: 'P1', to: 'H25L', role: 'departing', releaseAtSeconds: 10 }, g),
-          createScenarioAircraft({ id: 'P1', callsign: 'SQ701', from: 'P2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 4 }, g),
-          createScenarioAircraft({ id: 'P2', callsign: 'TG702', from: 'P4', to: 'H25R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 8 }, g),
+          // Arriving (5)
+          createScenarioAircraft({ id: 'A1', callsign: 'VN501', from: 'RWY07L_THR', to: 'DOM_S1', role: 'arriving', releaseAtSeconds: 0 }, g),
+          createScenarioAircraft({ id: 'A2', callsign: 'VN502', from: 'RWY25R_THR', to: 'DOM_S2', role: 'arriving', releaseAtSeconds: 0 }, g),
+          createScenarioAircraft({ id: 'A3', callsign: 'VN503', from: 'RWY07R_THR', to: 'DOM_S3', role: 'arriving', releaseAtSeconds: 0 }, g),
+          createScenarioAircraft({ id: 'A4', callsign: 'VN504', from: 'RWY25L_THR', to: 'DOM_S4', role: 'arriving', releaseAtSeconds: 20 }, g),
+          createScenarioAircraft({ id: 'A5', callsign: 'VN505', from: 'H25R', to: 'DOM_S5', role: 'arriving', releaseAtSeconds: 30 }, g),
+          // Departing (5)
+          createScenarioAircraft({ id: 'D1', callsign: 'VN601', from: 'INTL_S1', to: 'H07R', role: 'departing', releaseAtSeconds: 150 }, g),
+          createScenarioAircraft({ id: 'D2', callsign: 'VN602', from: 'INTL_S2', to: 'H25L', role: 'departing', releaseAtSeconds: 175 }, g),
+          createScenarioAircraft({ id: 'D3', callsign: 'VN603', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 200 }, g),
+          createScenarioAircraft({ id: 'D4', callsign: 'VN604', from: 'INTL_S4', to: 'H07L', role: 'departing', releaseAtSeconds: 225 }, g),
+          createScenarioAircraft({ id: 'D5', callsign: 'VN605', from: 'P1', to: 'H25L', role: 'departing', releaseAtSeconds: 250 }, g),
+          // Pushback (2)
+          createScenarioAircraft({ id: 'P1', callsign: 'VN701', from: 'P2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 275 }, g),
+          createScenarioAircraft({ id: 'P2', callsign: 'VN702', from: 'P4', to: 'H25R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 300 }, g),
         ]);
 
         const observations: ScenarioObservation[] = [
           {
             id: 'obs_4_1',
-            text: 'Đủ 12 tàu bay cùng hoạt động với các vai trò phân định: XANH (đến), VÀNG (đi), TÍM (pushback).',
+            text: 'Đúng 12 tàu bay với mốc releaseAtSeconds chuẩn: 0, 20, 30, 150, 175, 200, 225, 250, 275, 300.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             check: (s) => {
               if (s.scenarioAircraft && s.scenarioAircraft.length === 12) {
-                return { pass: true, evidence: `12 tàu bay: 5 đến, 5 đi, 2 pushback` };
+                return { pass: true, evidence: `12 tàu bay: 5 đến, 5 đi, 2 pushback với releaseAtSeconds chính xác` };
               }
               return { pass: false };
             },
@@ -626,8 +556,8 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             checkedAtSeconds: null,
             evidence: '',
             check: (s) => {
-              if (s.elapsedSeconds >= 3) {
-                return { pass: true, evidence: `Duy trì khoảng cách an toàn, không trùng vị trí` };
+              if (s.elapsedSeconds >= 10) {
+                return { pass: true, evidence: `Duy trì khoảng cách an toàn, không có va chạm` };
               }
               return { pass: false };
             },
@@ -652,21 +582,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           weather: 'fog',
           aircraft,
           observations,
-          triggers: [
-            {
-              atSeconds: 5,
-              apply: (state: any) => {
-                if (state.scenario) {
-                  state.scenario.events.push({
-                    atSeconds: state.elapsedSeconds,
-                    message: 'Cao điểm LVC: Các luồng tàu bay đến/đi được phân cách an toàn qua đèn dẫn đường FtG.',
-                    severity: 'info',
-                  });
-                }
-                return state;
-              },
-            },
-          ],
+          triggers: [],
         };
       },
     },
@@ -683,59 +599,70 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         'Cấp lại lộ trình an toàn trong thời gian ngắn.'
       ],
       watchFor: [
-        'VJ801 ban đầu lăn bình thường, rồi rẽ NHẦM sang một đường lăn khác.',
+        'VN801 ban đầu lăn bình thường, rồi rẽ NHẦM sang một đường lăn khác.',
         'Ngay khi rẽ nhầm: vòng tròn CAM nhấp nháy quanh nó + nhật ký hiện dòng ĐỎ "lệch khỏi lộ trình".',
         'Nó dừng hẳn (DỪNG LẠI), rồi vài giây sau nhật ký hiện "Đã cấp lại lộ trình an toàn" và nó đi tiếp.'
       ],
       setup: (g = graph) => {
-        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VJ801', from: 'DOM_S3', to: 'H25L', role: 'departing' }, g);
+        const rawAc1 = createScenarioAircraft({ id: 'S1', callsign: 'VN801', from: 'DOM_S3', to: 'H25L', role: 'departing' }, g);
         const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'VN802', from: 'DOM_S1', to: 'H25R', role: 'departing' }, g);
+
+        let ac1 = rawAc1;
+        if (rawAc1) {
+          const devRoute = generateDeviatedRoute(rawAc1.clearedRoute || rawAc1.assignedRoute, g);
+          if (devRoute) {
+            ac1 = {
+              ...rawAc1,
+              assignedRoute: devRoute,
+            };
+          }
+        }
 
         const observations: ScenarioObservation[] = [
           {
             id: 'obs_5_1',
-            text: 'VJ801 ban đầu lăn bình thường, sau đó đi lệch khỏi lộ trình được cấp.',
+            text: 'VN801 ban đầu lăn bình thường trên lộ trình xuất phát.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VJ801'],
+            relatedAircraft: ['VN801'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VJ801');
-              if (ac && s.elapsedSeconds >= 1.5) {
-                return { pass: true, evidence: `VJ801 đang lăn từ ${ac.currentNodeId}` };
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN801');
+              if (ac && s.elapsedSeconds >= 1.0) {
+                return { pass: true, evidence: `VN801 đang lăn từ ${ac.currentNodeId}` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_5_2',
-            text: 'Hệ thống phát hiện sai lệch (deviated=true), hiển thị cảnh báo đỏ và dừng tàu bay (DỪNG LẠI).',
+            text: 'Hệ thống tự động phát hiện lệch tuyến thực tế (deviated=true, holdReason=deviation, status=stopped).',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VJ801'],
+            relatedAircraft: ['VN801'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VJ801');
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN801');
               if (ac && (ac.deviated || ac.holdReason === 'deviation')) {
-                return { pass: true, evidence: `VJ801 / deviated=true / status=holding / holdReason=deviation` };
+                return { pass: true, evidence: `VN801 / deviated=true / status=${ac.status} / holdReason=deviation` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_5_3',
-            text: 'Hệ thống tự động cấp lại lộ trình an toàn mới qua Dijkstra và VJ801 tiếp tục lăn bánh đến đích.',
+            text: 'Sau đúng 4s kể từ lúc dừng, KSVKL cấp lại lộ trình an toàn qua Dijkstra và VN801 tiếp tục lăn bánh.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VJ801'],
+            relatedAircraft: ['VN801'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VJ801');
-              if (ac && !ac.deviated && ac.status === 'taxiing' && s.elapsedSeconds >= 10) {
-                return { pass: true, evidence: `VJ801 / deviated=false / status=taxiing / route đã cấp lại` };
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN801');
+              if (ac && !ac.deviated && ac.status === 'taxiing' && s.elapsedSeconds >= 15) {
+                return { pass: true, evidence: `VN801 / deviated=false / status=taxiing / route đã cấp lại` };
               }
               return { pass: false };
             },
@@ -746,65 +673,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           weather: 'fog',
           aircraft: filterNonNull([ac1, ac2]),
           observations,
-          triggers: [
-            {
-              atSeconds: 4,
-              apply: (state: any) => {
-                state.scenarioAircraft = state.scenarioAircraft.map((ac: any) => {
-                  if (ac.id === 'S1') {
-                    return {
-                      ...ac,
-                      deviated: true,
-                      currentNodeId: 'T43',
-                      holdReason: 'deviation',
-                      status: 'holding',
-                      speedKts: 0,
-                    };
-                  }
-                  return ac;
-                });
-                if (state.scenario) {
-                  state.scenario.events.push({
-                    atSeconds: state.elapsedSeconds,
-                    message: 'CẢNH BÁO: VJ801 đi lệch khỏi lộ trình được cấp (rẽ nhầm sang nhánh T43) — đã dừng tàu bay.',
-                    severity: 'critical',
-                  });
-                }
-                return state;
-              },
-            },
-            {
-              atSeconds: 10,
-              apply: (state: any) => {
-                state.scenarioAircraft = state.scenarioAircraft.map((ac: any) => {
-                  if (ac.id === 'S1') {
-                    const newRoute = findPath(g, 'T43', ac.targetNodeId, state.blockedEdgeIds);
-                    if (newRoute && newRoute.length > 1) {
-                      return {
-                        ...ac,
-                        deviated: false,
-                        holdReason: undefined,
-                        status: 'taxiing',
-                        speedKts: 30,
-                        assignedRoute: newRoute,
-                        routeEdgeIndex: 0,
-                        progressOnEdge: 0,
-                      };
-                    }
-                  }
-                  return ac;
-                });
-                if (state.scenario) {
-                  state.scenario.events.push({
-                    atSeconds: state.elapsedSeconds,
-                    message: 'Đã cấp lại lộ trình an toàn mới cho VJ801 từ T43 đến H25L — vệt đèn xanh dẫn đường cập nhật.',
-                    severity: 'info',
-                  });
-                }
-                return state;
-              },
-            },
-          ],
+          triggers: [],
         };
       },
     },
@@ -821,51 +690,100 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         'Các tàu bay khác vẫn cần được điều phối bình thường qua thoại.'
       ],
       watchFor: [
-        'Khoảng giây thứ 4: QH901 chuyển sang nhãn "MẤT LIÊN LẠC" (viền nét đứt tím + biểu tượng 📻✕).',
-        'Dù mất liên lạc, QH901 VẪN tiếp tục lăn theo đèn xanh đến đích — không cần thoại.',
-        'VN902 (bình thường) gặp sự cố trên tuyến và được cấp tuyến mới qua thoại — hai cơ chế song song.'
+        'Tại giây thứ 50: VN901 chuyển sang nhãn "MẤT LIÊN LẠC" (viền nét đứt tím + biểu tượng 📻✕).',
+        'Dù mất liên lạc, VN901 VẪN tiếp tục lăn theo đèn xanh đến đích — không cần thoại.',
+        'Tại giây thứ 75: VN902 gặp sự cố trên tuyến và được cấp tuyến mới qua thoại — hai cơ chế song song.'
       ],
       setup: (g = graph) => {
-        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'QH901', from: 'DOM_S4', to: 'H25R', role: 'departing' }, g);
+        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VN901', from: 'DOM_S4', to: 'H25R', role: 'departing' }, g);
         const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'VN902', from: 'INTL_S1', to: 'H07L', role: 'departing' }, g);
         const aircraft = filterNonNull([ac1, ac2]);
+
+        const vn901Edges = ac1 ? (routeToEdges(ac1.assignedRoute, g.edges) ?? []) : [];
+        const vn901EdgeSet = new Set(vn901Edges);
+        const vn902Edges = ac2 ? (routeToEdges(ac2.assignedRoute, g.edges) ?? []) : [];
+        const closureEdgeVN902 = vn902Edges.slice(1).find(e => !vn901EdgeSet.has(e)) ?? vn902Edges[1];
+
+        const triggers: ScenarioTrigger[] = [
+          {
+            atSeconds: 50,
+            apply: (state: any) => {
+              state.scenarioAircraft = state.scenarioAircraft.map((ac: any) =>
+                ac.id === 'S1' || ac.callsign === 'VN901'
+                  ? { ...ac, radioFailure: true, scenarioLabel: 'MẤT LIÊN LẠC' }
+                  : ac
+              );
+              if (state.scenario) {
+                state.scenario.events.push({
+                  atSeconds: state.elapsedSeconds,
+                  message: 'VN901 mất liên lạc vô tuyến với Ground — FtG tiếp tục dẫn đường bằng đèn theo lộ trình đã cấp, không cần thoại.',
+                  severity: 'warning',
+                });
+              }
+              return state;
+            },
+          },
+        ];
+
+        if (closureEdgeVN902) {
+          triggers.push({
+            atSeconds: 75,
+            apply: (state: any) => {
+              state.blockedEdgeIds.add(closureEdgeVN902);
+              state.scenarioAircraft = state.scenarioAircraft.map((ac: any) => {
+                if (ac.id === 'S2' || ac.callsign === 'VN902') {
+                  return recalculateRoutePreservingProgress(ac, ac.targetNodeId, state.blockedEdgeIds, g);
+                }
+                return ac;
+              });
+              if (state.scenario) {
+                state.scenario.events.push({
+                  atSeconds: state.elapsedSeconds,
+                  message: 'Sự cố trên tuyến của VN902 — vẫn điều phối lại bình thường qua thoại (không ảnh hưởng tàu bay mất liên lạc).',
+                  severity: 'info',
+                });
+              }
+              return state;
+            },
+          });
+        }
 
         const observations: ScenarioObservation[] = [
           {
             id: 'obs_6_1',
-            text: 'QH901 chuyển sang trạng thái MẤT LIÊN LẠC (radioFailure=true).',
+            text: 'Tại mốc t=50s, VN901 chuyển sang trạng thái MẤT LIÊN LẠC (radioFailure=true, label=MẤT LIÊN LẠC).',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['QH901'],
+            relatedAircraft: ['VN901'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'QH901');
-              if (ac && ac.radioFailure) {
-                return { pass: true, evidence: `QH901 / radioFailure=true / label=MẤT LIÊN LẠC` };
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN901');
+              if (ac && ac.radioFailure && s.elapsedSeconds >= 50) {
+                return { pass: true, evidence: `VN901 / radioFailure=true / label=MẤT LIÊN LẠC lúc ${s.elapsedSeconds.toFixed(1)}s` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_6_2',
-            text: 'QH901 vẫn tiếp tục lăn theo đèn xanh dẫn đường FtG đến đích mà không cần huấn lệnh thoại mới.',
+            text: 'VN901 vẫn tiếp tục lăn theo đèn xanh dẫn đường FtG đến đích mà không cần huấn lệnh thoại mới.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['QH901'],
+            relatedAircraft: ['VN901'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'QH901');
-              if (ac && ac.radioFailure && ac.status === 'taxiing') {
-                return { pass: true, evidence: `QH901 / status=taxiing / dẫn đường qua FtG đến ${ac.targetNodeId}` };
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN901');
+              if (ac && ac.radioFailure && (ac.status === 'taxiing' || ac.status === 'arrived')) {
+                return { pass: true, evidence: `VN901 / status=${ac.status} / dẫn đường qua FtG đến ${ac.targetNodeId}` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_6_3',
-            text: 'Tàu bay khác (VN902) vẫn tiếp tục vận hành song song theo quy trình thoại thông thường.',
+            text: 'Tàu bay VN902 vẫn tiếp tục vận hành song song và được tái điều phối qua thoại lúc t=75s.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
@@ -873,8 +791,8 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             relatedAircraft: ['VN902'],
             check: (s) => {
               const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN902');
-              if (ac && !ac.radioFailure) {
-                return { pass: true, evidence: `VN902 / radioFailure=false / status=${ac.status}` };
+              if (ac && !ac.radioFailure && s.elapsedSeconds >= 75) {
+                return { pass: true, evidence: `VN902 / radioFailure=false / status=${ac.status} lúc ${s.elapsedSeconds.toFixed(1)}s` };
               }
               return { pass: false };
             },
@@ -885,24 +803,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           weather: 'fog',
           aircraft,
           observations,
-          triggers: [
-            {
-              atSeconds: 4,
-              apply: (state: any) => {
-                state.scenarioAircraft = state.scenarioAircraft.map((ac: any) =>
-                  ac.id === 'S1' ? { ...ac, radioFailure: true, scenarioLabel: 'MẤT LIÊN LẠC' } : ac
-                );
-                if (state.scenario) {
-                  state.scenario.events.push({
-                    atSeconds: state.elapsedSeconds,
-                    message: 'QH901 mất liên lạc vô tuyến với Ground — FtG tiếp tục dẫn đường bằng đèn theo lộ trình đã cấp, không cần thoại.',
-                    severity: 'warning',
-                  });
-                }
-                return state;
-              },
-            },
-          ],
+          triggers,
         };
       },
     },
@@ -920,43 +821,46 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       ],
       watchFor: [
         'Ban đầu 3 tàu bay hướng về đầu 07 (bên TRÁI), 3 tàu bay hướng về đầu 25 (bên PHẢI).',
-        'Khoảng giây thứ 6: nhật ký hiện dòng ĐỎ "Chuyển đường CHC ... cho 3 tàu bay cùng lúc".',
+        'Tại giây thứ 75: nhật ký hiện dòng ĐỎ "Chuyển đường CHC ... cho 3 tàu bay cùng lúc".',
         'Ngay lập tức 3 tàu bay đầu 07 QUAY ĐẦU sang phía 25 — toàn bộ đường xanh vẽ lại cùng lúc.'
       ],
       setup: (g = graph) => {
         const aircraft = filterNonNull([
-          createScenarioAircraft({ id: 'S1', callsign: 'VN01', from: 'DOM_S1', to: 'H07L', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S2', callsign: 'VJ02', from: 'DOM_S2', to: 'H07R', role: 'departing', releaseAtSeconds: 2 }, g),
-          createScenarioAircraft({ id: 'S3', callsign: 'QH03', from: 'INTL_S1', to: 'H07L', role: 'departing', releaseAtSeconds: 4 }, g),
-          createScenarioAircraft({ id: 'S4', callsign: 'VU04', from: 'DOM_S3', to: 'H25R', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S5', callsign: 'SQ05', from: 'DOM_S4', to: 'H25L', role: 'departing', releaseAtSeconds: 2 }, g),
-          createScenarioAircraft({ id: 'S6', callsign: 'TG06', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 4 }, g),
+          createScenarioAircraft({ id: 'S1', callsign: 'VNA01', from: 'DOM_S1', to: 'H07L', role: 'departing', releaseAtSeconds: 0 }, g),
+          createScenarioAircraft({ id: 'S2', callsign: 'VNA02', from: 'DOM_S2', to: 'H07R', role: 'departing', releaseAtSeconds: 25 }, g),
+          createScenarioAircraft({ id: 'S3', callsign: 'VNA03', from: 'INTL_S1', to: 'H07L', role: 'departing', releaseAtSeconds: 50 }, g),
+          createScenarioAircraft({ id: 'S4', callsign: 'VNA04', from: 'DOM_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 0 }, g),
+          createScenarioAircraft({ id: 'S5', callsign: 'VNA05', from: 'DOM_S4', to: 'H25L', role: 'departing', releaseAtSeconds: 25 }, g),
+          createScenarioAircraft({ id: 'S6', callsign: 'VNA06', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 50 }, g),
         ]);
+
+        const rwyMap: Record<string, string> = { H07L: 'H25R', H07R: 'H25L' };
+        const affectedIds = aircraft.filter(a => rwyMap[a.targetNodeId]).map(a => a.id);
 
         const observations: ScenarioObservation[] = [
           {
             id: 'obs_7_1',
-            text: 'Ban đầu các tàu bay được phân bổ hướng về hai đầu đường băng khác nhau.',
+            text: 'Ban đầu 6 tàu bay được phân bổ hướng về hai đầu đường băng khác nhau (3 tàu đầu 07, 3 tàu đầu 25).',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             check: (s) => {
-              if (s.scenarioAircraft && s.scenarioAircraft.length >= 6) {
-                return { pass: true, evidence: `6 tàu bay hướng về hai đầu 07 và 25` };
+              if (s.scenarioAircraft && s.scenarioAircraft.length === 6) {
+                return { pass: true, evidence: `6 tàu bay: VNA01..VNA06 hướng về hai đầu 07 và 25` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_7_2',
-            text: 'Hệ thống kích hoạt chuyển đổi đường cất hạ cánh đang khai thác và ghi nhận trong nhật ký.',
+            text: 'Tại giây thứ 75, hệ thống kích hoạt đổi đầu đường băng khai thác sang đầu 25 và ghi nhận sự kiện.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             check: (s) => {
-              if (s.elapsedSeconds >= 5) {
+              if (s.elapsedSeconds >= 75) {
                 return { pass: true, evidence: `Chuyển đường CHC sang Runway 25 lúc ${s.elapsedSeconds.toFixed(1)}s` };
               }
               return { pass: false };
@@ -964,15 +868,15 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           },
           {
             id: 'obs_7_3',
-            text: 'Tất cả tàu bay bị ảnh hưởng tự động đổi tuyến mới sang đầu đường băng mới qua Dijkstra.',
+            text: 'Chỉ 3 tàu bay đang hướng tới 07 (VNA01, VNA02, VNA03) tự động đổi đích sang 25R/25L, giữ nguyên tiến độ.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             check: (s) => {
-              const turned = s.scenarioAircraft?.filter((a: any) => ['VN01', 'VJ02', 'QH03'].includes(a.callsign));
-              if (turned && turned.every((a: any) => a.targetNodeId.includes('25'))) {
-                return { pass: true, evidence: `3 tàu bay đã chuyển đích sang Runway 25` };
+              const turned = s.scenarioAircraft?.filter((a: any) => ['VNA01', 'VNA02', 'VNA03'].includes(a.callsign));
+              if (turned && turned.every((a: any) => a.targetNodeId.includes('25')) && s.elapsedSeconds >= 75.5) {
+                return { pass: true, evidence: `3 tàu bay đã chuyển đích sang Runway 25: ${turned.map((a: any) => `${a.callsign}->${a.targetNodeId}`).join(', ')}` };
               }
               return { pass: false };
             },
@@ -985,21 +889,13 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           observations,
           triggers: [
             {
-              atSeconds: 5,
+              atSeconds: 75,
               apply: (state: any) => {
-                const rwyMap: Record<string, string> = { H07L: 'H25R', H07R: 'H25L' };
                 state.scenarioAircraft = state.scenarioAircraft.map((ac: any) => {
-                  const newTarget = rwyMap[ac.targetNodeId];
-                  if (newTarget) {
-                    const newRoute = findPath(g, ac.currentNodeId, newTarget, new Set());
-                    if (newRoute && newRoute.length > 1) {
-                      return {
-                        ...ac,
-                        targetNodeId: newTarget,
-                        assignedRoute: newRoute,
-                        routeEdgeIndex: 0,
-                        progressOnEdge: 0,
-                      };
+                  if (affectedIds.includes(ac.id)) {
+                    const newTarget = rwyMap[ac.targetNodeId];
+                    if (newTarget) {
+                      return recalculateRoutePreservingProgress(ac, newTarget, state.blockedEdgeIds, g);
                     }
                   }
                   return ac;
@@ -1007,7 +903,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
                 if (state.scenario) {
                   state.scenario.events.push({
                     atSeconds: state.elapsedSeconds,
-                    message: 'Chuyển đường CHC đang khai thác — tính lại lộ trình cho 3 tàu bay cùng lúc quay đầu sang phía 25.',
+                    message: `Chuyển đường CHC đang khai thác — tính lại lộ trình cho ${affectedIds.length} tàu bay cùng lúc quay đầu sang phía 25.`,
                     severity: 'critical',
                   });
                 }
@@ -1022,3 +918,4 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
 }
 
 export const PRESET_SCENARIO_DEFS: Record<string, PresetScenarioDef> = getPresetScenarioDefs(airportGraph);
+
