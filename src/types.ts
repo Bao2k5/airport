@@ -121,6 +121,12 @@ export interface LiveEventLogItem {
   severity: 'info' | 'warning' | 'critical';
 }
 
+export interface RunwayOccupancyState {
+  NORTH: string | null;
+  SOUTH: string | null;
+  [key: string]: string | null | undefined;
+}
+
 export interface SimulationState {
   aircraft: Aircraft | null;
   manualFleet?: Aircraft[];
@@ -140,6 +146,7 @@ export interface SimulationState {
   // Edges blocked due to incidents
   blockedEdgeIds: Set<string>;
   liveEventLog: LiveEventLogItem[];
+  runwayOccupancy?: RunwayOccupancyState;
   scenario?: any;
   scenarioAircraft?: any[];
 }

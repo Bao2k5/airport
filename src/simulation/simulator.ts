@@ -4,6 +4,7 @@ import type {
   AirportGraph,
   AirlineCode,
   LiveEventLogItem,
+  RunwayOccupancyState,
   SimulationConfig,
   SimulationState,
   TrafficLevel,
@@ -584,15 +585,25 @@ function getAircraftCoordinate(ac: Aircraft, graph: AirportGraph): { x: number; 
   return n ? { x: n.x, y: n.y } : null;
 }
 
-function isRunwayNodeOrEdge(nodeId: string | undefined, edge: AirportEdge | undefined): boolean {
-  if (edge && edge.type === 'runway') return true;
-  if (!nodeId) return false;
-  return nodeId.includes('RWY') || nodeId.startsWith('R1_') || nodeId.startsWith('R2_') || nodeId.includes('THR');
+export type RunwayCorridor = 'NORTH' | 'SOUTH' | null;
+
+export function getRunwayCorridor(edgeId: string | null | undefined, nodeId?: string | null): RunwayCorridor {
+  if (edgeId) {
+    if (edgeId.startsWith('RWY1_SEG_') || edgeId.includes('07L') || edgeId.includes('25R')) return 'NORTH';
+    if (edgeId.startsWith('RWY2_SEG_') || edgeId.includes('07R') || edgeId.includes('25L')) return 'SOUTH';
+  }
+  if (nodeId) {
+    if (['RWY07L_THR', 'RWY25R_THR', 'R1_W4', 'R1_MID_V2', 'R1_NS_ENTRY_V2', 'R1_NS'].includes(nodeId)) return 'NORTH';
+    if (['RWY07R_THR', 'RWY25L_THR', 'R2_W11_ENTRY_V2', 'R2_W7', 'R2_W6_EXIT_V2', 'R2_W5', 'R2_W3', 'R2_NS2_V2', 'R2_E1_EXIT_V2', 'R2_E4', 'R2_W6_CROSS'].includes(nodeId)) return 'SOUTH';
+  }
+  return null;
 }
 
-/**
- * Single simulation tick. dt is elapsed time in seconds.
- */
+export function isRunwayNodeOrEdge(nodeId?: string | null, edge?: AirportEdge | null): boolean {
+  return getRunwayCorridor(edge?.id, nodeId) !== null;
+}
+
+/** Step the simulation forward by dt seconds */
 export function simulationTick(
   state: SimulationState,
   dt: number,
@@ -606,16 +617,17 @@ export function simulationTick(
 
   let tickLogs = state.liveEventLog || [];
 
-  // 1. Identify which runway segments / runways are currently occupied
-  const runwayOccupants = new Map<string, string>(); // runwayKey -> occupying aircraft callsign
+  // 1. Identify which runway corridors are currently occupied (NORTH: 07L/25R, SOUTH: 07R/25L)
+  const currentOccupancy: RunwayOccupancyState = {
+    NORTH: state.runwayOccupancy?.NORTH || null,
+    SOUTH: state.runwayOccupancy?.SOUTH || null,
+  };
+
   for (const ac of fleet) {
     if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
-    const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
-    const currEdge = graph.edges.find(e => e.id === routeEdges[ac.routeEdgeIndex]);
-    const currNode = ac.assignedRoute[ac.routeEdgeIndex];
-    if (isRunwayNodeOrEdge(currNode, currEdge)) {
-      const rwyKey = currNode?.includes('07L') || currNode?.includes('25R') || currEdge?.id.includes('R1') ? 'RWY07L/25R' : 'RWY07R/25L';
-      runwayOccupants.set(rwyKey, ac.callsign);
+    const corridor = getRunwayCorridor(ac.currentEdgeId, ac.currentNodeId);
+    if (corridor) {
+      currentOccupancy[corridor] = ac.id;
     }
   }
 
@@ -692,28 +704,53 @@ export function simulationTick(
       }
     }
 
-    // Check Runway Occupancy ahead
+    // ── RUNWAY OCCUPANCY SAFETY (Strict 1 aircraft per runway max) ──
     const nextNode = ac.assignedRoute[ac.routeEdgeIndex + 1];
     const nextEdge = edges.find(e => e.id === routeEdgeIds[ac.routeEdgeIndex + 1]);
-    const isEnteringRunway = isRunwayNodeOrEdge(nextNode, nextEdge);
-    if (isEnteringRunway) {
-      const rwyKey = nextNode?.includes('07L') || nextNode?.includes('25R') || nextEdge?.id.includes('R1') ? 'RWY07L/25R' : 'RWY07R/25L';
-      const occupyingCallsign = runwayOccupants.get(rwyKey);
-      if (occupyingCallsign && occupyingCallsign !== ac.callsign && ac.progressOnEdge >= 0.85) {
-        if (ac.status !== 'holding' || ac.holdReason !== 'runway-occupied') {
+    const targetCorridor = getRunwayCorridor(nextEdge?.id, nextNode);
+    const currentCorridor = getRunwayCorridor(ac.currentEdgeId, ac.currentNodeId);
+
+    if (targetCorridor && targetCorridor !== currentCorridor) {
+      const occupantId = currentOccupancy[targetCorridor];
+      if (occupantId && occupantId !== ac.id) {
+        const occupantAc = fleet.find(f => f.id === occupantId);
+        if (ac.status !== 'holding' || ac.holdReason !== 'stop-bar') {
           tickLogs = appendLiveLog(tickLogs, {
             atSeconds: state.elapsedSeconds + dt,
             callsign: ac.callsign,
-            message: `Stop Bar kích hoạt: ${ac.callsign} dừng trước ${rwyKey} do ${occupyingCallsign} đang chiếm dụng đường băng.`,
+            message: `[HOLDING_AT_STOP_BAR] Tàu bay ${ac.callsign} dừng trước Stop Bar vì Runway ${targetCorridor} đang bị chiếm dụng bởi ${occupantAc?.callsign || occupantId}.`,
             severity: 'warning',
           });
         }
         return {
           ...ac,
           status: 'holding' as const,
-          holdReason: 'runway-occupied',
+          holdReason: 'stop-bar',
           speedKts: 0,
         };
+      } else {
+        // Reserve runway corridor
+        currentOccupancy[targetCorridor] = ac.id;
+        if (ac.status === 'holding' && ac.holdReason === 'stop-bar') {
+          tickLogs = appendLiveLog(tickLogs, {
+            atSeconds: state.elapsedSeconds + dt,
+            callsign: ac.callsign,
+            message: `[RUNWAY_OCCUPIED] Runway ${targetCorridor} đã giải phóng — ${ac.callsign} tiến vào chiếm dụng đường băng.`,
+            severity: 'info',
+          });
+        }
+      }
+    }
+
+    if (currentCorridor && !targetCorridor) {
+      if (currentOccupancy[currentCorridor] === ac.id) {
+        currentOccupancy[currentCorridor] = null;
+        tickLogs = appendLiveLog(tickLogs, {
+          atSeconds: state.elapsedSeconds + dt,
+          callsign: ac.callsign,
+          message: `[RUNWAY_CLEARED] Tàu bay ${ac.callsign} đã hoàn tất thoát khỏi Runway ${currentCorridor} an toàn.`,
+          severity: 'info',
+        });
       }
     }
 
@@ -844,6 +881,7 @@ export function simulationTick(
     aircraft: activeSelected,
     manualFleet: updatedFleet,
     elapsedSeconds: state.elapsedSeconds + dt,
+    runwayOccupancy: currentOccupancy,
     lightStates: computeLightStates(activeSelected || state.aircraft!, state.blockedEdgeIds, graph),
     liveEventLog: tickLogs,
   };
@@ -877,6 +915,7 @@ export function initSimulation(
     warningMessage: null,
     lightStates: selectedAircraft ? computeLightStates(selectedAircraft, blockedEdgeIds, graph) : {},
     blockedEdgeIds,
+    runwayOccupancy: { NORTH: null, SOUTH: null },
     liveEventLog: [
       {
         id: 'init_ready',

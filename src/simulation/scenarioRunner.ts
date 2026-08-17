@@ -1,10 +1,8 @@
-// Complete Scenario Physics Engine with Dynamic Graph Selection
-// Supports both airportGraph (V1) and airportGraphV2 (V2) seamlessly.
-
-import type { SimulationState, SimulationConfig, AirportGraph } from '../types';
+import type { SimulationState, SimulationConfig, AirportGraph, RunwayOccupancyState } from '../types';
 import { getPresetScenarioDefs, type ScenarioAircraft, type ScenarioState, type ScenarioObservation } from '../data/presetScenarios';
 import { airportGraph } from '../data/airportGraph';
 import { routeToEdges } from './pathfinding';
+import { getRunwayCorridor } from './simulator';
 
 const DEFAULT_SCENARIO_CONFIG: SimulationConfig = {
   startNodeId: 'HS3',
@@ -117,6 +115,7 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
     warningMessage: null,
     lightStates: computeScenarioLightStates(aircraft, blockedEdgeIds, graph),
     blockedEdgeIds,
+    runwayOccupancy: { NORTH: null, SOUTH: null },
     liveEventLog: [
       {
         id: `sc_init_${scenarioId}`,
@@ -148,6 +147,20 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
   }
 
   const elapsed = state.elapsedSeconds + dt;
+  const currentOccupancy: RunwayOccupancyState = {
+    NORTH: state.runwayOccupancy?.NORTH || null,
+    SOUTH: state.runwayOccupancy?.SOUTH || null,
+  };
+
+  // Pre-calculate physical occupancy
+  for (const ac of state.scenarioAircraft) {
+    if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
+    const corridor = getRunwayCorridor(ac.currentEdgeId, ac.currentNodeId);
+    if (corridor) {
+      currentOccupancy[corridor] = ac.id;
+    }
+  }
+
   const scenarioAircraft = state.scenarioAircraft.map((ac: ScenarioAircraft) => {
     if (ac.status === 'departed' || ac.status === 'arrived') return ac;
 
@@ -171,6 +184,33 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
 
     if (!currentEdge || !fromNode || !toNode) {
       return { ...ac, status: 'arrived' as const, speedKts: 0 };
+    }
+
+    // ── RUNWAY OCCUPANCY SAFETY ──
+    const nextNodeId = ac.assignedRoute[ac.routeEdgeIndex + 1];
+    const nextEdgeId = routeEdges[ac.routeEdgeIndex + 1];
+    const targetCorridor = getRunwayCorridor(nextEdgeId, nextNodeId);
+    const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
+
+    if (targetCorridor && targetCorridor !== currentCorridor) {
+      const occupantId = currentOccupancy[targetCorridor];
+      if (occupantId && occupantId !== ac.id) {
+        // Runway occupied by another aircraft: MUST HOLD at Stop Bar
+        return {
+          ...ac,
+          status: 'holding' as const,
+          holdReason: 'stop-bar' as const,
+          speedKts: 0,
+        };
+      } else {
+        currentOccupancy[targetCorridor] = ac.id;
+      }
+    }
+
+    if (currentCorridor && !targetCorridor) {
+      if (currentOccupancy[currentCorridor] === ac.id) {
+        currentOccupancy[currentCorridor] = null;
+      }
     }
 
     // Distance step using exact kinematics and strict numeric guards
@@ -226,6 +266,7 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
   let nextState: SimulationState = {
     ...state,
     scenarioAircraft,
+    runwayOccupancy: currentOccupancy,
     elapsedSeconds: elapsed,
   };
 
