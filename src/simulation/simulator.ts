@@ -763,10 +763,23 @@ export function simulationTick(
     }
 
     const currentEdge = edges.find(e => e.id === currentEdgeId);
-    const edgeLengthMs = currentEdge ? currentEdge.lengthMeters : 50;
-    const progressPerSecond = edgeLengthMs > 0 ? effectiveSpeedMs / edgeLengthMs : 1;
+    let edgeLengthMs = 50;
+    if (currentEdge && Number.isFinite(currentEdge.lengthMeters) && currentEdge.lengthMeters > 0) {
+      edgeLengthMs = currentEdge.lengthMeters;
+    } else {
+      console.warn(`[Kinematics Fallback] Edge ${currentEdge?.id || currentEdgeId || 'unknown'} has invalid length (${currentEdge?.lengthMeters}m). Fallback 50m applied.`);
+    }
 
-    let newProgress = ac.progressOnEdge + progressPerSecond * dt;
+    const progressPerSecond = Number.isFinite(effectiveSpeedMs) && edgeLengthMs > 0
+      ? effectiveSpeedMs / edgeLengthMs
+      : 0;
+    const deltaP = Number.isFinite(progressPerSecond) && Number.isFinite(dt)
+      ? Math.max(0, progressPerSecond * dt)
+      : 0;
+
+    let newProgress = Number.isFinite(ac.progressOnEdge)
+      ? ac.progressOnEdge + deltaP
+      : 0;
     let newEdgeIndex = ac.routeEdgeIndex;
     let newCurrentNodeId = ac.currentNodeId;
 

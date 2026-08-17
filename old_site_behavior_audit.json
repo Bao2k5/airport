@@ -1,0 +1,246 @@
+{
+  "sourceUrl": "https://airport-simulator.vercel.app/",
+  "auditDate": "2026-08-17",
+  "graphCompatibility": {
+    "targetGraphId": "v2",
+    "graphName": "Sân bay TSN (v2)",
+    "requiredNodes": 162,
+    "requiredEdges": 166,
+    "requiredBackground": "/anhtren.png",
+    "mandatoryLog": {
+      "GRAPH_SELECTED": "v2",
+      "NODES": 162,
+      "EDGES": 166,
+      "BACKGROUND": "/anhtren.png"
+    }
+  },
+  "followTheGreen": {
+    "mechanism": "Segmented Single Active Edge Guidance with Next Edge Transition Preview",
+    "activeEdgePolicy": "At most ONE full active edge at any time",
+    "currentEdge": {
+      "status": "active (green)",
+      "aheadDotsOnly": true,
+      "rule": "Only dots at r >= progressOnEdge are illuminated. Dots behind aircraft nose (r < progressOnEdge) are strictly unlit (off)."
+    },
+    "nextEdgePreview": {
+      "triggerCondition": "progressOnEdge >= 0.75",
+      "previewExtent": "Only the first 2-3 dots (or first 25% length) of the next edge are illuminated as anticipation preview",
+      "fullNextEdgeLit": false
+    },
+    "fartherEdges": {
+      "status": "strictly off (unlit)",
+      "rule": "All edges beyond next edge remain off"
+    },
+    "nodeCrossingTransition": {
+      "rule": "When aircraft crosses node: previous edge turns off immediately, next edge becomes current active edge, guidance resets from nose forward"
+    },
+    "dotRendering": {
+      "spacingMeters": 16,
+      "dotConcentricCircles": [
+        { "r": 6.5, "fill": "url(#lead-green)" },
+        { "r": 3.0, "fill": "#22c55e" },
+        { "r": 1.3, "fill": "#f0fff6" }
+      ],
+      "filter": "url(#glow-green)",
+      "cssClass": "guidance-dot"
+    }
+  },
+  "kinematics": {
+    "speedConversion": "speedMetersPerSecond = speedKts * 0.5144",
+    "edgePixelLength": "If edge has trace points, sum Euclidean segments of trace; otherwise Math.hypot(toNode.x - fromNode.x, toNode.y - fromNode.y)",
+    "safePixelScale": "edge.lengthMeters > 0 ? (edgePixelLength / edge.lengthMeters) : 1",
+    "meterDistance": "meterDistance = speedMetersPerSecond * dt",
+    "pixelDistance": "pixelDistance = meterDistance * pixelScale",
+    "progressDelta": "edge.lengthMeters > 0 ? (meterDistance / edge.lengthMeters) : 1"
+  },
+  "safetySeparationConstants": {
+    "_n": { "value": 28, "description": "Standard runway/taxiway longitudinal separation limit in meters" },
+    "vn": { "value": 36, "description": "Apron / gate area longitudinal separation limit in meters" },
+    "hn": { "value": 14, "description": "Lateral corridor conflict tolerance in meters" },
+    "Zn": { "value": 34, "description": "Gate clearance radius for pushback / taxi-out conflict check" },
+    "gn": { "value": 4.0, "description": "Forced junction release timeout in seconds" },
+    "Yn": { "value": 20.0, "description": "Minimum cooldown seconds between automatic reroutes" },
+    "Xn": { "value": 12.0, "description": "Runway threshold holding duration before transition to DEPARTED status" },
+    "yn": { "value": 30.0, "description": "Maximum held duration before traffic avoidance fallback" }
+  },
+  "scenarios": [
+    {
+      "order": 1,
+      "id": "emergency_priority",
+      "title": "Kịch bản 1 — Tàu bay khẩn nguy được ưu tiên tuyệt đối",
+      "weather": "fog",
+      "aircraft": [
+        { "id": "S1", "callsign": "VN9999", "from": "RWY07R_THR", "to": "DOM_S1", "role": "emergency", "priority": 0, "label": "KHẨN NGUY" },
+        { "id": "S2", "callsign": "VN201", "from": "DOM_S3", "to": "H07R", "role": "departing", "priority": 1 },
+        { "id": "S3", "callsign": "VN202", "from": "DOM_S4", "to": "H25L", "role": "departing", "priority": 1 },
+        { "id": "S4", "callsign": "VN203", "from": "RWY25L_THR", "to": "INTL_S1", "role": "arriving", "priority": 1 },
+        { "id": "S5", "callsign": "VN204", "from": "DOM_S2", "to": "H07R", "role": "pushback", "priority": 3, "label": "PUSHBACK" }
+      ],
+      "triggers": [],
+      "expectedObservations": [
+        "Tàu bay ĐỎ (VN9999 — KHẨN NGUY) luôn đi thẳng, không bao giờ phải dừng.",
+        "Các tàu bay khác dừng lại (vạch Stop Bar đỏ ở mũi) khi tuyến cắt ngang hành lang ưu tiên.",
+        "Bảng Đội bay: VN9999 luôn LĂN BÁNH, các tàu bay khác chuyển sang GIỮ NGUYÊN."
+      ],
+      "expectedLogs": [
+        "Kịch bản bắt đầu.",
+        "Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí."
+      ]
+    },
+    {
+      "order": 2,
+      "id": "lvc_intersection_conflict",
+      "title": "Kịch bản 2 — Hai tàu bay cùng tiến vào một nút giao trong LVC",
+      "weather": "fog",
+      "aircraft": [
+        { "id": "S1", "callsign": "VN301", "from": "DOM_S3", "to": "H25L", "role": "departing", "priority": 1 },
+        { "id": "S2", "callsign": "VN302", "from": "INTL_S3", "to": "H07R", "role": "departing", "priority": 2 }
+      ],
+      "triggers": [],
+      "expectedObservations": [
+        "Hai tàu bay tiến vào cùng một giao điểm từ hai hướng khác nhau.",
+        "Tàu bay ưu tiên thấp hơn (VN302) dừng lại — vạch Stop Bar đỏ hiện ở mũi nó.",
+        "Sau khi VN301 đi qua giao điểm (> 28m), VN302 mới tiếp tục lăn bánh."
+      ],
+      "expectedLogs": [
+        "Kịch bản bắt đầu.",
+        "Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí."
+      ]
+    },
+    {
+      "order": 3,
+      "id": "taxiway_closure",
+      "title": "Kịch bản 3 — Đường lăn bị đóng đột xuất",
+      "weather": "clear",
+      "aircraft": [
+        { "id": "S1", "callsign": "VN401", "from": "DOM_S1", "to": "H25L", "role": "departing" },
+        { "id": "S2", "callsign": "VN402", "from": "DOM_S2", "to": "H25R", "role": "departing" },
+        { "id": "S3", "callsign": "VN403", "from": "INTL_S1", "to": "H07R", "role": "departing" },
+        { "id": "S4", "callsign": "VN404", "from": "INTL_S3", "to": "H07L", "role": "departing" }
+      ],
+      "triggers": [
+        { "atSeconds": 60, "action": "Đóng đoạn đường lăn chung và tự động kích hoạt Dijkstra dynamic reroute" }
+      ],
+      "expectedObservations": [
+        "4 tàu bay ban đầu cùng đi qua một đoạn đường lăn chung.",
+        "Tại giây thứ 60: đoạn đường lăn bị đóng (chữ X cam), nhật ký hiện cảnh báo đỏ.",
+        "Ngay sau đó các tàu bay đổi hướng — đường xanh dẫn đường vẽ lại sang tuyến tránh mới."
+      ],
+      "expectedLogs": [
+        "Kịch bản bắt đầu.",
+        "Đường lăn bị đóng đột xuất (FOD/phương tiện hỏng) — đang tính lại lộ trình cho các tàu bay liên quan.",
+        "Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí."
+      ]
+    },
+    {
+      "order": 4,
+      "id": "peak_hour_lvc",
+      "title": "Kịch bản 4 — Giờ cao điểm kết hợp LVC",
+      "weather": "fog",
+      "aircraft": [
+        { "id": "A1", "callsign": "VN501", "from": "RWY07L_THR", "to": "DOM_S1", "role": "arriving" },
+        { "id": "A2", "callsign": "VN502", "from": "RWY25R_THR", "to": "DOM_S2", "role": "arriving" },
+        { "id": "A3", "callsign": "VN503", "from": "RWY07R_THR", "to": "DOM_S3", "role": "arriving" },
+        { "id": "A4", "callsign": "VN504", "from": "RWY25L_THR", "to": "DOM_S4", "role": "arriving", "releaseAtSeconds": 20 },
+        { "id": "A5", "callsign": "VN505", "from": "H25R", "to": "DOM_S5", "role": "arriving", "releaseAtSeconds": 30 },
+        { "id": "D1", "callsign": "VN601", "from": "INTL_S1", "to": "H07R", "role": "departing", "releaseAtSeconds": 150 },
+        { "id": "D2", "callsign": "VN602", "from": "INTL_S2", "to": "H25L", "role": "departing", "releaseAtSeconds": 175 },
+        { "id": "D3", "callsign": "VN603", "from": "INTL_S3", "to": "H25R", "role": "departing", "releaseAtSeconds": 200 },
+        { "id": "D4", "callsign": "VN604", "from": "INTL_S4", "to": "H07L", "role": "departing", "releaseAtSeconds": 225 },
+        { "id": "D5", "callsign": "VN605", "from": "P1", "to": "H25L", "role": "departing", "releaseAtSeconds": 250 },
+        { "id": "P1", "callsign": "VN701", "from": "P2", "to": "H07R", "role": "pushback", "priority": 3, "label": "PUSHBACK", "releaseAtSeconds": 275 },
+        { "id": "P2", "callsign": "VN702", "from": "P4", "to": "H25R", "role": "pushback", "priority": 3, "label": "PUSHBACK", "releaseAtSeconds": 300 }
+      ],
+      "triggers": [],
+      "expectedObservations": [
+        "12 tàu bay cùng hoạt động tuần tự theo releaseAtSeconds.",
+        "Tại các nút giao đông đúc, các tàu bay xếp hàng chờ an toàn với khoảng cách 28m/36m.",
+        "Trong bảng Đội bay: các dòng Giữ khoảng cách / GIỮ NGUYÊN xuất hiện nhịp nhàng khi có xung đột."
+      ],
+      "expectedLogs": [
+        "Kịch bản bắt đầu.",
+        "Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí."
+      ]
+    },
+    {
+      "order": 5,
+      "id": "wrong_route_deviation",
+      "title": "Kịch bản 5 — Tàu bay taxi sai tuyến trong LVC",
+      "weather": "fog",
+      "aircraft": [
+        { "id": "S1", "callsign": "VN801", "from": "DOM_S3", "to": "H25L", "role": "departing" },
+        { "id": "S2", "callsign": "VN802", "from": "DOM_S1", "to": "H25R", "role": "departing" }
+      ],
+      "triggers": [],
+      "expectedObservations": [
+        "VN801 ban đầu lăn rồi rẽ sai khỏi lộ trình đã cấp.",
+        "Vòng tròn cam nhấp nháy quanh nó, nhật ký hiện dòng đỏ lệnh dừng khẩn cấp.",
+        "VN801 dừng hẳn (STOPPED), sau 4 giây nhật ký hiện Đã cấp lại lộ trình an toàn và tàu bay tiếp tục lăn."
+      ],
+      "expectedLogs": [
+        "Kịch bản bắt đầu.",
+        "KSVKL phát hiện VN801 lệch khỏi lộ trình đã cấp — lệnh dừng khẩn cấp.",
+        "Đã cấp lại lộ trình an toàn cho VN801 — tiếp tục lăn bánh.",
+        "Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí."
+      ]
+    },
+    {
+      "order": 6,
+      "id": "radio_failure",
+      "title": "Kịch bản 6 — Mất liên lạc vô tuyến (Radio Failure)",
+      "weather": "fog",
+      "aircraft": [
+        { "id": "S1", "callsign": "VN901", "from": "DOM_S4", "to": "H25R", "role": "departing" },
+        { "id": "S2", "callsign": "VN902", "from": "INTL_S1", "to": "H07L", "role": "departing" }
+      ],
+      "triggers": [
+        { "atSeconds": 50, "action": "VN901 mất liên lạc vô tuyến (radioFailure: true, label: MẤT LIÊN LẠC)" },
+        { "atSeconds": 75, "action": "Đóng đường lăn của VN902 để cấp lại tuyến mới qua thoại" }
+      ],
+      "expectedObservations": [
+        "Tại giây 50: VN901 hiện nhãn MẤT LIÊN LẠC và viền nét đứt tím.",
+        "VN901 vẫn tự động lăn an toàn theo đèn xanh của FtG đến đích không cần thoại.",
+        "VN902 gặp sự cố trên tuyến được cấp tuyến mới qua thoại song song."
+      ],
+      "expectedLogs": [
+        "Kịch bản bắt đầu.",
+        "VN901 mất liên lạc vô tuyến với Ground — FtG tiếp tục dẫn đường bằng đèn theo lộ trình đã cấp, không cần thoại.",
+        "Sự cố trên tuyến của VN902 — vẫn điều phối lại bình thường qua thoại (không ảnh hưởng tàu bay mất liên lạc).",
+        "Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí."
+      ]
+    },
+    {
+      "order": 7,
+      "id": "runway_change",
+      "title": "Kịch bản 7 — Chuyển đổi đường cất hạ cánh đang khai thác",
+      "weather": "clear",
+      "aircraft": [
+        { "id": "S1", "callsign": "VNA01", "from": "DOM_S1", "to": "H07L", "role": "departing" },
+        { "id": "S2", "callsign": "VNA02", "from": "DOM_S2", "to": "H07R", "role": "departing", "releaseAtSeconds": 25 },
+        { "id": "S3", "callsign": "VNA03", "from": "INTL_S1", "to": "H07L", "role": "departing", "releaseAtSeconds": 50 },
+        { "id": "S4", "callsign": "VNA04", "from": "DOM_S3", "to": "H25R", "role": "departing" },
+        { "id": "S5", "callsign": "VNA05", "from": "DOM_S4", "to": "H25L", "role": "departing", "releaseAtSeconds": 25 },
+        { "id": "S6", "callsign": "VNA06", "from": "INTL_S3", "to": "H25R", "role": "departing", "releaseAtSeconds": 50 }
+      ],
+      "triggers": [
+        { "atSeconds": 75, "action": "Chuyển đầu cất cánh từ 07 sang 25 cho toàn bộ tàu bay cùng lúc" }
+      ],
+      "expectedObservations": [
+        "Ban đầu 3 tàu bay hướng về đầu 07 (bên trái), 3 tàu bay hướng về đầu 25 (bên phải).",
+        "Tại giây 75: lệnh đổi đường CHC được phát ra, toàn bộ 3 tàu bay hướng 07 quay đầu sang đầu 25.",
+        "Đèn xanh FtG được tái lập trình đồng thời và mượt mà."
+      ],
+      "expectedLogs": [
+        "Kịch bản bắt đầu.",
+        "Chuyển đường CHC đang khai thác — tính lại lộ trình cho 3 tàu bay cùng lúc.",
+        "Kịch bản hoàn tất — toàn bộ tàu bay đã đến vị trí."
+      ]
+    }
+  ],
+  "manualControl": {
+    "standPositions": ["P1", "P2", "P3", "P4", "P5", "T49"],
+    "initialStatus": "PARKED",
+    "guidanceVisibility": "Only when route accepted and aircraft active",
+    "independentReset": true
+  }
+}

@@ -21,7 +21,6 @@ const DEFAULT_SCENARIO_CONFIG: SimulationConfig = {
   autoReroute: true,
 };
 
-const KTS_TO_PX_PER_SEC = 0.22;
 
 function getNodePos(nodeId: string, graph: AirportGraph = airportGraph) {
   return graph.nodes.find(n => n.id === nodeId) ?? null;
@@ -174,11 +173,21 @@ export function scenarioTick(state: SimulationState, dt: number, graph: AirportG
       return { ...ac, status: 'arrived' as const, speedKts: 0 };
     }
 
-    // Distance step
-    const distPx = Math.hypot(toNode.x - fromNode.x, toNode.y - fromNode.y) || 1;
-    const speedPxPerSec = ac.speedKts * KTS_TO_PX_PER_SEC;
-    const deltaProgress = (speedPxPerSec * dt) / distPx;
-    const nextProgress = ac.progressOnEdge + deltaProgress;
+    // Distance step using exact kinematics and strict numeric guards
+    const speedMetersPerSecond = Number.isFinite(ac.speedKts) ? ac.speedKts * 0.5144 : 15 * 0.5144;
+    let edgeLengthMs = 50;
+    if (currentEdge && Number.isFinite(currentEdge.lengthMeters) && currentEdge.lengthMeters > 0) {
+      edgeLengthMs = currentEdge.lengthMeters;
+    } else {
+      console.warn(`[Kinematics Fallback] Edge ${currentEdge?.id || 'unknown'} has invalid length (${currentEdge?.lengthMeters}m). Fallback 50m applied.`);
+    }
+
+    const deltaProgress = Number.isFinite(speedMetersPerSecond) && Number.isFinite(dt) && edgeLengthMs > 0
+      ? Math.max(0, (speedMetersPerSecond * dt) / edgeLengthMs)
+      : 0;
+    const nextProgress = Number.isFinite(ac.progressOnEdge)
+      ? ac.progressOnEdge + deltaProgress
+      : 0;
 
     if (nextProgress < 1) {
       return {

@@ -225,7 +225,8 @@ function AirportMap({
 
   return (
     <div
-      className="relative w-full h-full rounded-xl overflow-hidden border border-[#223044] touch-none select-none"
+      data-testid="airport-map-main"
+      className="airport-map-container relative w-full h-full rounded-xl overflow-hidden border border-[#223044] touch-none select-none"
       style={{ background: isNight ? '#0a0e18' : isAfternoon ? '#dfc98a' : BG_OUTER }}
     >
       {isAfternoon && (
@@ -469,11 +470,11 @@ function AirportMap({
 
         {/* ── Layer 5: Holding Bars & Closed Edge Markers ── */}
         {allActiveAircraft.map(ac => {
-          if (ac.status !== 'holding') return null;
+          if (ac.status !== 'holding' && ac.holdReason !== 'stop-bar') return null;
           const fromNode = activeGraph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex]);
           const toNode = activeGraph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex + 1]);
           if (!fromNode || !toNode) return null;
-          return <StopBar key={`hold-bar-${ac.id}`} x1={fromNode.x} y1={fromNode.y} x2={toNode.x} y2={toNode.y} />;
+          return <StopBar key={`hold-bar-${ac.id}`} x1={fromNode.x} y1={fromNode.y} x2={toNode.x} y2={toNode.y} progress={ac.progressOnEdge} />;
         })}
 
         {Array.from(state.blockedEdgeIds).map(edgeId => {
@@ -590,21 +591,17 @@ function AirportMap({
   );
 }
 
-// ── UNIFIED FOLLOW-THE-GREEN GUIDANCE RENDERER (SMGCS Standard) ─────────────
-export const GUIDANCE_LOOKAHEAD_RATIO = 0.6; // 60% of visible route ahead
-export const MIN_LOOKAHEAD_METERS = 40;
-export const MAX_LOOKAHEAD_METERS = 180;
-
-interface PolylinePoint {
+// ── SEGMENTED FOLLOW-THE-GREEN GUIDANCE RENDERER (Strict Segmented Active Edge) ─────────────
+interface GuidanceDot {
   x: number;
   y: number;
-  distMetersFromNose: number;
+  isPreview?: boolean;
 }
 
-function computeForwardGuidancePolyline(
+function computeSegmentedGuidanceDots(
   aircraft: Aircraft,
   graph: AirportGraph,
-): { points: PolylinePoint[]; totalMeters: number; pathD: string } | null {
+): { activeDots: GuidanceDot[]; previewDots: GuidanceDot[] } | null {
   if (!aircraft.assignedRoute || aircraft.assignedRoute.length < 2) return null;
   if (aircraft.routeEdgeIndex >= aircraft.assignedRoute.length - 1) return null;
 
@@ -612,96 +609,62 @@ function computeForwardGuidancePolyline(
   const toNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 1]);
   if (!fromNode || !toNode) return null;
 
-  const edges = graph.edges;
-  const currentEdge = edges.find(
-    e => (e.fromNodeId === fromNode.id && e.toNodeId === toNode.id) ||
-         (e.bidirectional && e.fromNodeId === toNode.id && e.toNodeId === fromNode.id)
-  ) || edges.find(e => e.id === aircraft.currentEdgeId);
+  const dx = toNode.x - fromNode.x;
+  const dy = toNode.y - fromNode.y;
+  const edgePixelLen = Math.hypot(dx, dy) || 1;
+  const dotCount = Math.max(1, Math.round(edgePixelLen / 16));
 
-  const t = Math.max(0, Math.min(1, aircraft.progressOnEdge));
-  const noseX = fromNode.x + (toNode.x - fromNode.x) * t;
-  const noseY = fromNode.y + (toNode.y - fromNode.y) * t;
+  const activeDots: GuidanceDot[] = [];
+  const prog = Math.max(0, Math.min(1, aircraft.progressOnEdge));
 
-  // 1. Calculate total remaining meters along the entire remainder of the route
-  const currentEdgeLenMeters = currentEdge?.lengthMeters || 50;
-  let remainingMetersOnRoute = (1 - t) * currentEdgeLenMeters;
-
-  for (let i = aircraft.routeEdgeIndex + 1; i < aircraft.assignedRoute.length - 1; i++) {
-    const u = aircraft.assignedRoute[i];
-    const v = aircraft.assignedRoute[i + 1];
-    const edge = edges.find(
-      e => (e.fromNodeId === u && e.toNodeId === v) ||
-           (e.bidirectional && e.fromNodeId === v && e.toNodeId === u)
-    );
-    remainingMetersOnRoute += edge?.lengthMeters || 50;
-  }
-
-  // 2. Compute dynamic lookahead window (60% of visible route, bounded 40m - 180m)
-  const targetLookaheadMeters = Math.max(
-    MIN_LOOKAHEAD_METERS,
-    Math.min(MAX_LOOKAHEAD_METERS, remainingMetersOnRoute * GUIDANCE_LOOKAHEAD_RATIO)
-  );
-
-  const points: PolylinePoint[] = [{ x: noseX, y: noseY, distMetersFromNose: 0 }];
-  let accumMeters = 0;
-
-  // 3. Forward trace along current edge
-  const remCurrentMeters = (1 - t) * currentEdgeLenMeters;
-  if (remCurrentMeters > 0.1) {
-    if (accumMeters + remCurrentMeters >= targetLookaheadMeters) {
-      const frac = (targetLookaheadMeters - accumMeters) / remCurrentMeters;
-      const ptX = noseX + (toNode.x - noseX) * frac;
-      const ptY = noseY + (toNode.y - noseY) * frac;
-      points.push({ x: ptX, y: ptY, distMetersFromNose: targetLookaheadMeters });
-      const pathD = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-      return { points, totalMeters: targetLookaheadMeters, pathD };
+  // 1. Current Active Edge: ONLY dots in front of aircraft nose (r >= prog)
+  for (let i = 1; i < dotCount; i++) {
+    const r = i / dotCount;
+    if (r >= prog) {
+      activeDots.push({
+        x: fromNode.x + dx * r,
+        y: fromNode.y + dy * r,
+        isPreview: false,
+      });
     }
-    accumMeters += remCurrentMeters;
-    points.push({ x: toNode.x, y: toNode.y, distMetersFromNose: accumMeters });
   }
 
-  // 4. Forward trace along subsequent edges
-  let prevNode = toNode;
-  for (let i = aircraft.routeEdgeIndex + 1; i < aircraft.assignedRoute.length - 1; i++) {
-    const nextNodeId = aircraft.assignedRoute[i + 1];
-    const nextNode = graph.nodes.find(n => n.id === nextNodeId);
-    if (!nextNode) break;
+  // 2. Next Edge Preview: Only if progressOnEdge >= 0.75, illuminate first 2-3 dots as preview
+  const previewDots: GuidanceDot[] = [];
+  if (prog >= 0.75 && aircraft.routeEdgeIndex + 1 < aircraft.assignedRoute.length - 1) {
+    const nextToNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 2]);
+    if (nextToNode) {
+      const ndx = nextToNode.x - toNode.x;
+      const ndy = nextToNode.y - toNode.y;
+      const nextEdgePixelLen = Math.hypot(ndx, ndy) || 1;
+      const nextDotCount = Math.max(1, Math.round(nextEdgePixelLen / 16));
+      const maxPreviewCount = Math.min(3, Math.max(1, Math.ceil(nextDotCount * 0.25)));
 
-    const edge = edges.find(
-      e => (e.fromNodeId === prevNode.id && e.toNodeId === nextNode.id) ||
-           (e.bidirectional && e.fromNodeId === nextNode.id && e.toNodeId === prevNode.id)
-    );
-    const segMeters = edge?.lengthMeters || 50;
-
-    if (accumMeters + segMeters >= targetLookaheadMeters) {
-      const frac = (targetLookaheadMeters - accumMeters) / segMeters;
-      const ptX = prevNode.x + (nextNode.x - prevNode.x) * frac;
-      const ptY = prevNode.y + (nextNode.y - prevNode.y) * frac;
-      points.push({ x: ptX, y: ptY, distMetersFromNose: targetLookaheadMeters });
-      accumMeters = targetLookaheadMeters;
-      break;
+      for (let i = 1; i <= maxPreviewCount; i++) {
+        const r = i / nextDotCount;
+        previewDots.push({
+          x: toNode.x + ndx * r,
+          y: toNode.y + ndy * r,
+          isPreview: true,
+        });
+      }
     }
-
-    accumMeters += segMeters;
-    points.push({ x: nextNode.x, y: nextNode.y, distMetersFromNose: accumMeters });
-    prevNode = nextNode;
   }
 
-  if (points.length < 2) return null;
-  const pathD = points.map((p, idx) => `${idx === 0 ? 'M' : 'L'}${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
-  return { points, totalMeters: accumMeters, pathD };
+  // Farther edges are strictly OFF (omitted)
+  return { activeDots, previewDots };
 }
 
 function FollowTheGreenRenderer({
   aircraft,
   graph,
-  animPhase,
+  animPhase: _animPhase,
   isScenario = false,
   isSelected = false,
 }: {
   aircraft: Aircraft;
   graph: AirportGraph;
-  animPhase: number;
+  animPhase?: number;
   isScenario?: boolean;
   isSelected?: boolean;
 }) {
@@ -713,86 +676,115 @@ function FollowTheGreenRenderer({
     return null;
   }
 
-  const poly = computeForwardGuidancePolyline(aircraft, graph);
-  if (!poly || poly.points.length < 2 || poly.totalMeters < 1) return null;
-
-  // Discrete glowing circular dots along forward guidance path (Nét đứt hình tròn sáng rực rỡ)
-  const dotSpacingMeters = 8; // approximately every 8 meters
-  const numDots = Math.max(1, Math.floor(poly.totalMeters / dotSpacingMeters));
-  const dots: { x: number; y: number; distMeters: number; phase: number }[] = [];
-
-  for (let i = 1; i <= numDots; i++) {
-    const targetM = i * dotSpacingMeters;
-    for (let j = 0; j < poly.points.length - 1; j++) {
-      const p1 = poly.points[j];
-      const p2 = poly.points[j + 1];
-      if (targetM >= p1.distMetersFromNose && targetM <= p2.distMetersFromNose) {
-        const segLen = p2.distMetersFromNose - p1.distMetersFromNose;
-        const frac = segLen > 0 ? (targetM - p1.distMetersFromNose) / segLen : 0;
-        const ptX = p1.x + (p2.x - p1.x) * frac;
-        const ptY = p1.y + (p2.y - p1.y) * frac;
-        const phase = (targetM / 10 - animPhase) % (Math.PI * 2);
-        dots.push({ x: ptX, y: ptY, distMeters: targetM, phase });
-        break;
-      }
-    }
-  }
+  const guidance = computeSegmentedGuidanceDots(aircraft, graph);
+  if (!guidance || (guidance.activeDots.length === 0 && guidance.previewDots.length === 0)) return null;
 
   return (
     <g
       className={`ftg-guidance-group-${aircraft.id}`}
       style={{
         filter: isSelected
-          ? 'drop-shadow(0 0 7px #22c55e) drop-shadow(0 0 16px #16a34a)'
-          : 'drop-shadow(0 0 5px #22c55e) drop-shadow(0 0 10px #16a34a)',
+          ? 'drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 14px #16a34a)'
+          : 'drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 8px #16a34a)',
       }}
     >
-      {/* 1. Subtle forward centerline lead line ahead of nose */}
-      <path
-        d={poly.pathD}
-        stroke="#22c55e"
-        strokeWidth={3.0}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        opacity={0.4}
-      />
-      <path
-        d={poly.pathD}
-        stroke="#86efac"
-        strokeWidth={1.2}
-        strokeLinecap="round"
-        strokeLinejoin="round"
-        fill="none"
-        opacity={0.7}
-      />
+      {/* 1. Active Edge Guidance Dots (In front of aircraft nose) */}
+      {guidance.activeDots.map((dot, idx) => (
+        <g key={`ftg-act-${aircraft.id}-${idx}`} className="guidance-dot">
+          {/* Outer radial halo circle */}
+          <circle cx={dot.x} cy={dot.y} r={6.5} fill="url(#neon-lead-green)" />
+          {/* Main green body */}
+          <circle cx={dot.x} cy={dot.y} r={3.0} fill="#22c55e" />
+          {/* Bright core center */}
+          <circle cx={dot.x} cy={dot.y} r={1.3} fill="#f0fff6" />
+        </g>
+      ))}
 
-      {/* 2. Sliding discrete glowing Follow-the-Green dots ahead of nose */}
-      {dots.map((dot, idx) => {
-        const pulse = 0.82 + 0.25 * Math.sin(dot.phase);
-        const fade = Math.max(0.35, 1 - (dot.distMeters / (poly.totalMeters * 1.1)));
-        return (
-          <g key={`ftg-dot-${aircraft.id}-${idx}`} opacity={fade}>
-            {/* Outer halo */}
-            <circle cx={dot.x} cy={dot.y} r={6.8 * pulse} fill="url(#neon-lead-green)" />
-            {/* Bright green body */}
-            <circle cx={dot.x} cy={dot.y} r={3.2 * pulse} fill="#22c55e" />
-            {/* Bright white core */}
-            <circle cx={dot.x} cy={dot.y} r={1.3} fill="#ffffff" />
-          </g>
-        );
-      })}
+      {/* 2. Next Edge Preview Dots (When progressOnEdge >= 0.75, first 2-3 dots) */}
+      {guidance.previewDots.map((dot, idx) => (
+        <g key={`ftg-prev-${aircraft.id}-${idx}`} opacity={0.65} className="guidance-dot-preview">
+          <circle cx={dot.x} cy={dot.y} r={5.5} fill="url(#neon-lead-green)" />
+          <circle cx={dot.x} cy={dot.y} r={2.5} fill="#22c55e" />
+          <circle cx={dot.x} cy={dot.y} r={1.1} fill="#f0fff6" />
+        </g>
+      ))}
     </g>
   );
 }
 
-function StopBar({ x1, y1, x2, y2 }: { x1: number; y1: number; x2: number; y2: number }) {
-  const mx = (x1 + x2) / 2, my = (y1 + y2) / 2;
+function StopBar({ x1, y1, x2, y2, progress = 0.5 }: { x1: number; y1: number; x2: number; y2: number; progress?: number }) {
+  const t = Math.max(0.05, Math.min(0.95, (Number.isFinite(progress) ? progress : 0.5) + 0.04));
+  const mx = x1 + (x2 - x1) * t;
+  const my = y1 + (y2 - y1) * t;
   const dx = x2 - x1, dy = y2 - y1;
   const len = Math.sqrt(dx * dx + dy * dy) || 1;
-  const px = (-dy / len) * 12, py = (dx / len) * 12;
+  const px = (-dy / len) * 14, py = (dx / len) * 14;
   return (
-    <line x1={mx - px} y1={my - py} x2={mx + px} y2={my + py} stroke="#ef4444" strokeWidth={4.5} strokeLinecap="round" />
+    <g className="stop-bar-active-group">
+      {/* 1. Broad pulsating outer glow */}
+      <line
+        x1={mx - px}
+        y1={my - py}
+        x2={mx + px}
+        y2={my + py}
+        stroke="#ef4444"
+        strokeWidth={9}
+        strokeLinecap="round"
+        opacity={0.45}
+        filter="url(#glow-aircraft)"
+      />
+      {/* 2. Main bright Stop Bar line */}
+      <line
+        x1={mx - px}
+        y1={my - py}
+        x2={mx + px}
+        y2={my + py}
+        stroke="#dc2626"
+        strokeWidth={5.5}
+        strokeLinecap="round"
+      />
+      {/* 3. High-contrast core line */}
+      <line
+        x1={mx - px * 0.85}
+        y1={my - py * 0.85}
+        x2={mx + px * 0.85}
+        y2={my + py * 0.85}
+        stroke="#fee2e2"
+        strokeWidth={1.8}
+        strokeLinecap="round"
+      />
+      {/* 4. Three discrete red flashing stop-bar lights */}
+      <circle cx={mx - px * 0.75} cy={my - py * 0.75} r={3.2} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
+      <circle cx={mx} cy={my} r={3.6} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
+      <circle cx={mx + px * 0.75} cy={my + py * 0.75} r={3.2} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
+
+      {/* 5. Clear prominent badge: STOP BAR */}
+      <g transform={`translate(${mx}, ${my - 12})`}>
+        <rect
+          x={-24}
+          y={-5}
+          width={48}
+          height={10}
+          rx={3}
+          fill="#b91c1c"
+          stroke="#fee2e2"
+          strokeWidth={1}
+          filter="drop-shadow(0 2px 4px rgba(0,0,0,0.6))"
+        />
+        <text
+          x={0}
+          y={2.2}
+          textAnchor="middle"
+          fontSize={5.8}
+          fontWeight={900}
+          fill="#ffffff"
+          letterSpacing={0.5}
+          fontFamily="monospace"
+        >
+          STOP BAR
+        </text>
+      </g>
+    </g>
   );
 }
 
