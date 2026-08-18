@@ -1,9 +1,8 @@
-// Bảng giám sát trạng thái trực tiếp — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
-
 import { Fragment } from 'react';
 import type { SimulationState, AirportGraph } from '../types';
 import { airportGraph } from '../data/airportGraph';
 import { routeToEdges } from '../simulation/pathfinding';
+import { getAirlineDef } from '../data/airlineTypes';
 
 interface Props {
   state: SimulationState;
@@ -123,8 +122,17 @@ export default function StatusPanel({ state, graph = airportGraph }: Props) {
                   }`}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2 font-mono">
-                      <span className="font-bold text-xs text-[#0D254C]">{ac.callsign}</span>
+                    <div className="flex items-center gap-1.5 flex-wrap">
+                      <span
+                        className="text-[9px] px-1.5 py-0.5 rounded font-bold text-white uppercase font-mono"
+                        style={{ backgroundColor: getAirlineDef(ac.airlineCode || ac.callsign).badgeBg }}
+                      >
+                        {ac.airlineCode || getAirlineDef(ac.callsign).code}
+                      </span>
+                      <span className="font-bold text-xs text-[#0D254C] font-mono">{ac.callsign}</span>
+                      <span className="text-[10px] text-[#475569] font-medium">
+                        {ac.airlineName || getAirlineDef(ac.callsign).name} ({ac.aircraftType || 'A321'})
+                      </span>
                       {ac.scenarioLabel && (
                         <span className="text-[9px] px-1.5 py-0.5 rounded bg-[#FEE2E2] text-[#991B1B] font-bold border border-[#FCA5A5]">
                           {ac.scenarioLabel}

@@ -1,4 +1,4 @@
-import type { AircraftStatus, AirportGraph, AirlineCode } from '../types';
+import type { AircraftStatus, AirportGraph, AirlineCode, AircraftType } from '../types';
 import { airportGraph } from './airportGraph';
 import { getAirlineDef } from './airlineTypes';
 import { findPath, routeToEdges } from '../simulation/pathfinding';
@@ -10,6 +10,7 @@ export interface ScenarioAircraft {
   airlineCode?: AirlineCode;
   airlineName?: string;
   aircraftAsset?: string;
+  aircraftType?: AircraftType;
   currentNodeId: string;
   targetNodeId: string;
   currentEdgeId: string | null;
@@ -104,6 +105,8 @@ export function createScenarioAircraft(
     callsign: string;
     from: string;
     to: string;
+    aircraftType?: AircraftType;
+    airlineCode?: AirlineCode;
     role?: 'emergency' | 'departing' | 'arriving' | 'pushback';
     priority?: number;
     label?: string;
@@ -119,9 +122,21 @@ export function createScenarioAircraft(
     return null;
   }
   const edges = routeToEdges(route, graph.edges) ?? [];
-  const airlineDef = getAirlineDef(opts.callsign);
+  const airlineDef = getAirlineDef(opts.airlineCode || opts.callsign);
   const isWaiting = Boolean(opts.releaseAtSeconds && opts.releaseAtSeconds > 0);
   const isQueued = Boolean(opts.queueOrder && opts.queueOrder > 1);
+
+  // Determine realistic default aircraft type
+  let aircraftType: AircraftType = opts.aircraftType || 'A321';
+  if (!opts.aircraftType) {
+    if (airlineDef.code === 'SQ' || airlineDef.code === 'TG') {
+      aircraftType = 'A350';
+    } else if (airlineDef.code === 'VN' && (opts.callsign.includes('9999') || opts.callsign.startsWith('VN3') || opts.callsign.startsWith('VN501') || opts.callsign.startsWith('VNA01'))) {
+      aircraftType = 'B737';
+    } else {
+      aircraftType = 'A321';
+    }
+  }
 
   return {
     id: opts.id,
@@ -129,11 +144,13 @@ export function createScenarioAircraft(
     airlineCode: airlineDef.code,
     airlineName: airlineDef.name,
     aircraftAsset: airlineDef.asset,
+    aircraftType,
     currentNodeId: opts.from,
     targetNodeId: opts.to,
     currentEdgeId: edges[0] ?? null,
     progressOnEdge: 0,
-    speedKts: 30,
+    speedKts: isWaiting || isQueued ? 0 : 15,
+    speedLimitKts: 15,
     status: isQueued ? 'queued' : (isWaiting ? 'waiting' : 'taxiing'),
     assignedRoute: route,
     routeEdgeIndex: 0,
@@ -144,6 +161,7 @@ export function createScenarioAircraft(
     releaseAtSeconds: opts.releaseAtSeconds,
     queueOrder: opts.queueOrder,
     queueRunway: opts.queueRunway,
+    routeVisible: true,
   };
 }
 
@@ -222,11 +240,11 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       ],
       setup: (g = graph) => {
         const aircraft = filterNonNull([
-          createScenarioAircraft({ id: 'S1', callsign: 'VN9999', from: 'RWY07R_THR', to: 'DOM_S1', role: 'emergency', priority: 0, label: 'KHẨN NGUY' }, g),
-          createScenarioAircraft({ id: 'S2', callsign: 'VN201', from: 'DOM_S3', to: 'H07R', role: 'departing', priority: 2 }, g),
-          createScenarioAircraft({ id: 'S3', callsign: 'VN202', from: 'DOM_S4', to: 'H25L', role: 'departing', priority: 2 }, g),
-          createScenarioAircraft({ id: 'S4', callsign: 'VN203', from: 'RWY25L_THR', to: 'INTL_S1', role: 'arriving', priority: 2 }, g),
-          createScenarioAircraft({ id: 'S5', callsign: 'VN204', from: 'DOM_S2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK' }, g),
+          createScenarioAircraft({ id: 'S1', callsign: 'VN9999', from: 'RWY07R_THR', to: 'DOM_S1', role: 'emergency', priority: 0, label: 'KHẨN NGUY', aircraftType: 'B737', airlineCode: 'VN' }, g),
+          createScenarioAircraft({ id: 'S2', callsign: 'VJ202', from: 'DOM_S3', to: 'H07R', role: 'departing', priority: 2, aircraftType: 'A321', airlineCode: 'VJ' }, g),
+          createScenarioAircraft({ id: 'S3', callsign: 'QH203', from: 'DOM_S4', to: 'H25L', role: 'departing', priority: 2, aircraftType: 'A321', airlineCode: 'QH' }, g),
+          createScenarioAircraft({ id: 'S4', callsign: 'VU204', from: 'RWY25L_THR', to: 'INTL_S1', role: 'arriving', priority: 2, aircraftType: 'A321', airlineCode: 'VU' }, g),
+          createScenarioAircraft({ id: 'S5', callsign: 'TG205', from: 'DOM_S2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK', aircraftType: 'A350', airlineCode: 'TG' }, g),
         ]);
 
         const observations: ScenarioObservation[] = [
@@ -254,7 +272,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN201', 'VN202', 'VN203', 'VN204'],
+            relatedAircraft: ['VJ202', 'QH203', 'VU204', 'TG205'],
             check: (s) => {
               const held = s.scenarioAircraft?.filter((a: any) => a.callsign !== 'VN9999' && a.status === 'holding' && a.holdReason === 'stop-bar');
               if (held && held.length > 0) {
@@ -307,8 +325,8 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         'Sau khi VN301 đi qua, TG302 mới tiếp tục lăn bánh — không bao giờ có va chạm.'
       ],
       setup: (g = graph) => {
-        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VN301', from: 'DOM_S3', to: 'H25L', role: 'departing', priority: 1 }, g);
-        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'TG302', from: 'INTL_S3', to: 'H07R', role: 'departing', priority: 2 }, g);
+        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VN301', from: 'DOM_S3', to: 'H25L', role: 'departing', priority: 1, aircraftType: 'B737', airlineCode: 'VN' }, g);
+        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'TG302', from: 'INTL_S3', to: 'H07R', role: 'departing', priority: 2, aircraftType: 'A350', airlineCode: 'TG' }, g);
 
         const observations: ScenarioObservation[] = [
           {
@@ -416,10 +434,10 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       ],
       setup: (g = graph) => {
         const aircraft = filterNonNull([
-          createScenarioAircraft({ id: 'S1', callsign: 'VN401', from: 'DOM_S1', to: 'H25L', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S2', callsign: 'VN402', from: 'DOM_S2', to: 'H25R', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S3', callsign: 'VN403', from: 'INTL_S1', to: 'H07R', role: 'departing' }, g),
-          createScenarioAircraft({ id: 'S4', callsign: 'VN404', from: 'INTL_S3', to: 'H07L', role: 'departing' }, g),
+          createScenarioAircraft({ id: 'S1', callsign: 'VN401', from: 'DOM_S1', to: 'H25L', role: 'departing', aircraftType: 'A321', airlineCode: 'VN' }, g),
+          createScenarioAircraft({ id: 'S2', callsign: 'VJ402', from: 'DOM_S2', to: 'H25R', role: 'departing', aircraftType: 'A321', airlineCode: 'VJ' }, g),
+          createScenarioAircraft({ id: 'S3', callsign: 'SQ403', from: 'INTL_S1', to: 'H07R', role: 'departing', aircraftType: 'A350', airlineCode: 'SQ' }, g),
+          createScenarioAircraft({ id: 'S4', callsign: 'QH404', from: 'INTL_S3', to: 'H07L', role: 'departing', aircraftType: 'A321', airlineCode: 'QH' }, g),
         ]);
         const closureEdge = 'E_W11_LOOP_13';
 
@@ -431,10 +449,10 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN401', 'VN402', 'VN403', 'VN404'],
+            relatedAircraft: ['VN401', 'VJ402', 'SQ403', 'QH404'],
             check: (s) => {
               if (s.scenarioAircraft && s.scenarioAircraft.length === 4) {
-                return { pass: true, evidence: `Đội bay 4 chiếc: VN401, VN402, VN403, VN404` };
+                return { pass: true, evidence: `Đội bay 4 chiếc: VN401, VJ402, SQ403, QH404` };
               }
               return { pass: false };
             },
@@ -527,20 +545,20 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       setup: (g = graph) => {
         const aircraft = filterNonNull([
           // Arriving (5)
-          createScenarioAircraft({ id: 'A1', callsign: 'VN501', from: 'RWY07L_THR', to: 'DOM_S1', role: 'arriving', releaseAtSeconds: 0 }, g),
-          createScenarioAircraft({ id: 'A2', callsign: 'VN502', from: 'RWY25R_THR', to: 'DOM_S2', role: 'arriving', releaseAtSeconds: 0 }, g),
-          createScenarioAircraft({ id: 'A3', callsign: 'VN503', from: 'RWY07R_THR', to: 'DOM_S3', role: 'arriving', releaseAtSeconds: 0 }, g),
-          createScenarioAircraft({ id: 'A4', callsign: 'VN504', from: 'RWY25L_THR', to: 'DOM_S4', role: 'arriving', releaseAtSeconds: 20 }, g),
-          createScenarioAircraft({ id: 'A5', callsign: 'VN505', from: 'H25R', to: 'DOM_S5', role: 'arriving', releaseAtSeconds: 30 }, g),
+          createScenarioAircraft({ id: 'A1', callsign: 'VN501', from: 'RWY07L_THR', to: 'DOM_S1', role: 'arriving', releaseAtSeconds: 0, aircraftType: 'B737', airlineCode: 'VN' }, g),
+          createScenarioAircraft({ id: 'A2', callsign: 'VJ502', from: 'RWY25R_THR', to: 'DOM_S2', role: 'arriving', releaseAtSeconds: 0, aircraftType: 'A321', airlineCode: 'VJ' }, g),
+          createScenarioAircraft({ id: 'A3', callsign: 'QH503', from: 'RWY07R_THR', to: 'DOM_S3', role: 'arriving', releaseAtSeconds: 0, aircraftType: 'A321', airlineCode: 'QH' }, g),
+          createScenarioAircraft({ id: 'A4', callsign: 'SQ504', from: 'RWY25L_THR', to: 'DOM_S4', role: 'arriving', releaseAtSeconds: 20, aircraftType: 'A350', airlineCode: 'SQ' }, g),
+          createScenarioAircraft({ id: 'A5', callsign: 'TG505', from: 'H25R', to: 'DOM_S5', role: 'arriving', releaseAtSeconds: 30, aircraftType: 'A350', airlineCode: 'TG' }, g),
           // Departing (5)
-          createScenarioAircraft({ id: 'D1', callsign: 'VN601', from: 'INTL_S1', to: 'H07R', role: 'departing', releaseAtSeconds: 150 }, g),
-          createScenarioAircraft({ id: 'D2', callsign: 'VN602', from: 'INTL_S2', to: 'H25L', role: 'departing', releaseAtSeconds: 175 }, g),
-          createScenarioAircraft({ id: 'D3', callsign: 'VN603', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 200 }, g),
-          createScenarioAircraft({ id: 'D4', callsign: 'VN604', from: 'INTL_S4', to: 'H07L', role: 'departing', releaseAtSeconds: 225 }, g),
-          createScenarioAircraft({ id: 'D5', callsign: 'VN605', from: 'P1', to: 'H25L', role: 'departing', releaseAtSeconds: 250 }, g),
+          createScenarioAircraft({ id: 'D1', callsign: 'VU601', from: 'INTL_S1', to: 'H07R', role: 'departing', releaseAtSeconds: 150, aircraftType: 'A321', airlineCode: 'VU' }, g),
+          createScenarioAircraft({ id: 'D2', callsign: 'VN602', from: 'INTL_S2', to: 'H25L', role: 'departing', releaseAtSeconds: 175, aircraftType: 'A321', airlineCode: 'VN' }, g),
+          createScenarioAircraft({ id: 'D3', callsign: 'VJ603', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 200, aircraftType: 'A321', airlineCode: 'VJ' }, g),
+          createScenarioAircraft({ id: 'D4', callsign: 'QH604', from: 'INTL_S4', to: 'H07L', role: 'departing', releaseAtSeconds: 225, aircraftType: 'A321', airlineCode: 'QH' }, g),
+          createScenarioAircraft({ id: 'D5', callsign: 'SQ605', from: 'P1', to: 'H25L', role: 'departing', releaseAtSeconds: 250, aircraftType: 'A350', airlineCode: 'SQ' }, g),
           // Pushback (2)
-          createScenarioAircraft({ id: 'P1', callsign: 'VN701', from: 'P2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 275 }, g),
-          createScenarioAircraft({ id: 'P2', callsign: 'VN702', from: 'P4', to: 'H25R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 300 }, g),
+          createScenarioAircraft({ id: 'P1', callsign: 'TG701', from: 'P2', to: 'H07R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 275, aircraftType: 'A350', airlineCode: 'TG' }, g),
+          createScenarioAircraft({ id: 'P2', callsign: 'VU702', from: 'P4', to: 'H25R', role: 'pushback', priority: 3, label: 'PUSHBACK', releaseAtSeconds: 300, aircraftType: 'A321', airlineCode: 'VU' }, g),
         ]);
 
         const observations: ScenarioObservation[] = [
@@ -609,13 +627,13 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         'Cấp lại lộ trình an toàn trong thời gian ngắn.'
       ],
       watchFor: [
-        'VN801 ban đầu lăn bình thường, rồi rẽ NHẦM sang một đường lăn khác.',
+        'VU801 ban đầu lăn bình thường, rồi rẽ NHẦM sang một đường lăn khác.',
         'Ngay khi rẽ nhầm: vòng tròn CAM nhấp nháy quanh nó + nhật ký hiện dòng ĐỎ "lệch khỏi lộ trình".',
         'Nó dừng hẳn (DỪNG LẠI), rồi vài giây sau nhật ký hiện "Đã cấp lại lộ trình an toàn" và nó đi tiếp.'
       ],
       setup: (g = graph) => {
-        const rawAc1 = createScenarioAircraft({ id: 'S1', callsign: 'VN801', from: 'DOM_S3', to: 'H25L', role: 'departing' }, g);
-        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'VN802', from: 'DOM_S1', to: 'H25R', role: 'departing' }, g);
+        const rawAc1 = createScenarioAircraft({ id: 'S1', callsign: 'VU801', from: 'DOM_S3', to: 'H25L', role: 'departing', aircraftType: 'A321', airlineCode: 'VU' }, g);
+        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'SQ802', from: 'DOM_S1', to: 'H25R', role: 'departing', aircraftType: 'A350', airlineCode: 'SQ' }, g);
 
         let ac1 = rawAc1;
         if (rawAc1) {
@@ -631,16 +649,16 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
         const observations: ScenarioObservation[] = [
           {
             id: 'obs_5_1',
-            text: 'VN801 ban đầu lăn bình thường trên lộ trình xuất phát.',
+            text: 'VU801 ban đầu lăn bình thường trên lộ trình xuất phát.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN801'],
+            relatedAircraft: ['VU801'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN801');
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VU801');
               if (ac && s.elapsedSeconds >= 1.0) {
-                return { pass: true, evidence: `VN801 đang lăn từ ${ac.currentNodeId}` };
+                return { pass: true, evidence: `VU801 đang lăn từ ${ac.currentNodeId}` };
               }
               return { pass: false };
             },
@@ -652,27 +670,27 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN801'],
+            relatedAircraft: ['VU801'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN801');
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VU801');
               if (ac && (ac.deviated || ac.holdReason === 'deviation')) {
-                return { pass: true, evidence: `VN801 / deviated=true / status=${ac.status} / holdReason=deviation` };
+                return { pass: true, evidence: `VU801 / deviated=true / status=${ac.status} / holdReason=deviation` };
               }
               return { pass: false };
             },
           },
           {
             id: 'obs_5_3',
-            text: 'Sau đúng 4s kể từ lúc dừng, KSVKL cấp lại lộ trình an toàn qua Dijkstra và VN801 tiếp tục lăn bánh.',
+            text: 'Sau đúng 4s kể từ lúc dừng, KSVKL cấp lại lộ trình an toàn qua Dijkstra và VU801 tiếp tục lăn bánh.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN801'],
+            relatedAircraft: ['VU801'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN801');
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VU801');
               if (ac && !ac.deviated && ac.status === 'taxiing' && s.elapsedSeconds >= 15) {
-                return { pass: true, evidence: `VN801 / deviated=false / status=taxiing / route đã cấp lại` };
+                return { pass: true, evidence: `VU801 / deviated=false / status=taxiing / route đã cấp lại` };
               }
               return { pass: false };
             },
@@ -702,17 +720,18 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       watchFor: [
         'Tại giây thứ 50: VN901 chuyển sang nhãn "MẤT LIÊN LẠC" (viền nét đứt tím + biểu tượng 📻✕).',
         'Dù mất liên lạc, VN901 VẪN tiếp tục lăn theo đèn xanh đến đích — không cần thoại.',
-        'Tại giây thứ 75: VN902 gặp sự cố trên tuyến và được cấp tuyến mới qua thoại — hai cơ chế song song.'
+        'Tại giây thứ 75: SQ902 gặp sự cố trên tuyến và được cấp tuyến mới qua thoại — hai cơ chế song song.'
       ],
       setup: (g = graph) => {
-        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VN901', from: 'DOM_S4', to: 'H25R', role: 'departing' }, g);
-        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'VN902', from: 'INTL_S1', to: 'H07L', role: 'departing' }, g);
-        const aircraft = filterNonNull([ac1, ac2]);
+        const ac1 = createScenarioAircraft({ id: 'S1', callsign: 'VN901', from: 'DOM_S4', to: 'H25R', role: 'departing', aircraftType: 'A321', airlineCode: 'VN' }, g);
+        const ac2 = createScenarioAircraft({ id: 'S2', callsign: 'SQ902', from: 'INTL_S1', to: 'H07L', role: 'departing', aircraftType: 'A350', airlineCode: 'SQ' }, g);
+        const ac3 = createScenarioAircraft({ id: 'S3', callsign: 'TG903', from: 'INTL_S3', to: 'H07R', role: 'departing', aircraftType: 'A350', airlineCode: 'TG' }, g);
+        const aircraft = filterNonNull([ac1, ac2, ac3]);
 
         const vn901Edges = ac1 ? (routeToEdges(ac1.assignedRoute, g.edges) ?? []) : [];
         const vn901EdgeSet = new Set(vn901Edges);
-        const vn902Edges = ac2 ? (routeToEdges(ac2.assignedRoute, g.edges) ?? []) : [];
-        const closureEdgeVN902 = vn902Edges.slice(1).find(e => !vn901EdgeSet.has(e)) ?? vn902Edges[1];
+        const sq902Edges = ac2 ? (routeToEdges(ac2.assignedRoute, g.edges) ?? []) : [];
+        const closureEdgeSQ902 = sq902Edges.slice(1).find(e => !vn901EdgeSet.has(e)) ?? sq902Edges[1];
 
         const triggers: ScenarioTrigger[] = [
           {
@@ -735,13 +754,13 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           },
         ];
 
-        if (closureEdgeVN902) {
+        if (closureEdgeSQ902) {
           triggers.push({
             atSeconds: 75,
             apply: (state: any) => {
-              state.blockedEdgeIds.add(closureEdgeVN902);
+              state.blockedEdgeIds.add(closureEdgeSQ902);
               state.scenarioAircraft = state.scenarioAircraft.map((ac: any) => {
-                if (ac.id === 'S2' || ac.callsign === 'VN902') {
+                if (ac.id === 'S2' || ac.callsign === 'SQ902') {
                   return recalculateRoutePreservingProgress(ac, ac.targetNodeId, state.blockedEdgeIds, g);
                 }
                 return ac;
@@ -749,7 +768,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
               if (state.scenario) {
                 state.scenario.events.push({
                   atSeconds: state.elapsedSeconds,
-                  message: 'Sự cố trên tuyến của VN902 — vẫn điều phối lại bình thường qua thoại (không ảnh hưởng tàu bay mất liên lạc).',
+                  message: 'Sự cố trên tuyến của SQ902 — vẫn điều phối lại bình thường qua thoại (không ảnh hưởng tàu bay mất liên lạc).',
                   severity: 'info',
                 });
               }
@@ -793,16 +812,16 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           },
           {
             id: 'obs_6_3',
-            text: 'Tàu bay VN902 vẫn tiếp tục vận hành song song và được tái điều phối qua thoại lúc t=75s.',
+            text: 'Tàu bay SQ902 vẫn tiếp tục vận hành song song và được tái điều phối qua thoại lúc t=75s.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
-            relatedAircraft: ['VN902'],
+            relatedAircraft: ['SQ902'],
             check: (s) => {
-              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN902');
+              const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'SQ902');
               if (ac && !ac.radioFailure && s.elapsedSeconds >= 75) {
-                return { pass: true, evidence: `VN902 / radioFailure=false / status=${ac.status} lúc ${s.elapsedSeconds.toFixed(1)}s` };
+                return { pass: true, evidence: `SQ902 / radioFailure=false / status=${ac.status} lúc ${s.elapsedSeconds.toFixed(1)}s` };
               }
               return { pass: false };
             },
@@ -836,12 +855,12 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
       ],
       setup: (g = graph) => {
         const aircraft = filterNonNull([
-          createScenarioAircraft({ id: 'S1', callsign: 'VNA01', from: 'DOM_S1', to: 'H07L', role: 'departing', releaseAtSeconds: 0 }, g),
-          createScenarioAircraft({ id: 'S2', callsign: 'VNA02', from: 'DOM_S2', to: 'H07R', role: 'departing', releaseAtSeconds: 25 }, g),
-          createScenarioAircraft({ id: 'S3', callsign: 'VNA03', from: 'INTL_S1', to: 'H07L', role: 'departing', releaseAtSeconds: 50 }, g),
-          createScenarioAircraft({ id: 'S4', callsign: 'VNA04', from: 'DOM_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 0 }, g),
-          createScenarioAircraft({ id: 'S5', callsign: 'VNA05', from: 'DOM_S4', to: 'H25L', role: 'departing', releaseAtSeconds: 25 }, g),
-          createScenarioAircraft({ id: 'S6', callsign: 'VNA06', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 50 }, g),
+          createScenarioAircraft({ id: 'S1', callsign: 'VNA01', from: 'DOM_S1', to: 'H07L', role: 'departing', releaseAtSeconds: 0, aircraftType: 'B737', airlineCode: 'VN' }, g),
+          createScenarioAircraft({ id: 'S2', callsign: 'VJA02', from: 'DOM_S2', to: 'H07R', role: 'departing', releaseAtSeconds: 25, aircraftType: 'A321', airlineCode: 'VJ' }, g),
+          createScenarioAircraft({ id: 'S3', callsign: 'QHA03', from: 'INTL_S1', to: 'H07L', role: 'departing', releaseAtSeconds: 50, aircraftType: 'A321', airlineCode: 'QH' }, g),
+          createScenarioAircraft({ id: 'S4', callsign: 'VUA04', from: 'DOM_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 0, aircraftType: 'A321', airlineCode: 'VU' }, g),
+          createScenarioAircraft({ id: 'S5', callsign: 'SQA05', from: 'DOM_S4', to: 'H25L', role: 'departing', releaseAtSeconds: 25, aircraftType: 'A350', airlineCode: 'SQ' }, g),
+          createScenarioAircraft({ id: 'S6', callsign: 'TGA06', from: 'INTL_S3', to: 'H25R', role: 'departing', releaseAtSeconds: 50, aircraftType: 'A350', airlineCode: 'TG' }, g),
         ]);
 
         const rwyMap: Record<string, string> = { H07L: 'H25R', H07R: 'H25L' };
@@ -857,7 +876,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
             evidence: '',
             check: (s) => {
               if (s.scenarioAircraft && s.scenarioAircraft.length === 6) {
-                return { pass: true, evidence: `6 tàu bay: VNA01..VNA06 hướng về hai đầu 07 và 25` };
+                return { pass: true, evidence: `6 tàu bay đa dạng hãng hướng về hai đầu 07 và 25` };
               }
               return { pass: false };
             },
@@ -878,13 +897,13 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           },
           {
             id: 'obs_7_3',
-            text: 'Chỉ 3 tàu bay đang hướng tới 07 (VNA01, VNA02, VNA03) tự động đổi đích sang 25R/25L, giữ nguyên tiến độ.',
+            text: 'Chỉ 3 tàu bay đang hướng tới 07 (VNA01, VJA02, QHA03) tự động đổi đích sang 25R/25L, giữ nguyên tiến độ.',
             required: true,
             status: 'pending',
             checkedAtSeconds: null,
             evidence: '',
             check: (s) => {
-              const turned = s.scenarioAircraft?.filter((a: any) => ['VNA01', 'VNA02', 'VNA03'].includes(a.callsign));
+              const turned = s.scenarioAircraft?.filter((a: any) => ['VNA01', 'VJA02', 'QHA03'].includes(a.callsign));
               if (turned && turned.every((a: any) => a.targetNodeId.includes('25')) && s.elapsedSeconds >= 75.5) {
                 return { pass: true, evidence: `3 tàu bay đã chuyển đích sang Runway 25: ${turned.map((a: any) => `${a.callsign}->${a.targetNodeId}`).join(', ')}` };
               }

@@ -676,11 +676,17 @@ export function scenarioTick(
   );
 
   const standsWithQueuedPushback = new Set<string>();
+  const hasEmergencyInbound = fleet.some(a => (a.role === 'emergency' || a.priority === 0) && a.status === 'taxiing');
 
   for (const idx of sortedIndices) {
     const ac = fleet[idx];
     const isAtInitialStand = ac.status !== 'arrived' && ac.routeEdgeIndex === 0 && ac.progressOnEdge === 0 && isStandNode(ac.assignedRoute[0], graph);
     if (!isAtInitialStand) continue;
+
+    if (hasEmergencyInbound && (ac.role === 'pushback' || (ac.priority !== undefined && ac.priority > 0))) {
+      standsWithQueuedPushback.add(ac.id);
+      continue;
+    }
 
     if (isStandDepartureClear(ac, fullContext, startingStandAircraftIds, graph)) {
       continue;
