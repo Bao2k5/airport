@@ -932,12 +932,23 @@ export function acceptRoute(
   state: SimulationState,
   graph: AirportGraph = airportGraph,
 ): SimulationState {
-  const activeAc = state.aircraft || (state.manualFleet ? state.manualFleet[0] : null);
-  if (!activeAc) return state;
+  const selectedId = state.selectedAircraftId || 'VN001';
+  const updatedFleet = (state.manualFleet || []).map(ac => {
+    if (ac.id === selectedId) {
+      return {
+        ...ac,
+        routeVisible: true,
+      };
+    }
+    return ac;
+  });
+  const activeAc = updatedFleet.find(a => a.id === selectedId) || state.aircraft;
   return {
     ...state,
     routeStatus: 'accepted',
-    lightStates: computeLightStates(activeAc, state.blockedEdgeIds, graph),
+    manualFleet: updatedFleet,
+    aircraft: activeAc || null,
+    lightStates: activeAc ? computeLightStates(activeAc, state.blockedEdgeIds, graph) : {},
   };
 }
 

@@ -136,8 +136,14 @@ export default function StatusPanel({ state, graph = airportGraph }: Props) {
 
                   <div className="grid grid-cols-2 gap-2 text-xs text-[#475569]">
                     <div>Vị trí: <span className="text-[#0D254C] font-mono font-semibold">{ac.currentNodeId}</span></div>
-                    <div>Tốc độ: <span className="text-[#16845B] font-mono font-semibold">{ac.speedKts || 0} kts</span></div>
+                    <div>Tốc độ: <span className="text-[#16845B] font-mono font-bold">{(ac.speedKts || 0).toFixed(1)} kts</span> <span className="text-[10px] text-[#64748B]">/ {ac.speedLimitKts ?? 15} kts</span></div>
                   </div>
+
+                  {ac.speedReason && (
+                    <div className="text-[10px] text-[#475569] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded flex items-center gap-1">
+                      <span>ℹ️</span> {ac.speedReason}
+                    </div>
+                  )}
 
                   {hasStopBar && (
                     <div className="text-[10px] font-bold text-[#991B1B] bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg px-2 py-1 flex items-center gap-1.5">
@@ -185,6 +191,10 @@ export default function StatusPanel({ state, graph = airportGraph }: Props) {
               <span className="text-[#16845B] text-xs font-mono font-bold">
                 {activeAircraft.speedKts.toFixed(1)} kts
               </span>
+            </div>
+            <div className="flex flex-col col-span-2 bg-white p-1.5 rounded border border-[#E2E8F0] text-[11px] text-[#475569] flex justify-between items-center">
+              <span>Giới hạn khu vực: <strong className="text-[#0D254C] font-mono">{activeAircraft.speedLimitKts ?? 15} kts</strong></span>
+              <span className="text-[#1C67DA] font-semibold">{activeAircraft.speedReason || (activeAircraft.status === 'parked' ? 'Đỗ tại bến' : 'Tốc độ hành trình tiêu chuẩn')}</span>
             </div>
             <div className="flex flex-col">
               <span className="text-[#64748B] text-[11px]">Thời gian hoạt động</span>

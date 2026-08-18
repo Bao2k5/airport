@@ -99,6 +99,8 @@ export interface Aircraft {
   queueRunway?: 'NORTH' | 'SOUTH';
   role?: string;
   scenarioLabel?: string;
+  speedLimitKts?: number;
+  speedReason?: string;
 }
 
 export interface SimulationConfig {

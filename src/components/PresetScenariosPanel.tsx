@@ -82,7 +82,10 @@ export default function PresetScenariosPanel({
       {currentScenarioState && !showList && (
         <div className="flex flex-col gap-3">
           <div className="flex items-center justify-between">
-            <span className="font-bold text-[#0D254C] text-sm">{currentScenarioState.title}</span>
+            <div className="flex flex-col">
+              <span className="font-bold text-[#0D254C] text-sm">{currentScenarioState.title}</span>
+              <span className="text-[10px] font-mono text-[#1C67DA] font-bold mt-0.5">Tốc độ chuẩn: 15 kts</span>
+            </div>
             {onExitScenario && (
               <button
                 onClick={onExitScenario}

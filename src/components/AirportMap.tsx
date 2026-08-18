@@ -413,6 +413,14 @@ function AirportMap({
           </g>
         )}
 
+        {/* ── Layer 2.8: Route Preview Blue Layer (Full Trip Planned Route - Manual & Scenario) ── */}
+        <RoutePreviewBlueRenderer
+          aircraftList={isScenario ? (state.scenarioAircraft ?? []) : (state.manualFleet ?? (state.aircraft ? [state.aircraft] : []))}
+          selectedAircraftId={state.selectedAircraftId || state.aircraft?.id}
+          isScenario={isScenario}
+          graph={activeGraph}
+        />
+
         {/* ── Layer 3: Unified Follow-the-Green Guidance Layer (Scenario & Manual) ── */}
         <g className="follow-the-green-layer">
           {allActiveAircraft.map(ac => (
@@ -593,7 +601,110 @@ function AirportMap({
   );
 }
 
-// ── SEGMENTED FOLLOW-THE-GREEN GUIDANCE RENDERER (Strict Segmented Active Edge) ─────────────
+// ── FULL-TRIP ROUTE PREVIEW BLUE RENDERER (Layer 1: Planned Route Across Whole Map) ─────────
+function RoutePreviewBlueRenderer({
+  aircraftList,
+  selectedAircraftId,
+  isScenario,
+  graph,
+}: {
+  aircraftList: Aircraft[];
+  selectedAircraftId?: string;
+  isScenario: boolean;
+  graph: AirportGraph;
+}) {
+  // In Manual Mode: render for selected aircraft (or single active aircraft)
+  // In Scenario Mode: render for all scenario aircraft
+  const targetAircraft = isScenario
+    ? aircraftList
+    : aircraftList.filter(a => a.id === selectedAircraftId || (aircraftList.length === 1 && a.id === aircraftList[0].id));
+
+  return (
+    <g className="route-preview-blue-layer">
+      {targetAircraft.map(ac => {
+        if (!ac.assignedRoute || ac.assignedRoute.length < 2) return null;
+        const isSelected = ac.id === selectedAircraftId;
+
+        // Build array of line segments
+        const segments: { f: { x: number; y: number; id: string }; t: { x: number; y: number; id: string }; edgeId?: string }[] = [];
+        for (let i = 0; i < ac.assignedRoute.length - 1; i++) {
+          const fromNode = graph.nodes.find(n => n.id === ac.assignedRoute[i]);
+          const toNode = graph.nodes.find(n => n.id === ac.assignedRoute[i + 1]);
+          if (fromNode && toNode) {
+            const edge = graph.edges.find(
+              e => (e.fromNodeId === fromNode.id && e.toNodeId === toNode.id) ||
+                   (e.bidirectional && e.fromNodeId === toNode.id && e.toNodeId === fromNode.id)
+            );
+            segments.push({ f: fromNode, t: toNode, edgeId: edge?.id });
+          }
+        }
+
+        if (segments.length === 0) return null;
+
+        return (
+          <g
+            key={`route-preview-${ac.id}`}
+            className={`route-preview-blue route-preview-aircraft-${ac.id}`}
+            opacity={!isScenario || isSelected ? 0.95 : 0.65}
+          >
+            {/* 1. Backdrop soft cyan glow */}
+            {segments.map((seg, idx) => (
+              <line
+                key={`rpb-glow-${ac.id}-${idx}`}
+                x1={seg.f.x}
+                y1={seg.f.y}
+                x2={seg.t.x}
+                y2={seg.t.y}
+                stroke="rgba(2, 132, 199, 0.35)"
+                strokeWidth={5.5}
+                strokeLinecap="round"
+                strokeLinejoin="round"
+              />
+            ))}
+
+            {/* 2. Main dashed Blue Route Preview Line */}
+            {segments.map((seg, idx) => (
+              <line
+                key={`rpb-line-${ac.id}-${idx}`}
+                className="route-preview-edge"
+                x1={seg.f.x}
+                y1={seg.f.y}
+                x2={seg.t.x}
+                y2={seg.t.y}
+                stroke="#0284c7"
+                strokeWidth={2.8}
+                strokeDasharray="6,4"
+                strokeLinecap="round"
+              />
+            ))}
+
+            {/* 3. Small node waypoint indicators along route */}
+            {ac.assignedRoute.map((nodeId, idx) => {
+              const node = graph.nodes.find(n => n.id === nodeId);
+              if (!node) return null;
+              const isStart = idx === 0;
+              const isEnd = idx === ac.assignedRoute.length - 1;
+              return (
+                <circle
+                  key={`rpb-node-${ac.id}-${nodeId}-${idx}`}
+                  cx={node.x}
+                  cy={node.y}
+                  r={isStart || isEnd ? 3.5 : 2.0}
+                  fill="#38bdf8"
+                  stroke="#0f172a"
+                  strokeWidth={0.6}
+                  opacity={0.9}
+                />
+              );
+            })}
+          </g>
+        );
+      })}
+    </g>
+  );
+}
+
+// ── SEGMENTED FOLLOW-THE-GREEN GUIDANCE RENDERER (Layer 2: Localized Active Edge Guidance) ───
 interface GuidanceDot {
   x: number;
   y: number;
@@ -692,7 +803,7 @@ function FollowTheGreenRenderer({
   blockedEdgeIds?: Set<string>;
 }) {
   // STRICT RULE: Do not show guidance when aircraft is parked, arrived, departed, or before starting in manual mode
-  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed') {
+  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed' || aircraft.status === 'waiting') {
     return null;
   }
   if (!isScenario && !aircraft.routeVisible && aircraft.status !== 'taxiing' && aircraft.status !== 'holding') {
@@ -704,7 +815,7 @@ function FollowTheGreenRenderer({
 
   return (
     <g
-      className={`ftg-guidance-group-${aircraft.id}`}
+      className={`guidance-green guidance-active-edge ftg-guidance-group-${aircraft.id}`}
       style={{
         filter: isSelected
           ? 'drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 14px #16a34a)'
@@ -732,7 +843,7 @@ function FollowTheGreenRenderer({
         const phase = animPhase * 3 + (idx + 4) * 0.45;
         const pulse = 0.85 + 0.15 * Math.sin(phase);
         return (
-          <g key={`ftg-prev-${aircraft.id}-${idx}`} opacity={0.65} className="guidance-dot-preview">
+          <g key={`ftg-prev-${aircraft.id}-${idx}`} opacity={0.65} className="guidance-dot guidance-dot-preview">
             <circle cx={dot.x} cy={dot.y} r={5.5 * pulse} fill="url(#neon-lead-green)" />
             <circle cx={dot.x} cy={dot.y} r={2.5 * pulse} fill="#22c55e" />
             <circle cx={dot.x} cy={dot.y} r={1.1} fill="#f0fff6" />

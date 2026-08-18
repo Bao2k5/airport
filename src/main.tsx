@@ -15,10 +15,16 @@ import {
   SEPARATION_APRON_M,
   SEPARATION_TAXIWAY_PX,
   SEPARATION_APRON_PX,
+  SCENARIO_TAXI_SPEED_KTS,
+  SCENARIO_APRON_SPEED_KTS,
+  SCENARIO_JUNCTION_SPEED_KTS,
+  SCENARIO_STOP_SPEED_KTS,
+  MAX_ACCEL_KTS_PER_S,
+  MAX_DECEL_KTS_PER_S,
 } from './simulation/scenarioRunner'
 import { getPresetScenarioDefs } from './data/presetScenarios'
 import { findPath, routeToEdges } from './simulation/pathfinding'
-import { simulationTick, createDefaultManualFleet } from './simulation/simulator'
+import { simulationTick, createDefaultManualFleet, acceptRoute, startManualAircraft, resetManualAircraft } from './simulation/simulator'
 
 // Expose simulation engine for runtime verification
 if (typeof window !== 'undefined') {
@@ -30,6 +36,9 @@ if (typeof window !== 'undefined') {
     scenarioTick,
     simulationTick,
     createDefaultManualFleet,
+    acceptRoute,
+    startManualAircraft,
+    resetManualAircraft,
     recalculateRoutePreservingProgress,
     assertNoTwoAircraftOnSameRunway,
     computeScenarioLightStates,
@@ -38,6 +47,12 @@ if (typeof window !== 'undefined') {
     SEPARATION_APRON_M,
     SEPARATION_TAXIWAY_PX,
     SEPARATION_APRON_PX,
+    SCENARIO_TAXI_SPEED_KTS,
+    SCENARIO_APRON_SPEED_KTS,
+    SCENARIO_JUNCTION_SPEED_KTS,
+    SCENARIO_STOP_SPEED_KTS,
+    MAX_ACCEL_KTS_PER_S,
+    MAX_DECEL_KTS_PER_S,
     getPresetScenarioDefs,
     findPath,
     routeToEdges,

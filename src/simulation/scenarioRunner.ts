@@ -17,6 +17,14 @@ export const SEPARATION_APRON_PX = SEPARATION_APRON_M * PIXELS_PER_METER;     //
 export const STAND_CLEARANCE_RADIUS_M = 34; // Stand clearance safety radius (34m)
 export const STAND_CLEARANCE_RADIUS_PX = STAND_CLEARANCE_RADIUS_M * PIXELS_PER_METER; // 11.333 px
 
+// Standard Educational Simulation Speeds (Educational demo parameters, not real-world aviation ops)
+export const SCENARIO_TAXI_SPEED_KTS = 15;     // Standard Taxiway speed baseline (15 kts)
+export const SCENARIO_APRON_SPEED_KTS = 7;      // Apron/Stand area speed limit (7 kts)
+export const SCENARIO_JUNCTION_SPEED_KTS = 5;   // Approaching junction / stop-bar speed (5 kts)
+export const SCENARIO_STOP_SPEED_KTS = 0;       // Holding / Stopped speed (0 kts)
+export const MAX_ACCEL_KTS_PER_S = 6.0;         // Smooth acceleration rate
+export const MAX_DECEL_KTS_PER_S = 10.0;        // Smooth deceleration rate
+
 const KNOTS_TO_MS = 0.5144;
 const JUNCTION_FORCE_WAIT_S = 4.0;   // Force junction entry if waiting > 4s to resolve minor gridlocks
 const ARRIVAL_HOLD_S = 12.0;         // Arrival threshold hold before DEPARTED
@@ -512,10 +520,10 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
   const { weather, aircraft, triggers } = setupRes;
   const observations: ScenarioObservation[] = setupRes.observations || def.observations || [];
 
-  const weatherFactor = weather === 'fog' ? 0.45 : weather === 'thunderstorm' ? 0.35 : 1.0;
   const calibratedFleet = aircraft.map(ac => ({
     ...ac,
-    speedKts: ac.speedKts * weatherFactor,
+    speedKts: ac.speedKts > 0 ? ac.speedKts : SCENARIO_TAXI_SPEED_KTS,
+    speedLimitKts: SCENARIO_TAXI_SPEED_KTS,
   }));
 
   const scenarioState: ScenarioState = {
@@ -749,6 +757,8 @@ export function scenarioTick(
         holdReason: 'stop-bar',
         heldSeconds: (ac.heldSeconds ?? 0) + dt,
         speedKts: 0,
+        speedLimitKts: 0,
+        speedReason: 'Dừng: Stop Bar đường băng',
       };
       updatedFleet[idx] = steppedAc;
       continue;
@@ -757,11 +767,46 @@ export function scenarioTick(
       currentOccupancy[currentCorridor] = ac.id;
     }
 
-    const baseCruiseSpeedKts = 30 * (state.config.weather === 'fog' ? 0.45 : state.config.weather === 'thunderstorm' ? 0.35 : 1.0);
-    const nominalSpeedKts = ac.speedKts > 0 ? ac.speedKts : baseCruiseSpeedKts;
+    // Stand pushback/departure clearance hold (for cross-traffic yield / emergency priority corridor)
+    if (standsWithQueuedPushback.has(ac.id) && ac.progressOnEdge === 0) {
+      steppedAc = {
+        ...ac,
+        status: 'holding',
+        holdReason: 'stop-bar',
+        heldSeconds: (ac.heldSeconds ?? 0) + dt,
+        speedKts: 0,
+        speedLimitKts: 0,
+        speedReason: 'Dừng: Chờ giải tỏa hành lang',
+      };
+      updatedFleet[idx] = steppedAc;
+      continue;
+    }
+
+    // 1. Determine zone speed limit
+    const isApronZone = (isStandNode(fromNode.id, graph) && ac.progressOnEdge < 0.25) || ac.role === 'pushback';
+    const isApproachingJunction = ac.progressOnEdge >= 0.85 && ac.routeEdgeIndex + 1 < routeEdges.length;
+
+    let targetZoneSpeedKts = SCENARIO_TAXI_SPEED_KTS; // 15 kts baseline
+    let speedReason = 'Tốc độ tiêu chuẩn';
+
+    if (isApproachingJunction) {
+      targetZoneSpeedKts = SCENARIO_JUNCTION_SPEED_KTS; // 5 kts
+      speedReason = 'Giảm tốc: gần giao lộ';
+    } else if (isApronZone) {
+      targetZoneSpeedKts = SCENARIO_APRON_SPEED_KTS; // 7 kts
+      speedReason = 'Giảm tốc: khu vực sân đỗ';
+    }
+
+    // Smooth speed change
+    let currentSpeedKts = ac.speedKts > 0 ? ac.speedKts : targetZoneSpeedKts;
+    if (currentSpeedKts < targetZoneSpeedKts) {
+      currentSpeedKts = Math.min(targetZoneSpeedKts, currentSpeedKts + MAX_ACCEL_KTS_PER_S * dt);
+    } else if (currentSpeedKts > targetZoneSpeedKts) {
+      currentSpeedKts = Math.max(targetZoneSpeedKts, currentSpeedKts - MAX_DECEL_KTS_PER_S * dt);
+    }
 
     const edgeLenMeters = currentEdge.lengthMeters > 0 ? currentEdge.lengthMeters : 50;
-    const effectiveSpeedMs = nominalSpeedKts * KNOTS_TO_MS;
+    const effectiveSpeedMs = currentSpeedKts * KNOTS_TO_MS;
     const stepProgress = (effectiveSpeedMs * dt) / edgeLenMeters;
 
     // Check headway buffer along current edge
@@ -775,6 +820,38 @@ export function scenarioTick(
     }
 
     const isHoldingAtJunction = ac.status === 'holding' && ac.progressOnEdge >= 0.9;
+    const isApproachingJunctionStop = (targetProgress >= 0.90 || isHoldingAtJunction) && ac.routeEdgeIndex + 1 < routeEdges.length;
+
+    if (isApproachingJunctionStop) {
+      const nextEdgeId = routeEdges[ac.routeEdgeIndex + 1];
+      const nextTargetNodeId = ac.assignedRoute[ac.routeEdgeIndex + 2];
+      const isBlocked = blockedEdgeIds.has(nextEdgeId);
+      const targetCorridor = getRunwayCorridor(nextEdgeId, nextTargetNodeId);
+      const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
+      const isRunwayBlocked = targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
+      const isNodeReserved = activeCtx.reservedNodes.has(toNode.id);
+      const isEdgeReserved = activeCtx.reserved.has(nextEdgeId);
+      const heldSec = (ac.heldSeconds ?? 0) + dt;
+      const forceJunction = heldSec >= JUNCTION_FORCE_WAIT_S;
+
+      const canProceed = !isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph);
+
+      if (!canProceed) {
+        steppedAc = {
+          ...ac,
+          progressOnEdge: 0.92,
+          currentNodeId: fromNode.id,
+          status: 'holding',
+          heldSeconds: heldSec,
+          holdReason: 'stop-bar',
+          speedKts: 0,
+          speedLimitKts: 0,
+          speedReason: 'Dừng: Stop Bar',
+        };
+        updatedFleet[idx] = steppedAc;
+        continue;
+      }
+    }
 
     if (targetProgress < 1 && !isHoldingAtJunction) {
       if (targetProgress <= ac.progressOnEdge + 1e-6) {
@@ -784,6 +861,8 @@ export function scenarioTick(
           holdReason: 'separation',
           heldSeconds: (ac.heldSeconds ?? 0) + dt,
           speedKts: 0,
+          speedLimitKts: 0,
+          speedReason: 'Giảm tốc: giữ khoảng cách',
         };
       } else {
         steppedAc = {
@@ -794,7 +873,9 @@ export function scenarioTick(
           status: 'taxiing',
           heldSeconds: 0,
           holdReason: undefined,
-          speedKts: nominalSpeedKts,
+          speedKts: currentSpeedKts,
+          speedLimitKts: targetZoneSpeedKts,
+          speedReason,
         };
       }
     } else {
@@ -813,6 +894,8 @@ export function scenarioTick(
           currentEdgeId: routeEdges[routeEdges.length - 1] ?? null,
           status: 'arrived',
           speedKts: 0,
+          speedLimitKts: 0,
+          speedReason: 'Đã đến đích an toàn',
           holdReason: undefined,
         };
       } else {
@@ -846,7 +929,9 @@ export function scenarioTick(
             status: 'taxiing',
             heldSeconds: 0,
             holdReason: undefined,
-            speedKts: nominalSpeedKts,
+            speedKts: currentSpeedKts,
+            speedLimitKts: targetZoneSpeedKts,
+            speedReason,
           };
         } else {
           // Must hold at junction before Stop Bar (hold on incoming edge buffer to allow intersecting traffic to clear)
@@ -859,6 +944,8 @@ export function scenarioTick(
             heldSeconds: heldSec,
             holdReason: holdR,
             speedKts: 0,
+            speedLimitKts: 0,
+            speedReason: 'Dừng: Stop Bar',
           };
         }
       }

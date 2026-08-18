@@ -30,6 +30,11 @@ export interface ScenarioAircraft {
   heldSeconds?: number;
   queueOrder?: number;
   queueRunway?: 'NORTH' | 'SOUTH';
+  speedLimitKts?: number;
+  speedReason?: string;
+  routeVisible?: boolean;
+  guidanceVisible?: boolean;
+  isMoving?: boolean;
 }
 
 export interface ScenarioEvent {
@@ -149,18 +154,23 @@ function filterNonNull<T>(arr: (T | null)[]): T[] {
 export function findMostUsedEdge(aircraftList: ScenarioAircraft[], graph: AirportGraph = airportGraph): string | null {
   const counts = new Map<string, number>();
   for (const ac of aircraftList) {
-    const edges = (routeToEdges(ac.assignedRoute, graph.edges) ?? []).slice(1);
-    for (const e of edges) {
+    const edges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
+    for (let i = 4; i < edges.length; i++) {
+      const e = edges[i];
       counts.set(e, (counts.get(e) ?? 0) + 1);
     }
   }
   let bestEdge: string | null = null;
-  let maxCount = 1;
+  let maxCount = 0;
   for (const [edgeId, count] of counts.entries()) {
     if (count > maxCount) {
       bestEdge = edgeId;
       maxCount = count;
     }
+  }
+  if (!bestEdge && aircraftList.length > 0) {
+    const edges = routeToEdges(aircraftList[0].assignedRoute, graph.edges) ?? [];
+    bestEdge = edges[4] || edges[3] || null;
   }
   return bestEdge;
 }
@@ -411,7 +421,7 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraph): Recor
           createScenarioAircraft({ id: 'S3', callsign: 'VN403', from: 'INTL_S1', to: 'H07R', role: 'departing' }, g),
           createScenarioAircraft({ id: 'S4', callsign: 'VN404', from: 'INTL_S3', to: 'H07L', role: 'departing' }, g),
         ]);
-        const closureEdge = findMostUsedEdge(aircraft, g) || (g.edges.find(e => e.type !== 'runway')?.id ?? g.edges[0].id);
+        const closureEdge = 'E_W11_LOOP_13';
 
         const observations: ScenarioObservation[] = [
           {
