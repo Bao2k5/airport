@@ -1,0 +1,230 @@
+[
+  {
+    "name": "07L ↔ 25R (Northern Runway)",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 7,
+      "distPx": 975,
+      "path": [
+        "v3_line_01_p00",
+        "v3_line_03_p00",
+        "v3_line_04_p00",
+        "v3_line_01_p01",
+        "v3_line_06_p00",
+        "v3_line_01_p02",
+        "v3_line_01_p03"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 7,
+      "distPx": 975,
+      "path": [
+        "v3_line_01_p03",
+        "v3_line_01_p02",
+        "v3_line_06_p00",
+        "v3_line_01_p01",
+        "v3_line_04_p00",
+        "v3_line_03_p00",
+        "v3_line_01_p00"
+      ]
+    }
+  },
+  {
+    "name": "07R ↔ T63 (Southern Runway)",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 15,
+      "distPx": 970,
+      "path": [
+        "v3_line_05_p00",
+        "v3_line_03_p01",
+        "v3_line_16_p00",
+        "v3_line_17_p00",
+        "v3_line_05_p01",
+        "v3_line_04_p04",
+        "v3_line_04_p05",
+        "v3_line_10_p00",
+        "v3_line_05_p02",
+        "v3_line_19_p00",
+        "v3_line_05_p03",
+        "v3_line_05_p04",
+        "v3_line_06_p03",
+        "v3_line_07_p01",
+        "v3_line_05_p05"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 15,
+      "distPx": 970,
+      "path": [
+        "v3_line_05_p05",
+        "v3_line_07_p01",
+        "v3_line_06_p03",
+        "v3_line_05_p04",
+        "v3_line_05_p03",
+        "v3_line_19_p00",
+        "v3_line_05_p02",
+        "v3_line_10_p00",
+        "v3_line_04_p05",
+        "v3_line_04_p04",
+        "v3_line_05_p01",
+        "v3_line_17_p00",
+        "v3_line_16_p00",
+        "v3_line_03_p01",
+        "v3_line_05_p00"
+      ]
+    }
+  },
+  {
+    "name": "W5/07L ↔ W11/07R (West Transversal)",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 4,
+      "distPx": 247,
+      "path": [
+        "v3_line_03_p00",
+        "v3_line_03_p01",
+        "v3_line_16_p00",
+        "v3_line_16_p01"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 4,
+      "distPx": 247,
+      "path": [
+        "v3_line_16_p01",
+        "v3_line_16_p00",
+        "v3_line_03_p01",
+        "v3_line_03_p00"
+      ]
+    }
+  },
+  {
+    "name": "W9B ↔ T39 (Central Taxiway Spine)",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 20,
+      "distPx": 1033,
+      "path": [
+        "v3_line_17_p04",
+        "v3_line_18_p03",
+        "v3_line_17_p05",
+        "v3_line_10_p04",
+        "v3_line_17_p06",
+        "v3_line_11_p01",
+        "v3_line_17_p07",
+        "v3_line_19_p03",
+        "v3_line_17_p08",
+        "v3_line_17_p09",
+        "v3_line_17_p10",
+        "v3_line_21_p00",
+        "v3_line_13_p03",
+        "v3_line_22_p00",
+        "v3_line_15_p01",
+        "v3_line_23_p00",
+        "v3_line_24_p00",
+        "v3_line_25_p00",
+        "v3_line_17_p11",
+        "v3_line_17_p12"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 20,
+      "distPx": 1033,
+      "path": [
+        "v3_line_17_p12",
+        "v3_line_17_p11",
+        "v3_line_25_p00",
+        "v3_line_24_p00",
+        "v3_line_23_p00",
+        "v3_line_15_p01",
+        "v3_line_22_p00",
+        "v3_line_13_p03",
+        "v3_line_21_p00",
+        "v3_line_17_p10",
+        "v3_line_17_p09",
+        "v3_line_17_p08",
+        "v3_line_19_p03",
+        "v3_line_17_p07",
+        "v3_line_11_p01",
+        "v3_line_17_p06",
+        "v3_line_10_p04",
+        "v3_line_17_p05",
+        "v3_line_18_p03",
+        "v3_line_17_p04"
+      ]
+    }
+  },
+  {
+    "name": "INTL_S3 ↔ 07L (Apron to Runway)",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 23,
+      "distPx": 1228,
+      "path": [
+        "v3_line_23_p00",
+        "v3_line_15_p01",
+        "v3_line_22_p00",
+        "v3_line_13_p03",
+        "v3_line_21_p00",
+        "v3_line_17_p10",
+        "v3_line_17_p09",
+        "v3_line_17_p08",
+        "v3_line_19_p03",
+        "v3_line_19_p02",
+        "v3_line_19_p01",
+        "v3_line_19_p00",
+        "v3_line_05_p02",
+        "v3_line_10_p00",
+        "v3_line_04_p05",
+        "v3_line_04_p04",
+        "v3_line_05_p01",
+        "v3_line_04_p03",
+        "v3_line_04_p02",
+        "v3_line_04_p01",
+        "v3_line_04_p00",
+        "v3_line_03_p00",
+        "v3_line_01_p00"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 23,
+      "distPx": 1228,
+      "path": [
+        "v3_line_01_p00",
+        "v3_line_03_p00",
+        "v3_line_04_p00",
+        "v3_line_04_p01",
+        "v3_line_04_p02",
+        "v3_line_04_p03",
+        "v3_line_05_p01",
+        "v3_line_04_p04",
+        "v3_line_04_p05",
+        "v3_line_10_p00",
+        "v3_line_05_p02",
+        "v3_line_19_p00",
+        "v3_line_19_p01",
+        "v3_line_19_p02",
+        "v3_line_19_p03",
+        "v3_line_17_p08",
+        "v3_line_17_p09",
+        "v3_line_17_p10",
+        "v3_line_21_p00",
+        "v3_line_13_p03",
+        "v3_line_22_p00",
+        "v3_line_15_p01",
+        "v3_line_23_p00"
+      ]
+    }
+  }
+]

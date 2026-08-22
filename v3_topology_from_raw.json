@@ -1,0 +1,11 @@
+{
+  "generatedAt": "2026-08-21T14:00:14.457Z",
+  "source": "d:/Thao/airport-simulator/v3_raw_traces_manual.json",
+  "totalNodes": 120,
+  "operationalNamedNodes": 35,
+  "geometryOnlyNodes": 85,
+  "totalEdges": 133,
+  "connectedComponents": 1,
+  "allPairsPass": 1190,
+  "allPairsTotal": 1190
+}

@@ -101,6 +101,10 @@ export interface Aircraft {
   scenarioLabel?: string;
   speedLimitKts?: number;
   speedReason?: string;
+  hidden?: boolean;
+  arrivedAtSeconds?: number;
+  isFireExtinguished?: boolean;
+  extinguishingStartedAtSeconds?: number;
 }
 
 export interface SimulationConfig {
@@ -154,4 +158,12 @@ export interface SimulationState {
   runwayOccupancy?: RunwayOccupancyState;
   scenario?: any;
   scenarioAircraft?: any[];
+  comicBubble?: {
+    speaker: string;
+    text: string;
+    subText?: string;
+    active: boolean;
+    x?: number;
+    y?: number;
+  };
 }

@@ -1,1276 +1,1298 @@
 /* eslint-disable react-refresh/only-export-components */
-// Guided Node Placement & Raw Trace Calibration Editor
-// Crash-Proof, High-Performance Drawing, Lightweight RAM History, Instant Auto-Save & Recovery
+// Precision Manual Node Repositioning & Raw Trace Inspection for Graph V3
+// Mode 'raw-only': Reads strictly from v3_raw_traces_manual.json, with direct reload from file, SHA-256 metadata, Gap Audit table, and zero auto-connections.
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
-import { airportGraph, SVG_WIDTH, SVG_HEIGHT } from './data/airportGraph';
-import { NODE_GUIDE_DATA, type NodeGuideItem } from './data/nodeGuideData';
+import './index.css';
+import { SVG_WIDTH, SVG_HEIGHT } from './data/airportGraph';
+import rawTracesManualData from './data/v3_raw_traces_manual.json';
 
-export interface NodeStateItem extends NodeGuideItem {
-  x: number | null;
-  y: number | null;
-  status: 'unplaced' | 'placed';
-  centerlineErrorPx?: number;
-  assignedRawLine?: string;
-  isUncertain?: boolean;
+export interface RawPoint {
+  x: number;
+  y: number;
+  label?: string;
+  nodeId?: string;
+  note?: string;
 }
 
-export interface RawLineItem {
+export interface RawLine {
   id: string;
   name: string;
-  points: Array<{ x: number; y: number }>;
+  points: RawPoint[];
 }
 
-export interface EditorSnapshot {
-  timestamp: number;
+export interface SelectedNodeInfo {
+  lineId: string;
+  pointIndex: number;
+  origX: number;
+  origY: number;
+}
+
+export interface GapAuditItem {
+  id: string;
+  type: 'EXACT_TOUCHING' | 'POINT_ON_SEGMENT' | 'CLOSE_ALIGNED' | 'DRAWING_GAP' | 'CROSSING';
+  pointA: { lineId: string; pIdx: number; x: number; y: number; label?: string };
+  pointB?: { lineId: string; pIdx: number; x: number; y: number; label?: string };
+  segmentB?: { lineId: string; p1Idx: number; p2Idx: number; p1: { x: number; y: number }; p2: { x: number; y: number } };
+  distancePx: number;
   description: string;
-  nodeStates: NodeStateItem[];
-  rawLines: RawLineItem[];
-  activeGroup: string;
-  selectedId: string;
-  activeLineId: string;
 }
 
-const STORAGE_KEY = 'guided_node_editor_v9';
-const RAW_LINES_STORAGE_KEY = 'raw_trace_lines_v5';
-const AUTOSAVE_BACKUP_KEY = 'raw_trace_backup_v5';
-
-export const GROUP_LABELS: Record<string, string> = {
-  ALL: 'Tất cả 11 nhóm (127 node)',
-  RUNWAY_NORTH: '1. Trục đường băng Bắc (07L/25R)',
-  RUNWAY_SOUTH: '2. Trục đường băng Nam (07R/25L)',
-  W11_W9A_W9B: '3. Vòng xoay W11/W9A/W9B Tây Bắc',
-  W5_WEST: '4. Đường lăn W5 Phía Tây',
-  W6_VERTICAL: '5. Trục dọc W6',
-  W5_MIDDLE: '6. Đường lăn W5 Phía Giữa',
-  W7A_W7B_M5: '7. Cụm nút giao W7A/W7B/M5',
-  W3_M1_APRON: '8. Nút chéo W3 & M1 vào Apron',
-  NS1_NS2_E1_E2: '9. Trục trung tâm NS1/NS2/E1/E2',
-  E4_E6: '10. Đường rẽ E4 & Vòng E6 Đông',
-  APRON_STANDS: '11. Apron Bến đỗ & Parking',
-};
-
-export const GROUP_COLORS: Record<string, string> = {
-  RUNWAY_NORTH: '#ef4444',
-  RUNWAY_SOUTH: '#f97316',
-  W11_W9A_W9B: '#a855f7',
-  W5_WEST: '#ec4899',
-  W6_VERTICAL: '#3b82f6',
-  W5_MIDDLE: '#06b6d4',
-  W7A_W7B_M5: '#14b8a6',
-  W3_M1_APRON: '#eab308',
-  NS1_NS2_E1_E2: '#84cc16',
-  E4_E6: '#6366f1',
-  APRON_STANDS: '#10b981',
-};
-
-// Complete 44-line immutable baseline raw traces (182 points)
-export const PRESET_COMPLETE_RAW_LINES: RawLineItem[] = [
-  { "id": "line_01", "name": "line_01", "points": [{ "x": 50, "y": 440 }, { "x": 120, "y": 408 }, { "x": 228, "y": 360 }, { "x": 420, "y": 272 }, { "x": 620, "y": 182 }, { "x": 823, "y": 91 }, { "x": 880, "y": 65 }, { "x": 926, "y": 44 }] },
-  { "id": "line_02", "name": "line_02", "points": [{ "x": 61, "y": 643 }, { "x": 140, "y": 610 }, { "x": 237, "y": 571 }, { "x": 370, "y": 515 }, { "x": 499, "y": 459 }, { "x": 580, "y": 424 }, { "x": 653, "y": 392 }, { "x": 820, "y": 319 }, { "x": 991, "y": 246 }, { "x": 1135, "y": 184 }] },
-  { "id": "line_03", "name": "line_03", "points": [{ "x": 71, "y": 469 }, { "x": 70, "y": 490 }, { "x": 68, "y": 510 }, { "x": 67, "y": 535 }, { "x": 67, "y": 555 }, { "x": 66, "y": 575 }, { "x": 66, "y": 595 }, { "x": 67, "y": 620 }, { "x": 68, "y": 640 }, { "x": 70, "y": 655 }, { "x": 73, "y": 672 }, { "x": 78, "y": 695 }, { "x": 85, "y": 715 }, { "x": 96, "y": 735 }, { "x": 110, "y": 755 }, { "x": 126, "y": 765 }, { "x": 145, "y": 770 }, { "x": 170, "y": 765 }, { "x": 200, "y": 750 }, { "x": 240, "y": 730 }, { "x": 280, "y": 705 }, { "x": 125, "y": 680 }] },
-  { "id": "line_04", "name": "line_04", "points": [{ "x": 75, "y": 460 }, { "x": 85, "y": 500 }, { "x": 84, "y": 550 }, { "x": 83, "y": 600 }, { "x": 85, "y": 650 }, { "x": 95, "y": 700 }, { "x": 115, "y": 735 }] },
-  { "id": "line_05", "name": "line_05", "points": [{ "x": 235, "y": 395 }, { "x": 232, "y": 420 }, { "x": 230, "y": 440 }, { "x": 227, "y": 465 }, { "x": 225, "y": 490 }, { "x": 223, "y": 510 }, { "x": 222, "y": 530 }, { "x": 223, "y": 555 }, { "x": 225, "y": 580 }, { "x": 232, "y": 605 }, { "x": 240, "y": 630 }, { "x": 260, "y": 660 }, { "x": 345, "y": 680 }] },
-  { "id": "line_06", "name": "line_06", "points": [{ "x": 85, "y": 715 }, { "x": 105, "y": 650 }, { "x": 125, "y": 680 }, { "x": 220, "y": 600 }, { "x": 295, "y": 678 }] },
-  { "id": "line_07", "name": "line_07", "points": [{ "x": 498, "y": 475 }, { "x": 494, "y": 495 }, { "x": 490, "y": 510 }, { "x": 485, "y": 530 }, { "x": 480, "y": 550 }, { "x": 470, "y": 580 }, { "x": 465, "y": 615 }] },
-  { "id": "line_08", "name": "line_08", "points": [{ "x": 498, "y": 620 }, { "x": 515, "y": 612 }, { "x": 535, "y": 605 }] },
-  { "id": "line_09", "name": "line_09", "points": [{ "x": 380, "y": 665 }, { "x": 410, "y": 650 }, { "x": 440, "y": 635 }, { "x": 470, "y": 620 }, { "x": 498, "y": 620 }] },
-  { "id": "line_10", "name": "line_10", "points": [{ "x": 665, "y": 415 }, { "x": 685, "y": 430 }, { "x": 705, "y": 445 }, { "x": 730, "y": 480 }] },
-  { "id": "line_11", "name": "line_11", "points": [{ "x": 705, "y": 445 }, { "x": 750, "y": 445 }] },
-  { "id": "line_12", "name": "line_12", "points": [{ "x": 823, "y": 115 }, { "x": 820, "y": 140 }, { "x": 818, "y": 170 }, { "x": 812, "y": 220 }, { "x": 805, "y": 275 }, { "x": 800, "y": 305 }, { "x": 795, "y": 335 }] },
-  { "id": "line_13", "name": "line_13", "points": [{ "x": 795, "y": 335 }, { "x": 788, "y": 375 }, { "x": 780, "y": 415 }] },
-  { "id": "line_14", "name": "line_14", "points": [{ "x": 780, "y": 415 }, { "x": 770, "y": 438 }, { "x": 760, "y": 460 }, { "x": 752, "y": 490 }, { "x": 745, "y": 520 }, { "x": 742, "y": 555 }, { "x": 740, "y": 590 }, { "x": 738, "y": 625 }, { "x": 735, "y": 660 }, { "x": 732, "y": 695 }, { "x": 730, "y": 730 }] },
-  { "id": "line_15", "name": "line_15", "points": [{ "x": 880, "y": 110 }, { "x": 876, "y": 140 }, { "x": 872, "y": 175 }, { "x": 868, "y": 215 }, { "x": 865, "y": 255 }] },
-  { "id": "line_16", "name": "line_16", "points": [{ "x": 865, "y": 255 }, { "x": 862, "y": 290 }, { "x": 858, "y": 330 }] },
-  { "id": "line_17", "name": "line_17", "points": [{ "x": 858, "y": 330 }, { "x": 854, "y": 365 }, { "x": 850, "y": 400 }, { "x": 846, "y": 435 }, { "x": 842, "y": 470 }] },
-  { "id": "line_18", "name": "line_18", "points": [{ "x": 890, "y": 80 }, { "x": 880, "y": 110 }] },
-  { "id": "line_19", "name": "line_19", "points": [] },
-  { "id": "line_20", "name": "line_20", "points": [{ "x": 855, "y": 360 }, { "x": 890, "y": 420 }] },
-  { "id": "line_21", "name": "line_21", "points": [{ "x": 842, "y": 470 }, { "x": 860, "y": 465 }, { "x": 875, "y": 460 }, { "x": 892, "y": 452 }, { "x": 910, "y": 445 }, { "x": 955, "y": 425 }] },
-  { "id": "line_22", "name": "line_22", "points": [{ "x": 890, "y": 420 }, { "x": 940, "y": 395 }] },
-  { "id": "line_23", "name": "line_23", "points": [{ "x": 940, "y": 395 }, { "x": 955, "y": 425 }] },
-  { "id": "line_24", "name": "line_24", "points": [{ "x": 940, "y": 70 }, { "x": 945, "y": 120 }] },
-  { "id": "line_25", "name": "line_25", "points": [{ "x": 945, "y": 120 }, { "x": 950, "y": 180 }] },
-  { "id": "line_26", "name": "line_26", "points": [{ "x": 950, "y": 180 }, { "x": 955, "y": 235 }] },
-  { "id": "line_27", "name": "line_27", "points": [{ "x": 955, "y": 235 }, { "x": 965, "y": 280 }] },
-  { "id": "line_28", "name": "line_28", "points": [{ "x": 965, "y": 280 }, { "x": 980, "y": 320 }] },
-  { "id": "line_29", "name": "line_29", "points": [{ "x": 980, "y": 320 }, { "x": 1010, "y": 350 }] },
-  { "id": "line_30", "name": "line_30", "points": [{ "x": 1010, "y": 350 }, { "x": 1030, "y": 362 }, { "x": 1050, "y": 375 }] },
-  { "id": "line_31", "name": "line_31", "points": [{ "x": 955, "y": 235 }, { "x": 1020, "y": 240 }] },
-  { "id": "line_32", "name": "line_32", "points": [{ "x": 980, "y": 415 }, { "x": 1030, "y": 395 }] },
-  { "id": "line_33", "name": "line_33", "points": [{ "x": 1080, "y": 215 }, { "x": 1100, "y": 230 }] },
-  { "id": "line_34", "name": "line_34", "points": [{ "x": 1050, "y": 260 }, { "x": 1090, "y": 340 }] },
-  { "id": "line_35", "name": "line_35", "points": [{ "x": 1070, "y": 365 }, { "x": 1110, "y": 310 }, { "x": 1125, "y": 250 }] },
-  { "id": "line_36", "name": "line_36", "points": [{ "x": 1125, "y": 250 }, { "x": 1115, "y": 210 }] },
-  { "id": "line_37", "name": "line_37", "points": [{ "x": 1140, "y": 220 }, { "x": 1155, "y": 245 }, { "x": 1145, "y": 270 }] },
-  { "id": "line_38", "name": "line_38", "points": [{ "x": 745, "y": 385 }, { "x": 805, "y": 355 }] },
-  { "id": "line_39", "name": "line_39", "points": [{ "x": 685, "y": 470 }, { "x": 675, "y": 520 }] },
-  { "id": "line_40", "name": "line_40", "points": [{ "x": 775, "y": 460 }, { "x": 775, "y": 560 }] },
-  { "id": "line_41", "name": "line_41", "points": [{ "x": 705, "y": 460 }, { "x": 705, "y": 560 }] },
-  { "id": "line_42", "name": "line_42", "points": [{ "x": 755, "y": 690 }, { "x": 775, "y": 690 }] },
-  { "id": "line_43", "name": "line_43", "points": [{ "x": 715, "y": 740 }, { "x": 775, "y": 740 }] },
-  { "id": "line_44", "name": "line_44", "points": [] }
+// 38 Distinct High-Contrast Vibrant Colors for each Raw Line
+const VIBRANT_LINE_COLORS = [
+  '#00f5ff', '#38bdf8', '#fbbf24', '#34d399', '#a78bfa',
+  '#f472b6', '#fb923c', '#4ade80', '#22d3ee', '#818cf8',
+  '#f87171', '#e879f9', '#a3e635', '#2dd4bf', '#60a5fa',
+  '#facc15', '#ec4899', '#14b8a6', '#8b5cf6', '#06b6d4',
+  '#10b981', '#f97316', '#6366f1', '#d946ef', '#84cc16',
+  '#0ea5e9', '#e11d48', '#059669', '#d97706', '#7c3aed',
+  '#2563eb', '#db2777', '#0d9488', '#ea580c', '#4f46e5',
+  '#c026d3', '#65a30d', '#0284c7'
 ];
 
-function getInitialCleanState(): NodeStateItem[] {
-  return NODE_GUIDE_DATA.map(item => ({
-    ...item,
-    x: null,
-    y: null,
-    status: 'unplaced',
-    isUncertain: false,
-    centerlineErrorPx: undefined,
-    assignedRawLine: undefined,
-  }));
-}
-
-function recoverPreAutoMatchRawLines(): RawLineItem[] | null {
-  const keysToScan = [
-    'raw_trace_lines_v5',
-    'raw_trace_backup_v5',
-    'editor_pre_automatch_snapshot_v2',
-    'editor_snapshot_history_v2',
-    'raw_trace_lines_v4',
-    'raw_trace_lines_v3',
-    'raw_trace_lines_v2',
-    'editor_pre_automatch_snapshot_v1',
-    'editor_snapshot_history_v1',
-    'raw_trace_lines_v1',
-  ];
-
-  for (const k of keysToScan) {
-    try {
-      const raw = localStorage.getItem(k) || sessionStorage.getItem(k);
-      if (!raw) continue;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed) && parsed.length > 0 && parsed[0].points) {
-        return parsed;
-      }
-      if (parsed.rawLines && Array.isArray(parsed.rawLines) && parsed.rawLines.length > 0) {
-        return parsed.rawLines;
-      }
-      if (parsed.stack && Array.isArray(parsed.stack)) {
-        for (let i = parsed.stack.length - 1; i >= 0; i--) {
-          if (parsed.stack[i].rawLines && parsed.stack[i].rawLines.length > 0) {
-            return parsed.stack[i].rawLines;
-          }
-        }
-      }
-    } catch {
-      /* ignore */
-    }
-  }
-  return null;
-}
-
-function sanitizeRawLines(input: any): RawLineItem[] {
-  if (!Array.isArray(input)) return PRESET_COMPLETE_RAW_LINES;
-  const valid: RawLineItem[] = [];
-  input.forEach((item, idx) => {
+function sanitizeRawLines(input: any): RawLine[] {
+  const sourceArray = Array.isArray(input) ? input : (rawTracesManualData as any[]);
+  const valid: RawLine[] = [];
+  sourceArray.forEach((item, idx) => {
     if (!item || typeof item !== 'object') return;
     const id = typeof item.id === 'string' && item.id.trim() ? item.id : `line_${String(idx + 1).padStart(2, '0')}`;
     const name = typeof item.name === 'string' && item.name.trim() ? item.name : id;
-    const pts: Array<{ x: number; y: number }> = [];
+
+    const pts: RawPoint[] = [];
     if (Array.isArray(item.points)) {
       item.points.forEach((p: any) => {
         if (p && typeof p.x === 'number' && typeof p.y === 'number' && !isNaN(p.x) && !isNaN(p.y)) {
-          pts.push({ x: Math.round(p.x), y: Math.round(p.y) });
+          pts.push({
+            x: Math.round(p.x),
+            y: Math.round(p.y),
+            label: typeof p.label === 'string' && p.label.trim() ? p.label.trim() : undefined,
+            nodeId: typeof p.nodeId === 'string' && p.nodeId.trim() ? p.nodeId.trim() : undefined,
+            note: typeof p.note === 'string' ? p.note : undefined,
+          });
         }
       });
     }
     valid.push({ id, name, points: pts });
   });
-  return valid.length > 0 ? valid : PRESET_COMPLETE_RAW_LINES;
+  return valid;
 }
 
-function loadInitialRawLines(): RawLineItem[] {
-  try {
-    const recovered = recoverPreAutoMatchRawLines();
-    if (recovered && recovered.length > 0) return sanitizeRawLines(recovered);
-  } catch {
-    /* ignore */
-  }
-  return sanitizeRawLines(PRESET_COMPLETE_RAW_LINES);
-}
+export default function PrecisionChartPenAnnotator() {
+  // Check URL params for raw-only mode
+  const isRawOnlyMode = useMemo(() => {
+    if (typeof window === 'undefined') return false;
+    const params = new URLSearchParams(window.location.search);
+    return params.get('mode') === 'raw-only';
+  }, []);
 
-function GuidedNodeEditor() {
-  const [editorMode, setEditorMode] = useState<'GUIDED' | 'RAW_TRACE'>('RAW_TRACE');
-  const [nodeStates, setNodeStates] = useState<NodeStateItem[]>(() => getInitialCleanState());
-  const [rawLines, setRawLines] = useState<RawLineItem[]>(() => loadInitialRawLines());
-  const [activeLineId, setActiveLineId] = useState<string>('line_01');
+  // ── File Source Metadata State ────────────────────────────────────────────
+  const [fileMeta, setFileMeta] = useState<{
+    absolutePath: string;
+    sha256: string;
+    lineCount: number;
+    pointCount: number;
+    lineIds: string[];
+  }>({
+    absolutePath: 'd:\\Thao\\airport-simulator\\v3_raw_traces_manual.json',
+    sha256: '30B8A929FCB6CA1E25AE80F430FA49DE8B06F4DB4E0292D57DB28A5DA89D8991',
+    lineCount: (rawTracesManualData as any[]).length,
+    pointCount: (rawTracesManualData as any[]).reduce((sum, l) => sum + (l.points?.length || 0), 0),
+    lineIds: (rawTracesManualData as any[]).map(l => l.id),
+  });
 
-  const [selectedId, setSelectedId] = useState<string>('RWY07L_THR');
-  const [activeGroup, setActiveGroup] = useState<string>('ALL');
-  const [statusFilter, setStatusFilter] = useState<'ALL' | 'UNPLACED' | 'PLACED'>('ALL');
-  const [searchQuery, setSearchQuery] = useState<string>('');
+  // ── Raw Lines State (Strictly initialized from file without stale localStorage in raw-only) ──
+  const [lines, setLines] = useState<RawLine[]>(() => {
+    return sanitizeRawLines(rawTracesManualData);
+  });
+
+  const [activeLineId, setActiveLineId] = useState<string | null>(() => lines[0]?.id || 'line_01');
   
-  const [draggingId, setDraggingId] = useState<string | null>(null);
-  const [showRegionSpotlight, setShowRegionSpotlight] = useState<boolean>(true);
-  const [showLabels, setShowLabels] = useState<boolean>(true);
-  const [showDeltaLines, setShowDeltaLines] = useState<boolean>(false);
-  const [showProposedNodes, setShowProposedNodes] = useState<boolean>(false);
-  const [zoomLevel, setZoomLevel] = useState<number>(1);
-  const [cursorPos, setCursorPos] = useState<{ x: number; y: number } | null>(null);
-  const [autoSaveStatus, setAutoSaveStatus] = useState<string>('✓ Đã lưu');
+  // ── Selected Node & Dragging State ────────────────────────────────────────
+  const [selectedNode, setSelectedNode] = useState<SelectedNodeInfo | null>(null);
+  const [nodeLabelInput, setNodeLabelInput] = useState<string>('');
+  const draggingNodeRef = useRef<{ lineId: string; pointIndex: number; origX: number; origY: number; moved: boolean } | null>(null);
 
-  // Lightweight in-memory history stack (up to 30 snapshots in RAM)
-  const historyRef = useRef<EditorSnapshot[]>([]);
-  const historyIdxRef = useRef<number>(-1);
-  const [canUndo, setCanUndo] = useState<boolean>(false);
-  const [canRedo, setCanRedo] = useState<boolean>(false);
+  // ── Display Toggles ───────────────────────────────────────────────────────
+  const [showPoints, setShowPoints] = useState<boolean>(true);
+  const [showLineNames, setShowLineNames] = useState<boolean>(true);
+  const [showPointIndices, setShowPointIndices] = useState<boolean>(false);
+  const [showGapPanel, setShowGapPanel] = useState<boolean>(false);
+  const [highlightedGap, setHighlightedGap] = useState<GapAuditItem | null>(null);
 
+  // ── Save State & Toast ────────────────────────────────────────────────────
+  const [saveStatus, setSaveStatus] = useState<'idle' | 'saving' | 'saved' | 'error'>('idle');
+  const [toastMsg, setToastMsg] = useState<string | null>(null);
+
+  // ── Viewport & Cursor ─────────────────────────────────────────────────────
   const svgRef = useRef<SVGSVGElement | null>(null);
   const fileInputRef = useRef<HTMLInputElement | null>(null);
-  const rawFileInputRef = useRef<HTMLInputElement | null>(null);
+  const [view, setView] = useState({ x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT });
+  const [cursor, setCursor] = useState<{ x: number; y: number } | null>(null);
+  const [panning, setPanning] = useState(false);
+  const panRef = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
+  const [statusMsg, setStatusMsg] = useState<string>(
+    '🔍 NGUỒN DUY NHẤT: v3_raw_traces_manual.json (0 Junctions, không dùng tên tạm V1/V2)'
+  );
 
-  // Auto-Save rawLines immediately on every modification
-  useEffect(() => {
-    try {
-      const serialized = JSON.stringify(rawLines);
-      localStorage.setItem(RAW_LINES_STORAGE_KEY, serialized);
-      localStorage.setItem(AUTOSAVE_BACKUP_KEY, serialized);
-      sessionStorage.setItem(RAW_LINES_STORAGE_KEY, serialized);
-      setAutoSaveStatus(`✓ Đã lưu (${rawLines.reduce((acc, l) => acc + l.points.length, 0)} điểm)`);
-    } catch (e) {
-      console.warn('LocalStorage save failed:', e);
-    }
-  }, [rawLines]);
+  // ── Undo / Redo History ───────────────────────────────────────────────────
+  const historyRef = useRef<RawLine[][]>([JSON.parse(JSON.stringify(lines))]);
+  const historyIdxRef = useRef<number>(0);
+  const [canUndo, setCanUndo] = useState(false);
+  const [canRedo, setCanRedo] = useState(false);
 
-  useEffect(() => {
-    try {
-      localStorage.setItem(STORAGE_KEY, JSON.stringify(nodeStates));
-    } catch {
-      /* ignore */
-    }
-  }, [nodeStates]);
-
-  // Ensure activeLineId is always valid
-  useEffect(() => {
-    if (rawLines.length > 0 && !rawLines.some(l => l.id === activeLineId)) {
-      setActiveLineId(rawLines[0].id);
-    }
-  }, [rawLines, activeLineId]);
-
-  // Lightweight in-RAM snapshot
-  const pushSnapshot = useCallback((description: string, customNodes?: NodeStateItem[], customLines?: RawLineItem[]) => {
-    const snapshot: EditorSnapshot = {
-      timestamp: Date.now(),
-      description,
-      nodeStates: customNodes ? [...customNodes] : nodeStates,
-      rawLines: customLines ? JSON.parse(JSON.stringify(customLines)) : JSON.parse(JSON.stringify(rawLines)),
-      activeGroup,
-      selectedId,
-      activeLineId,
-    };
-
-    const trimmed = historyRef.current.slice(0, historyIdxRef.current + 1);
-    trimmed.push(snapshot);
-    if (trimmed.length > 30) trimmed.shift();
-
-    historyRef.current = trimmed;
-    historyIdxRef.current = trimmed.length - 1;
+  const pushHistory = useCallback((nextLines: RawLine[], msg: string) => {
+    const nextCopy = JSON.parse(JSON.stringify(nextLines));
+    const newHist = historyRef.current.slice(0, historyIdxRef.current + 1);
+    newHist.push(nextCopy);
+    if (newHist.length > 50) newHist.shift();
+    historyRef.current = newHist;
+    historyIdxRef.current = newHist.length - 1;
     setCanUndo(historyIdxRef.current > 0);
     setCanRedo(false);
-  }, [nodeStates, rawLines, activeGroup, selectedId, activeLineId]);
+    setStatusMsg(msg);
+  }, []);
 
-  // Undo (↶ Quay lại)
   const handleUndo = useCallback(() => {
     if (historyIdxRef.current > 0) {
-      historyIdxRef.current -= 1;
-      const snapshot = historyRef.current[historyIdxRef.current];
-      if (snapshot) {
-        setNodeStates(snapshot.nodeStates);
-        setRawLines(snapshot.rawLines);
-        setActiveGroup(snapshot.activeGroup);
-        setSelectedId(snapshot.selectedId);
-        setActiveLineId(snapshot.activeLineId || (snapshot.rawLines[0] ? snapshot.rawLines[0].id : 'line_01'));
-      }
+      historyIdxRef.current--;
+      const prev = JSON.parse(JSON.stringify(historyRef.current[historyIdxRef.current]));
+      setLines(prev);
       setCanUndo(historyIdxRef.current > 0);
-      setCanRedo(historyIdxRef.current < historyRef.current.length - 1);
+      setCanRedo(true);
+      setStatusMsg('↺ Đã hoàn tác (Undo)');
     }
   }, []);
 
-  // Redo (↷ Làm lại)
   const handleRedo = useCallback(() => {
     if (historyIdxRef.current < historyRef.current.length - 1) {
-      historyIdxRef.current += 1;
-      const snapshot = historyRef.current[historyIdxRef.current];
-      if (snapshot) {
-        setNodeStates(snapshot.nodeStates);
-        setRawLines(snapshot.rawLines);
-        setActiveGroup(snapshot.activeGroup);
-        setSelectedId(snapshot.selectedId);
-        setActiveLineId(snapshot.activeLineId || (snapshot.rawLines[0] ? snapshot.rawLines[0].id : 'line_01'));
-      }
+      historyIdxRef.current++;
+      const next = JSON.parse(JSON.stringify(historyRef.current[historyIdxRef.current]));
+      setLines(next);
       setCanUndo(true);
       setCanRedo(historyIdxRef.current < historyRef.current.length - 1);
+      setStatusMsg('↻ Đã làm lại (Redo)');
     }
   }, []);
 
-  // Quick One-Click Preset: Load Complete 11 Clean Traces
-  const handleLoadFullPresets = () => {
-    if (window.confirm('Nạp toàn bộ 11 nhánh tim đường mẫu đầy đủ (127 điểm đã căn chuẩn)?')) {
-      pushSnapshot('Nạp 11 nhánh mẫu');
-      setRawLines(PRESET_COMPLETE_RAW_LINES);
-      setActiveLineId('line_01');
+  // ── Fetch Fresh File on Load & On Reload Button ───────────────────────────
+  const fetchFreshRawFromFile = useCallback(async () => {
+    try {
+      const resp = await fetch('/api/raw-traces-info');
+      if (resp.ok) {
+        const info = await resp.json();
+        setFileMeta({
+          absolutePath: info.absolutePath,
+          sha256: info.sha256,
+          lineCount: info.lineCount,
+          pointCount: info.pointCount,
+          lineIds: info.lineIds,
+        });
+        if (Array.isArray(info.lines)) {
+          const sanitized = sanitizeRawLines(info.lines);
+          setLines(sanitized);
+          historyRef.current = [JSON.parse(JSON.stringify(sanitized))];
+          historyIdxRef.current = 0;
+          setCanUndo(false);
+          setCanRedo(false);
+          setToastMsg(`✅ ĐÃ NẠP LẠI TỪ FILE: ${info.lineCount} Lines, ${info.pointCount} Points!`);
+          setStatusMsg(`🔄 Đã nạp lại trực tiếp từ ${info.absolutePath} (SHA: ${info.sha256.slice(0, 8)}...)`);
+          setTimeout(() => setToastMsg(null), 4000);
+          return;
+        }
+      }
+    } catch {}
+    // Fallback to imported JSON
+    const clean = sanitizeRawLines(rawTracesManualData);
+    setLines(clean);
+    setToastMsg(`✅ ĐÃ NẠP LẠI NGUỒN CHUẨN TỪ FILE JSON!`);
+    setStatusMsg(`🔄 Đã nạp lại file gốc v3_raw_traces_manual.json`);
+    setTimeout(() => setToastMsg(null), 4000);
+  }, []);
+
+  useEffect(() => {
+    fetchFreshRawFromFile();
+  }, [fetchFreshRawFromFile]);
+
+  // Statistics
+  const stats = useMemo(() => {
+    let totalPts = 0;
+    let namedPts = 0;
+    let geomPts = 0;
+    lines.forEach(l => {
+      l.points.forEach(p => {
+        totalPts++;
+        if (p.label && p.label.trim().length > 0) namedPts++;
+        else geomPts++;
+      });
+    });
+    return {
+      lineCount: lines.length,
+      totalPoints: totalPts,
+      namedPoints: namedPts,
+      geometryOnlyPoints: geomPts,
+    };
+  }, [lines]);
+
+  // ── Gap Audit Calculation (Inspection Only, Never Auto-Connect) ───────────
+  const gapAuditItems: GapAuditItem[] = useMemo(() => {
+    const items: GapAuditItem[] = [];
+    const allPts: { lineId: string; pIdx: number; x: number; y: number; label?: string }[] = [];
+    lines.forEach(l => {
+      l.points.forEach((p, idx) => {
+        allPts.push({ lineId: l.id, pIdx: idx, x: p.x, y: p.y, label: p.label });
+      });
+    });
+
+    lines.forEach(line => {
+      if (line.points.length === 0) return;
+      const startPt = { lineId: line.id, pIdx: 0, x: line.points[0].x, y: line.points[0].y, label: line.points[0].label };
+      const endPt = {
+        lineId: line.id,
+        pIdx: line.points.length - 1,
+        x: line.points[line.points.length - 1].x,
+        y: line.points[line.points.length - 1].y,
+        label: line.points[line.points.length - 1].label,
+      };
+
+      [startPt, endPt].forEach((pt, isEnd) => {
+        let nearestPt = { dist: Infinity, pt: null as any };
+        let nearestSeg = { dist: Infinity, lineId: '', p1Idx: 0, p2Idx: 0, p1: null as any, p2: null as any };
+
+        allPts.forEach(other => {
+          if (other.lineId === line.id) return;
+          const d = Math.hypot(other.x - pt.x, other.y - pt.y);
+          if (d < nearestPt.dist) nearestPt = { dist: d, pt: other };
+        });
+
+        lines.forEach(otherLine => {
+          if (otherLine.id === line.id) return;
+          for (let s = 0; s < otherLine.points.length - 1; s++) {
+            const a = otherLine.points[s];
+            const b = otherLine.points[s + 1];
+            const l2 = (b.x - a.x) ** 2 + (b.y - a.y) ** 2;
+            let t = l2 === 0 ? 0 : ((pt.x - a.x) * (b.x - a.x) + (pt.y - a.y) * (b.y - a.y)) / l2;
+            t = Math.max(0, Math.min(1, t));
+            const proj = { x: a.x + t * (b.x - a.x), y: a.y + t * (b.y - a.y) };
+            const d = Math.hypot(pt.x - proj.x, pt.y - proj.y);
+            if (d < nearestSeg.dist) {
+              nearestSeg = { dist: d, lineId: otherLine.id, p1Idx: s, p2Idx: s + 1, p1: a, p2: b };
+            }
+          }
+        });
+
+        const distVal = Math.min(nearestPt.dist, nearestSeg.dist);
+        let type: GapAuditItem['type'] = 'DRAWING_GAP';
+        if (nearestPt.dist <= 2.0) type = 'EXACT_TOUCHING';
+        else if (nearestSeg.dist <= 2.0) type = 'POINT_ON_SEGMENT';
+        else if (distVal <= 5.0) type = 'CLOSE_ALIGNED';
+
+        items.push({
+          id: `gap_${line.id}_${isEnd ? 'end' : 'start'}`,
+          type,
+          pointA: pt,
+          pointB: nearestPt.pt || undefined,
+          segmentB: nearestSeg.lineId ? {
+            lineId: nearestSeg.lineId,
+            p1Idx: nearestSeg.p1Idx,
+            p2Idx: nearestSeg.p2Idx,
+            p1: nearestSeg.p1,
+            p2: nearestSeg.p2,
+          } : undefined,
+          distancePx: Math.round(distVal * 10) / 10,
+          description: `${line.id} [${isEnd ? 'END' : 'START'} #${pt.pIdx + 1}] (${pt.x}, ${pt.y}) -> gần nhất ${nearestPt.pt?.lineId || nearestSeg.lineId} (${Math.round(distVal * 10) / 10}px)`,
+        });
+      });
+    });
+
+    return items;
+  }, [lines]);
+
+  // Selected node detailed object
+  const selectedNodeDetails = useMemo(() => {
+    if (!selectedNode) return null;
+    const l = lines.find(x => x.id === selectedNode.lineId);
+    if (!l) return null;
+    const pt = l.points[selectedNode.pointIndex];
+    if (!pt) return null;
+    return {
+      line: l,
+      point: pt,
+      pointIndex: selectedNode.pointIndex,
+      origX: selectedNode.origX,
+      origY: selectedNode.origY,
+    };
+  }, [selectedNode, lines]);
+
+  // Sync nodeLabelInput when selected node changes
+  useEffect(() => {
+    if (selectedNodeDetails) {
+      setNodeLabelInput(selectedNodeDetails.point.label || '');
+    } else {
+      setNodeLabelInput('');
+    }
+  }, [selectedNodeDetails?.line.id, selectedNodeDetails?.pointIndex]);
+
+  // ── Instant Real-Time Node Label Updater ──────────────────────────────────
+  const handleLabelChange = useCallback((newVal: string) => {
+    setNodeLabelInput(newVal);
+    if (!selectedNode) return;
+    const trimmed = newVal.trim();
+    const { lineId, pointIndex } = selectedNode;
+
+    setLines(prev => {
+      return prev.map(l => {
+        if (l.id !== lineId) return l;
+        const newPts = [...l.points];
+        if (newPts[pointIndex]) {
+          newPts[pointIndex] = {
+            ...newPts[pointIndex],
+            label: trimmed || undefined,
+            nodeId: trimmed || undefined,
+          };
+        }
+        return { ...l, points: newPts };
+      });
+    });
+
+    setStatusMsg(
+      trimmed
+        ? `✏️ Tên node: "${trimmed}" (Đã cập nhật tức thì - Bấm Ctrl+S để lưu vào file)`
+        : `✕ Đã xóa nhãn node (Bấm Ctrl+S để lưu vào file)`
+    );
+  }, [selectedNode]);
+
+  // ── Apply Node Label Helper (With History Push) ───────────────────────────
+  const handleApplyNodeLabel = useCallback((customLabel?: string) => {
+    if (!selectedNode) return;
+    const rawVal = customLabel !== undefined ? customLabel : nodeLabelInput;
+    const trimmed = rawVal.trim();
+    const { lineId, pointIndex } = selectedNode;
+
+    setNodeLabelInput(trimmed);
+    setLines(prev => {
+      const next = prev.map(l => {
+        if (l.id !== lineId) return l;
+        const newPts = [...l.points];
+        if (newPts[pointIndex]) {
+          newPts[pointIndex] = {
+            ...newPts[pointIndex],
+            label: trimmed || undefined,
+            nodeId: trimmed || undefined,
+          };
+        }
+        return { ...l, points: newPts };
+      });
+      pushHistory(
+        next,
+        trimmed
+          ? `🏷️ Đã đặt tên node #${pointIndex + 1} của ${lineId}: "${trimmed}"`
+          : `✕ Đã xóa nhãn node #${pointIndex + 1} của ${lineId}`
+      );
+      return next;
+    });
+
+    setStatusMsg(
+      trimmed
+        ? `✓ Đã lưu nhãn: "${trimmed}" (Nhấn Ctrl+S hoặc nút "Lưu" để ghi vào file)`
+        : `✓ Đã xóa nhãn node (Nhấn Ctrl+S hoặc nút "Lưu" để ghi vào file)`
+    );
+  }, [selectedNode, nodeLabelInput, pushHistory]);
+
+  // ── Zoom & Pan Logic ──────────────────────────────────────────────────────
+  const clampView = useCallback((v: { x: number; y: number; w: number; h: number }) => {
+    const aspect = SVG_HEIGHT / SVG_WIDTH;
+    const w = Math.min(SVG_WIDTH, Math.max(SVG_WIDTH * 0.08, v.w));
+    const h = w * aspect;
+    const x = Math.min(SVG_WIDTH - w, Math.max(0, v.x));
+    const y = Math.min(SVG_HEIGHT - h, Math.max(0, v.y));
+    return { x, y, w, h };
+  }, []);
+
+  const zoomAt = useCallback((clientX: number, clientY: number, factor: number) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    if (rect.width <= 0 || rect.height <= 0) return;
+    setView(v => {
+      const aspect = SVG_HEIGHT / SVG_WIDTH;
+      const w = Math.min(SVG_WIDTH, Math.max(SVG_WIDTH * 0.08, v.w * factor));
+      const h = w * aspect;
+      const fx = Math.max(0, Math.min(1, (clientX - rect.left) / rect.width));
+      const fy = Math.max(0, Math.min(1, (clientY - rect.top) / rect.height));
+      const sx = v.x + fx * v.w;
+      const sy = v.y + fy * v.h;
+      return clampView({ x: sx - fx * w, y: sy - fy * h, w, h });
+    });
+  }, [clampView]);
+
+  const zoomToCoord = useCallback((cx: number, cy: number, span = 200) => {
+    const aspect = SVG_HEIGHT / SVG_WIDTH;
+    const w = span;
+    const h = span * aspect;
+    const x = Math.max(0, Math.min(SVG_WIDTH - w, cx - w / 2));
+    const y = Math.max(0, Math.min(SVG_HEIGHT - h, cy - h / 2));
+    setView({ x, y, w, h });
+  }, []);
+
+  useEffect(() => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const onWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      zoomAt(e.clientX, e.clientY, e.deltaY < 0 ? 1 / 1.3 : 1.3);
+    };
+    svg.addEventListener('wheel', onWheel, { passive: false });
+    return () => svg.removeEventListener('wheel', onWheel);
+  }, [zoomAt]);
+
+  const resetView = () => {
+    setView({ x: 0, y: 0, w: SVG_WIDTH, h: SVG_HEIGHT });
+    setHighlightedGap(null);
+  };
+
+  // ── Clean Export Data Format Helper ───────────────────────────────────────
+  const getCleanData = (sourceLines = lines) => {
+    return sourceLines.map(l => ({
+      id: l.id,
+      name: l.name,
+      points: l.points.map(p => ({
+        x: Math.round(p.x),
+        y: Math.round(p.y),
+        label: p.label ? p.label.trim() : undefined,
+        nodeId: p.nodeId ? p.nodeId.trim() : undefined,
+        note: p.note,
+      })),
+    }));
+  };
+
+  // ── Direct Save to Disk API ───────────────────────────────────────────────
+  const handleDirectSave = async () => {
+    setSaveStatus('saving');
+    
+    // Auto-commit any currently typed label in nodeLabelInput
+    let currentLines = lines;
+    if (selectedNode) {
+      const currentPoint = currentLines.find(l => l.id === selectedNode.lineId)?.points[selectedNode.pointIndex];
+      const trimmed = nodeLabelInput.trim();
+      const currentLabel = currentPoint?.label || '';
+      if (trimmed !== currentLabel) {
+        currentLines = currentLines.map(l => {
+          if (l.id !== selectedNode.lineId) return l;
+          const newPts = [...l.points];
+          if (newPts[selectedNode.pointIndex]) {
+            newPts[selectedNode.pointIndex] = {
+              ...newPts[selectedNode.pointIndex],
+              label: trimmed || undefined,
+              nodeId: trimmed || undefined,
+            };
+          }
+          return { ...l, points: newPts };
+        });
+        setLines(currentLines);
+      }
+    }
+
+    const cleanData = getCleanData(currentLines);
+
+    try {
+      const resp = await fetch('/api/save-raw-traces', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(cleanData),
+      });
+
+      if (resp.ok) {
+        setSaveStatus('saved');
+        setToastMsg('✅ ĐÃ LƯU TRỰC TIẾP VÀO FILE v3_raw_traces_manual.json TRÊN Ổ ĐĨA!');
+        setStatusMsg(`💾 Đã lưu thành công ${cleanData.length} lines vào v3_raw_traces_manual.json lúc ${new Date().toLocaleTimeString()}`);
+        setTimeout(() => {
+          setSaveStatus('idle');
+          setToastMsg(null);
+        }, 4000);
+      } else {
+        throw new Error('Server returned non-200');
+      }
+    } catch (err) {
+      setSaveStatus('error');
+      exportJson();
+      setToastMsg('⚠️ Đã tải file JSON về máy (Download)');
+      setTimeout(() => {
+        setSaveStatus('idle');
+        setToastMsg(null);
+      }, 4000);
     }
   };
 
-  // Undo last drawn point in active line
-  const undoLastPoint = useCallback(() => {
-    pushSnapshot('Xóa điểm vừa chấm');
-    setRawLines(prev =>
-      prev.map(line =>
-        line.id === activeLineId && line.points.length > 0
-          ? { ...line, points: line.points.slice(0, -1) }
-          : line
-      )
-    );
-  }, [activeLineId, pushSnapshot]);
+  // ── Export JSON (Download) ────────────────────────────────────────────────
+  const exportJson = () => {
+    const cleanData = getCleanData();
+    const blob = new Blob([JSON.stringify(cleanData, null, 2)], { type: 'application/json' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'v3_raw_traces_manual.json';
+    a.click();
+    URL.revokeObjectURL(url);
+    setStatusMsg(`📥 Đã tải file v3_raw_traces_manual.json (${lines.length} lines, ${stats.totalPoints} points)!`);
+  };
 
-  // Keyboard shortcut listener
+  // ── Import JSON (Upload File) ─────────────────────────────────────────────
+  const handleImportJson = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+    const reader = new FileReader();
+    reader.onload = evt => {
+      try {
+        const text = evt.target?.result as string;
+        const parsed = JSON.parse(text);
+        if (Array.isArray(parsed)) {
+          const sanitized = sanitizeRawLines(parsed);
+          setLines(sanitized);
+          pushHistory(sanitized, `📥 Đã nạp thành công ${sanitized.length} lines từ file ${file.name}`);
+          setToastMsg(`✅ ĐÃ IMPORT THÀNH CÔNG: ${sanitized.length} Lines!`);
+          setTimeout(() => setToastMsg(null), 4000);
+        }
+      } catch (err) {
+        alert('File JSON không hợp lệ!');
+      }
+    };
+    reader.readAsText(file);
+    e.target.value = '';
+  };
+
+  // ── Node Click & Drag Handlers ────────────────────────────────────────────
+  const handleNodeMouseDown = (e: React.MouseEvent, lineId: string, pointIndex: number) => {
+    e.stopPropagation();
+    const l = lines.find(x => x.id === lineId);
+    if (!l) return;
+    const pt = l.points[pointIndex];
+    if (!pt) return;
+
+    setSelectedNode({ lineId, pointIndex, origX: pt.x, origY: pt.y });
+    setActiveLineId(lineId);
+    draggingNodeRef.current = { lineId, pointIndex, origX: pt.x, origY: pt.y, moved: false };
+
+    setStatusMsg(`🎯 Đã chọn: ${lineId} - Điểm #${pointIndex + 1} (${pt.x}, ${pt.y})`);
+  };
+
+  const handleSvgMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
+    const svg = svgRef.current;
+    if (!svg) return;
+    const rect = svg.getBoundingClientRect();
+    const fx = (e.clientX - rect.left) / rect.width;
+    const fy = (e.clientY - rect.top) / rect.height;
+    const curX = Math.round(view.x + fx * view.w);
+    const curY = Math.round(view.y + fy * view.h);
+    setCursor({ x: curX, y: curY });
+
+    if (panning && panRef.current) {
+      const dx = (e.clientX - panRef.current.px) * (view.w / rect.width);
+      const dy = (e.clientY - panRef.current.py) * (view.h / rect.height);
+      setView(clampView({
+        x: panRef.current.vx - dx,
+        y: panRef.current.vy - dy,
+        w: view.w,
+        h: view.h,
+      }));
+      return;
+    }
+
+    if (draggingNodeRef.current) {
+      draggingNodeRef.current.moved = true;
+      const { lineId, pointIndex } = draggingNodeRef.current;
+      setLines(prev => prev.map(l => {
+        if (l.id !== lineId) return l;
+        const newPts = [...l.points];
+        if (newPts[pointIndex]) {
+          newPts[pointIndex] = { ...newPts[pointIndex], x: Math.max(0, Math.min(SVG_WIDTH, curX)), y: Math.max(0, Math.min(SVG_HEIGHT, curY)) };
+        }
+        return { ...l, points: newPts };
+      }));
+    }
+  };
+
+  const handleSvgMouseUp = () => {
+    if (panning) {
+      setPanning(false);
+      panRef.current = null;
+    }
+    if (draggingNodeRef.current) {
+      if (draggingNodeRef.current.moved) {
+        pushHistory(lines, `✓ Đã dời điểm #${draggingNodeRef.current.pointIndex + 1} của ${draggingNodeRef.current.lineId}`);
+      }
+      draggingNodeRef.current = null;
+    }
+  };
+
+  const handleSvgMouseDown = (e: React.MouseEvent<SVGSVGElement>) => {
+    if (e.button === 1 || e.altKey || e.shiftKey) {
+      setPanning(true);
+      panRef.current = { px: e.clientX, py: e.clientY, vx: view.x, vy: view.y };
+    }
+  };
+
+  // Keyboard Shortcuts
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'z') {
+      // Global Save
+      if (e.key === 's' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
-        if (e.shiftKey) {
-          handleRedo();
-        } else {
-          handleUndo();
-        }
-      } else if ((e.ctrlKey || e.metaKey) && e.key.toLowerCase() === 'y') {
+        handleDirectSave();
+        return;
+      }
+
+      const targetTag = (e.target as HTMLElement)?.tagName;
+      if (targetTag === 'INPUT' || targetTag === 'TEXTAREA') {
+        return;
+      }
+
+      if (!selectedNode) return;
+      let dx = 0;
+      let dy = 0;
+      const step = e.shiftKey ? 5 : 1;
+
+      if (e.key === 'ArrowLeft') dx = -step;
+      else if (e.key === 'ArrowRight') dx = step;
+      else if (e.key === 'ArrowUp') dy = -step;
+      else if (e.key === 'ArrowDown') dy = step;
+      else if (e.key === 'z' && (e.ctrlKey || e.metaKey)) {
+        e.preventDefault();
+        handleUndo();
+        return;
+      } else if (e.key === 'y' && (e.ctrlKey || e.metaKey)) {
         e.preventDefault();
         handleRedo();
-      } else if (e.key === 'Backspace' && editorMode === 'RAW_TRACE') {
-        undoLastPoint();
+        return;
+      } else if (e.key === 'Escape') {
+        setSelectedNode(null);
+        setHighlightedGap(null);
+        return;
+      }
+
+      if (dx !== 0 || dy !== 0) {
+        e.preventDefault();
+        const { lineId, pointIndex } = selectedNode;
+        setLines(prev => {
+          const next = prev.map(l => {
+            if (l.id !== lineId) return l;
+            const newPts = [...l.points];
+            if (newPts[pointIndex]) {
+              newPts[pointIndex] = {
+                ...newPts[pointIndex],
+                x: Math.max(0, Math.min(SVG_WIDTH, newPts[pointIndex].x + dx)),
+                y: Math.max(0, Math.min(SVG_HEIGHT, newPts[pointIndex].y + dy)),
+              };
+            }
+            return { ...l, points: newPts };
+          });
+          pushHistory(next, `🎯 Tinh chỉnh điểm #${pointIndex + 1} (${dx !== 0 ? `X: ${dx > 0 ? '+' : ''}${dx}` : `Y: ${dy > 0 ? '+' : ''}${dy}`})`);
+          return next;
+        });
       }
     };
+
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [handleUndo, handleRedo, undoLastPoint, editorMode]);
-
-  const nodeMap = useMemo(() => {
-    const map = new Map<string, NodeStateItem>();
-    nodeStates.forEach(n => map.set(n.id, n));
-    return map;
-  }, [nodeStates]);
-
-  const selectedNode = useMemo(() => {
-    return nodeMap.get(selectedId) || nodeStates[0];
-  }, [selectedId, nodeMap, nodeStates]);
-
-  const filteredNodes = useMemo(() => {
-    return nodeStates.filter(n => {
-      const matchGroup = activeGroup === 'ALL' || n.group === activeGroup;
-      const matchStatus =
-        statusFilter === 'ALL' ||
-        (statusFilter === 'UNPLACED' && n.status === 'unplaced') ||
-        (statusFilter === 'PLACED' && n.status === 'placed');
-      const q = searchQuery.toLowerCase().trim();
-      const matchSearch =
-        !q ||
-        n.id.toLowerCase().includes(q) ||
-        n.routeCode.toLowerCase().includes(q) ||
-        (n.label && n.label.toLowerCase().includes(q)) ||
-        (n.note && n.note.toLowerCase().includes(q));
-      return matchGroup && matchStatus && matchSearch;
-    });
-  }, [nodeStates, activeGroup, statusFilter, searchQuery]);
-
-  const stats = useMemo(() => {
-    const total = nodeStates.length;
-    let placed = 0;
-    nodeStates.forEach(n => {
-      if (n.status === 'placed' && n.x !== null && n.y !== null) placed++;
-    });
-    return {
-      total,
-      placed,
-      unplaced: total - placed,
-    };
-  }, [nodeStates]);
-
-  const detectedJunctions = useMemo(() => {
-    const junctions: Array<{ pt: { x: number; y: number }; lines: string[] }> = [];
-    const endpoints: Array<{ lineId: string; pt: { x: number; y: number } }> = [];
-
-    rawLines.forEach(line => {
-      if (line.points.length > 0) {
-        endpoints.push({ lineId: line.id, pt: line.points[0] });
-        endpoints.push({ lineId: line.id, pt: line.points[line.points.length - 1] });
-      }
-    });
-
-    for (let i = 0; i < endpoints.length; i++) {
-      for (let j = i + 1; j < endpoints.length; j++) {
-        const ep1 = endpoints[i];
-        const ep2 = endpoints[j];
-        if (ep1.lineId !== ep2.lineId) {
-          const dist = Math.hypot(ep1.pt.x - ep2.pt.x, ep1.pt.y - ep2.pt.y);
-          if (dist <= 10.0) {
-            junctions.push({
-              pt: { x: (ep1.pt.x + ep2.pt.x) / 2, y: (ep1.pt.y + ep2.pt.y) / 2 },
-              lines: [ep1.lineId, ep2.lineId],
-            });
-          }
-        }
-      }
-    }
-    return junctions;
-  }, [rawLines]);
-
-  const toSvgCoords = useCallback((clientX: number, clientY: number) => {
-    const svg = svgRef.current;
-    if (!svg) return { x: 0, y: 0 };
-    const pt = svg.createSVGPoint();
-    pt.x = clientX;
-    pt.y = clientY;
-    const p = pt.matrixTransform(svg.getScreenCTM()!.inverse());
-    return {
-      x: Math.min(SVG_WIDTH, Math.max(0, Math.round(p.x))),
-      y: Math.min(SVG_HEIGHT, Math.max(0, Math.round(p.y))),
-    };
-  }, []);
-
-  // Blazingly fast, crash-proof canvas click
-  const handleCanvasClick = (e: React.MouseEvent<SVGSVGElement>) => {
-    if (editorMode === 'RAW_TRACE') {
-      const coords = toSvgCoords(e.clientX, e.clientY);
-      setRawLines(prev => {
-        const lineExists = prev.some(l => l.id === activeLineId);
-        if (!lineExists) {
-          const newLine: RawLineItem = {
-            id: activeLineId || 'line_01',
-            name: activeLineId || 'line_01',
-            points: [coords],
-          };
-          return [...prev, newLine];
-        }
-        return prev.map(line =>
-          line.id === activeLineId
-            ? { ...line, points: [...line.points, coords] }
-            : line
-        );
-      });
-    }
-  };
-
-  const handleMouseDownNode = (e: React.MouseEvent, id: string) => {
-    if (editorMode === 'RAW_TRACE') return;
-    e.stopPropagation();
-    pushSnapshot(`Kéo di chuyển node ${id}`);
-    setSelectedId(id);
-    setDraggingId(id);
-  };
-
-  const handleMouseMove = (e: React.MouseEvent<SVGSVGElement>) => {
-    const coords = toSvgCoords(e.clientX, e.clientY);
-    setCursorPos(coords);
-
-    if (draggingId && editorMode === 'GUIDED') {
-      setNodeStates(prev =>
-        prev.map(n =>
-          n.id === draggingId
-            ? { ...n, x: coords.x, y: coords.y, status: 'placed' }
-            : n
-        )
-      );
-    }
-  };
-
-  const handleMouseUp = () => {
-    if (draggingId) {
-      setDraggingId(null);
-    }
-  };
-
-  // RAW TRACE Actions
-  const startNewLine = () => {
-    pushSnapshot('Tạo nhánh polyline mới');
-    const nextIdx = rawLines.length + 1;
-    const nextId = `line_${String(nextIdx).padStart(2, '0')}`;
-    const newLine: RawLineItem = {
-      id: nextId,
-      name: nextId,
-      points: [],
-    };
-    setRawLines(prev => [...prev, newLine]);
-    setActiveLineId(nextId);
-  };
-
-  const deleteActiveLine = () => {
-    pushSnapshot(`Xóa nhánh ${activeLineId}`);
-    if (rawLines.length <= 1) {
-      setRawLines([{ id: 'line_01', name: 'line_01', points: [] }]);
-      setActiveLineId('line_01');
-      return;
-    }
-    const remaining = rawLines.filter(l => l.id !== activeLineId);
-    setRawLines(remaining);
-    if (remaining.length > 0) {
-      setActiveLineId(remaining[0].id);
-    }
-  };
-
-  const clearAllPointsOfActiveLine = () => {
-    pushSnapshot(`Xóa toàn bộ điểm của nhánh ${activeLineId}`);
-    setRawLines(prev =>
-      prev.map(l => (l.id === activeLineId ? { ...l, points: [] } : l))
-    );
-  };
-
-  // Auto-Match Engine
-  const autoMatchRawTraces = () => {
-    const validLines = rawLines.filter(l => l.points.length >= 2);
-    if (validLines.length === 0) {
-      alert('Vui lòng vẽ ít nhất 1 nhánh đường (chấm ít nhất 2 điểm) trước khi bấm Khớp Topo!');
-      return;
-    }
-
-    // Advanced Spatial Nearest-Segment Projection Matcher across ALL user-drawn lines
-    const allSegments: Array<{ lineId: string; p1: { x: number; y: number }; p2: { x: number; y: number } }> = [];
-    validLines.forEach(line => {
-      for (let i = 0; i < line.points.length - 1; i++) {
-        allSegments.push({ lineId: line.id, p1: line.points[i], p2: line.points[i + 1] });
-      }
-    });
-
-    const projectPointToSegment = (p: { x: number; y: number }, a: { x: number; y: number }, b: { x: number; y: number }) => {
-      const dx = b.x - a.x;
-      const dy = b.y - a.y;
-      const lenSq = dx * dx + dy * dy;
-      if (lenSq === 0) return { x: a.x, y: a.y, dist: Math.hypot(p.x - a.x, p.y - a.y) };
-
-      let t = ((p.x - a.x) * dx + (p.y - a.y) * dy) / lenSq;
-      t = Math.max(0, Math.min(1, t));
-      const projX = Math.round(a.x + t * dx);
-      const projY = Math.round(a.y + t * dy);
-      const dist = Math.hypot(p.x - projX, p.y - projY);
-      return { x: projX, y: projY, dist };
-    };
-
-    const newStates = nodeStates.map(node => {
-      let bestX = node.oldX;
-      let bestY = node.oldY;
-      let minDistance = Infinity;
-      let matchedLineId = 'line_01';
-
-      allSegments.forEach(seg => {
-        const res = projectPointToSegment({ x: node.oldX, y: node.oldY }, seg.p1, seg.p2);
-        if (res.dist < minDistance) {
-          minDistance = res.dist;
-          bestX = res.x;
-          bestY = res.y;
-          matchedLineId = seg.lineId;
-        }
-      });
-
-      const err = Math.round(minDistance * 10) / 10;
-      const conf: 'HIGH' | 'MEDIUM' | 'LOW' = err <= 5 ? 'HIGH' : (err <= 12 ? 'MEDIUM' : 'LOW');
-
-      return {
-        ...node,
-        x: bestX,
-        y: bestY,
-        status: 'placed' as const,
-        centerlineErrorPx: err,
-        assignedRawLine: matchedLineId,
-        confidence: conf,
-        isUncertain: conf === 'LOW',
-      };
-    });
-
-    setNodeStates(newStates);
-    setShowDeltaLines(false);
-    alert(`Đã tự động khớp 127 nodes với ${validLines.length} nhánh đường!`);
-  };
-
-  const exportRawTracesJSON = () => {
-    const blob = new Blob([JSON.stringify(rawLines, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'raw_traces.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const exportMatchedPositionsJSON = () => {
-    const exportArray = nodeStates.map(n => ({
-      id: n.id,
-      label: n.label,
-      type: n.type,
-      group: n.group,
-      assignedRawLine: n.assignedRawLine || 'line_01',
-      routeCode: n.routeCode,
-      routeOrder: n.routeOrder,
-      routeTotal: n.routeTotal,
-      direction: n.direction,
-      oldX: n.oldX,
-      oldY: n.oldY,
-      proposedX: n.x,
-      proposedY: n.y,
-      deltaPx: n.x !== null && n.y !== null ? Math.round(Math.hypot(n.x - n.oldX, n.y - n.oldY) * 10) / 10 : 0,
-      confidence: n.confidence,
-      isUncertain: n.isUncertain,
-      status: n.status,
-      note: n.note || '',
-    }));
-
-    const blob = new Blob([JSON.stringify(exportArray, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'raw_trace_matched_positions.proposed.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importRawTracesJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target!.result as string);
-        if (Array.isArray(data)) {
-          if (data.length > 0 && ('proposedX' in data[0] || 'oldX' in data[0])) {
-            alert('LƯU Ý: Bạn vừa chọn nhầm file dữ liệu Node (có chứa proposedX/oldX). Vui lòng chọn đúng file raw_traces.json (chứa danh sách các điểm polyline)!');
-            return;
-          }
-
-          const sanitized = sanitizeRawLines(data);
-          pushSnapshot('Nhập raw traces từ JSON');
-          setRawLines(sanitized);
-          if (sanitized.length > 0) setActiveLineId(sanitized[0].id);
-          const totalPoints = sanitized.reduce((acc, l) => acc + (l.points?.length || 0), 0);
-          alert(`Đã nhập thành công ${sanitized.length} nhánh raw traces với ${totalPoints} điểm!`);
-        } else {
-          alert('Định dạng file JSON không hợp lệ (phải là mảng các nhánh polyline).');
-        }
-      } catch (err) {
-        alert('Lỗi file JSON: ' + (err as Error).message);
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  const exportGuidedJSON = () => {
-    const exportArray = nodeStates.map(n => ({
-      id: n.id,
-      label: n.label,
-      type: n.type,
-      group: n.group,
-      routeName: n.routeName,
-      routeCode: n.routeCode,
-      routeOrder: n.routeOrder,
-      routeTotal: n.routeTotal,
-      direction: n.direction,
-      instruction: n.instruction,
-      oldX: n.oldX,
-      oldY: n.oldY,
-      newX: n.x,
-      newY: n.y,
-      status: n.status,
-      confidence: n.confidence,
-      note: n.note || '',
-    }));
-
-    const blob = new Blob([JSON.stringify(exportArray, null, 2)], { type: 'application/json' });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement('a');
-    a.href = url;
-    a.download = 'guided_node_positions.proposed.json';
-    a.click();
-    URL.revokeObjectURL(url);
-  };
-
-  const importGuidedJSON = (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
-    if (!file) return;
-    const reader = new FileReader();
-    reader.onload = ev => {
-      try {
-        const data = JSON.parse(ev.target!.result as string);
-        if (Array.isArray(data)) {
-          const map = new Map<string, any>();
-          data.forEach(item => {
-            if (item.id) map.set(item.id, item);
-          });
-
-          pushSnapshot('Nhập proposal JSON từ file');
-          setNodeStates(prev =>
-            prev.map(n => {
-              const imp = map.get(n.id);
-              if (imp) {
-                const targetX = typeof imp.newX === 'number' ? imp.newX : (typeof imp.x === 'number' ? imp.x : n.x);
-                const targetY = typeof imp.newY === 'number' ? imp.newY : (typeof imp.y === 'number' ? imp.y : n.y);
-                const isPlaced = imp.status === 'placed' || targetX !== null;
-                return {
-                  ...n,
-                  x: targetX,
-                  y: targetY,
-                  status: isPlaced ? 'placed' : ('unplaced' as const),
-                  confidence: imp.confidence || n.confidence,
-                  note: imp.note || n.note,
-                };
-              }
-              return n;
-            })
-          );
-          // rawLines is 100% UNTOUCHED
-          alert(`Đã nhập proposal thành công với ${map.size} node! (Danh sách raw traces được giữ nguyên 100%).`);
-        }
-      } catch (err) {
-        alert('Lỗi: ' + (err as Error).message);
-      }
-    };
-    reader.readAsText(file);
-    e.target.value = '';
-  };
-
-  const currentGroupNodes = useMemo(() => {
-    const grp = activeGroup !== 'ALL' ? activeGroup : selectedNode.group;
-    return nodeStates
-      .filter(n => n.group === grp)
-      .sort((a, b) => a.routeOrder - b.routeOrder);
-  }, [nodeStates, activeGroup, selectedNode.group]);
-
-  const activeLine = useMemo(() => {
-    return rawLines.find(l => l.id === activeLineId) || rawLines[0];
-  }, [rawLines, activeLineId]);
+  }, [selectedNode, pushHistory, handleUndo, handleRedo]);
 
   return (
-    <div style={{ display: 'flex', width: '100vw', height: '100vh', background: '#090d16', color: '#f3f4f6', fontFamily: 'system-ui, -apple-system, sans-serif', fontSize: 13, overflow: 'hidden' }}>
-      
-      {/* ── Left Area: Interactive Canvas & Guidance ── */}
-      <div style={{ flex: 1, display: 'flex', flexDirection: 'column', height: '100%', position: 'relative', overflow: 'hidden', padding: 8 }}>
-        
-        {/* Top Header Mode Switcher & Snapshot Toolbar */}
-        <div style={{ background: '#111827', border: '2px solid #38bdf8', borderRadius: 8, padding: '8px 12px', marginBottom: 6, display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexShrink: 0 }}>
-          
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <span style={{ fontSize: 13, fontWeight: 900, color: '#38bdf8' }}>
-              🛫 SÂN BAY TÂN SƠN NHẤT
+    <div className="flex h-screen w-screen bg-[#070b14] text-slate-100 font-sans select-none overflow-hidden">
+      <input
+        type="file"
+        ref={fileInputRef}
+        onChange={handleImportJson}
+        accept=".json"
+        className="hidden"
+      />
+
+      {/* ── TOP NAV BAR ───────────────────────────────────────────────────── */}
+      <div className="absolute top-0 left-0 right-0 h-12 bg-[#0c121e]/95 backdrop-blur border-b border-slate-800 flex items-center justify-between px-4 z-30 shadow-2xl">
+        <div className="flex items-center gap-3 min-w-0">
+          <div className="flex items-center gap-2">
+            <span className="text-sm font-black tracking-wider text-cyan-400 uppercase">
+              {isRawOnlyMode ? '🔍 RAW-ONLY V3' : '🖐️ GRAPH V3'}
             </span>
-            <div style={{ display: 'flex', background: '#1e293b', padding: 2, borderRadius: 6 }}>
-              <button
-                onClick={() => {
-                  pushSnapshot('Chuyển sang Guided Mode');
-                  setEditorMode('GUIDED');
-                }}
-                style={{ background: editorMode === 'GUIDED' ? '#2563eb' : 'transparent', color: '#fff', border: 'none', borderRadius: 4, padding: '5px 12px', cursor: 'pointer', fontWeight: 800, fontSize: 11 }}
-              >
-                🧭 Guided Mode (11 Tuyến)
-              </button>
-              <button
-                onClick={() => {
-                  pushSnapshot('Chuyển sang Raw Trace Mode');
-                  setEditorMode('RAW_TRACE');
-                }}
-                style={{ background: editorMode === 'RAW_TRACE' ? '#059669' : 'transparent', color: '#fff', border: 'none', borderRadius: 4, padding: '5px 12px', cursor: 'pointer', fontWeight: 800, fontSize: 11 }}
-              >
-                ✏️ RAW TRACE (Tự Do Vẽ line_01...)
-              </button>
-            </div>
-            <span style={{ fontSize: 11, color: '#34d399', background: 'rgba(6, 78, 59, 0.6)', border: '1px solid #059669', padding: '3px 8px', borderRadius: 4, fontWeight: 700 }}>
-              {autoSaveStatus}
-            </span>
-            <span style={{ fontSize: 11, color: '#94a3b8', background: '#1e293b', padding: '3px 8px', borderRadius: 4 }}>
-              {stats.placed}/127 node đã đặt
+            <span className="text-[10px] bg-cyan-950 text-cyan-300 px-2 py-0.5 rounded-full border border-cyan-800 font-mono font-bold">
+              {lines.length} RAW LINES
             </span>
           </div>
 
-          {/* Quick Undo / Redo & Recovery Controls */}
-          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-            <button
-              onClick={handleUndo}
-              disabled={!canUndo}
-              title="Phím tắt: Ctrl+Z"
-              style={{
-                background: canUndo ? '#334155' : '#1e293b',
-                color: canUndo ? '#ffffff' : '#64748b',
-                opacity: canUndo ? 1 : 0.45,
-                border: '1px solid #475569',
-                borderRadius: 4,
-                padding: '5px 12px',
-                cursor: canUndo ? 'pointer' : 'not-allowed',
-                fontWeight: 900,
-                fontSize: 12,
-              }}
-            >
-              ↶ Quay lại (Ctrl+Z)
-            </button>
+          <div className="h-4 w-[1px] bg-slate-700 mx-1" />
 
-            <button
-              onClick={handleRedo}
-              disabled={!canRedo}
-              title="Phím tắt: Ctrl+Y"
-              style={{
-                background: canRedo ? '#334155' : '#1e293b',
-                color: canRedo ? '#ffffff' : '#64748b',
-                opacity: canRedo ? 1 : 0.45,
-                border: '1px solid #475569',
-                borderRadius: 4,
-                padding: '5px 12px',
-                cursor: canRedo ? 'pointer' : 'not-allowed',
-                fontWeight: 900,
-                fontSize: 12,
-              }}
-            >
-              ↷ Làm lại (Ctrl+Y)
-            </button>
-
-            <button
-              onClick={() => {
-                const recovered = recoverPreAutoMatchRawLines();
-                if (recovered && recovered.length > 0) {
-                  pushSnapshot('Khôi phục snapshot raw trace gần nhất');
-                  setRawLines(recovered);
-                  if (recovered.length > 0) setActiveLineId(recovered[0].id);
-                  const totalPts = recovered.reduce((acc, l) => acc + l.points.length, 0);
-                  alert(`Đã khôi phục thành công ${recovered.length} nhánh raw trace với tổng cộng ${totalPts} điểm! Tọa độ node đồ thị giữ nguyên.`);
-                } else {
-                  alert('Không tìm thấy snapshot raw trace nào trong bộ nhớ đệm.');
-                }
-              }}
-              title="Khôi phục danh sách nhánh raw polylines gần nhất trước khi auto-match"
-              style={{
-                background: '#0284c7',
-                color: '#ffffff',
-                border: 'none',
-                borderRadius: 4,
-                padding: '5px 12px',
-                cursor: 'pointer',
-                fontWeight: 900,
-                fontSize: 11,
-              }}
-            >
-              📸 Khôi Phục Snapshot Raw Trace Gần Nhất
-            </button>
-
-            <button
-              onClick={handleLoadFullPresets}
-              title="Nạp ngay toàn bộ 11 nhánh tim đường đã được căn chuẩn để bạn không phải chấm lại từ đầu"
-              style={{
-                background: '#047857',
-                color: '#ffffff',
-                border: '1px solid #34d399',
-                borderRadius: 4,
-                padding: '5px 12px',
-                cursor: 'pointer',
-                fontWeight: 900,
-                fontSize: 11,
-              }}
-            >
-              ⚡ Nạp 11 Nhánh Tim Đường Mẫu
-            </button>
+          {/* Quick Metrics */}
+          <div className="flex items-center gap-3 text-xs font-mono text-slate-400 truncate">
+            <span>Points: <strong className="text-cyan-300">{stats.totalPoints}</strong></span>
+            <span>Named: <strong className="text-emerald-300">{stats.namedPoints}</strong></span>
+            <span>Geom: <strong className="text-slate-300">{stats.geometryOnlyPoints}</strong></span>
+            <span className="text-amber-400 font-bold bg-amber-950/60 px-1.5 py-0.5 rounded border border-amber-800/60">
+              Junctions = 0
+            </span>
           </div>
         </div>
 
-        {/* RAW TRACE Control Bar (When in RAW_TRACE mode) */}
-        {editorMode === 'RAW_TRACE' && (
-          <div style={{ background: '#064e3b', border: '2px solid #34d399', borderRadius: 6, padding: '6px 12px', marginBottom: 4, display: 'flex', justifyContent: 'space-between', alignItems: 'center', zIndex: 20 }}>
-            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <button onClick={startNewLine} style={{ background: '#22c55e', color: '#000', border: 'none', borderRadius: 4, padding: '5px 10px', cursor: 'pointer', fontWeight: 900, fontSize: 11 }}>
-                ➕ Vẽ Nhánh Mới ({`line_${String(rawLines.length + 1).padStart(2, '0')}`})
-              </button>
-              
-              <span style={{ fontSize: 12, color: '#a7f3d0', fontWeight: 700, marginLeft: 4 }}>
-                Đang vẽ:
-              </span>
-              <select
-                value={activeLineId}
-                onChange={e => setActiveLineId(e.target.value)}
-                style={{ background: '#022c22', color: '#ecfdf5', border: '1px solid #34d399', borderRadius: 4, padding: '4px 8px', fontSize: 11, fontWeight: 700 }}
+        {/* Action Controls & Toggles */}
+        <div className="flex items-center gap-2">
+          {/* Undo / Redo */}
+          <button
+            onClick={handleUndo}
+            disabled={!canUndo}
+            className={`px-2 py-1 text-xs rounded border transition font-bold ${
+              canUndo
+                ? 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-200 cursor-pointer'
+                : 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
+            }`}
+            title="Hoàn tác (Ctrl+Z)"
+          >
+            ↺
+          </button>
+          <button
+            onClick={handleRedo}
+            disabled={!canRedo}
+            className={`px-2 py-1 text-xs rounded border transition font-bold ${
+              canRedo
+                ? 'bg-slate-800 hover:bg-slate-700 border-slate-600 text-slate-200 cursor-pointer'
+                : 'bg-slate-900 border-slate-800 text-slate-600 cursor-not-allowed'
+            }`}
+            title="Làm lại (Ctrl+Y)"
+          >
+            ↻
+          </button>
+
+          <div className="h-4 w-[1px] bg-slate-700 mx-1" />
+
+          {/* Toggles */}
+          <button
+            onClick={() => setShowPoints(!showPoints)}
+            className={`px-2 py-1 text-xs rounded border transition cursor-pointer font-bold flex items-center gap-1 ${
+              showPoints
+                ? 'bg-cyan-950 border-cyan-500 text-cyan-200'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+            title="Hiện/Ẩn Chấm Điểm"
+          >
+            <span>🔘 Điểm</span>
+          </button>
+
+          <button
+            onClick={() => setShowLineNames(!showLineNames)}
+            className={`px-2 py-1 text-xs rounded border transition cursor-pointer font-bold flex items-center gap-1 ${
+              showLineNames
+                ? 'bg-cyan-950 border-cyan-500 text-cyan-200'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+            title="Hiện/Ẩn Tên Tuyến"
+          >
+            <span>🏷️ Tên</span>
+          </button>
+
+          <button
+            onClick={() => setShowPointIndices(!showPointIndices)}
+            className={`px-2 py-1 text-xs rounded border transition cursor-pointer font-bold flex items-center gap-1 ${
+              showPointIndices
+                ? 'bg-cyan-950 border-cyan-500 text-cyan-200'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+            title="Hiện/Ẩn Thứ Tự Điểm (#1, #2...)"
+          >
+            <span>🔢 Số #</span>
+          </button>
+
+          <button
+            onClick={() => setShowGapPanel(!showGapPanel)}
+            className={`px-2 py-1 text-xs rounded border transition cursor-pointer font-bold flex items-center gap-1 ${
+              showGapPanel
+                ? 'bg-amber-950 border-amber-500 text-amber-200'
+                : 'bg-slate-900 border-slate-700 text-slate-400 hover:text-white'
+            }`}
+            title="Bảng Kiểm Toán Điểm Hở (RAW_GAP_AUDIT)"
+          >
+            <span>📐 Điểm Hở ({gapAuditItems.length})</span>
+          </button>
+
+          <div className="h-4 w-[1px] bg-slate-700 mx-1" />
+
+          {/* 🔄 Nạp Lại RAW V3 từ File Button */}
+          <button
+            onClick={fetchFreshRawFromFile}
+            className="px-2.5 py-1 bg-sky-900 hover:bg-sky-800 border border-sky-600 text-sky-200 text-xs font-bold rounded-lg cursor-pointer transition flex items-center gap-1"
+            title="Nạp lại trực tiếp từ v3_raw_traces_manual.json trên ổ đĩa"
+          >
+            <span>🔄 Nạp lại RAW từ file</span>
+          </button>
+
+          {/* 💾 LƯU TRỰC TIẾP Button */}
+          <button
+            onClick={handleDirectSave}
+            disabled={saveStatus === 'saving'}
+            className="px-3 py-1 bg-emerald-500 hover:bg-emerald-400 active:scale-95 text-slate-950 text-xs font-black rounded-lg shadow-lg shadow-emerald-950/50 cursor-pointer transition flex items-center gap-1 ring-2 ring-emerald-400/50"
+            title="Lưu trực tiếp vào file v3_raw_traces_manual.json (Ctrl+S)"
+          >
+            <span>💾 {saveStatus === 'saving' ? 'Đang lưu...' : 'Lưu (Ctrl+S)'}</span>
+          </button>
+
+          {/* Import / Export JSON Buttons */}
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold rounded-lg cursor-pointer transition"
+            title="Nhập file JSON từ máy tính"
+          >
+            📤 Import
+          </button>
+          <button
+            onClick={exportJson}
+            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 border border-slate-700 text-slate-300 text-xs font-bold rounded-lg cursor-pointer transition"
+            title="Xuất file JSON về máy"
+          >
+            📥 Export
+          </button>
+
+          <button
+            onClick={resetView}
+            className="px-2 py-1 bg-slate-800 hover:bg-slate-700 text-xs rounded font-bold cursor-pointer transition text-slate-200"
+            title="Toàn Cảnh"
+          >
+            🗺️
+          </button>
+        </div>
+      </div>
+
+      {/* ── TOAST NOTIFICATION POPUP ────────────────────────────────────────── */}
+      {toastMsg && (
+        <div className="absolute top-14 right-6 z-50 bg-emerald-950/95 border-2 border-emerald-400 text-emerald-100 font-bold px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur animate-bounce flex items-center gap-2 text-xs">
+          <span>{toastMsg}</span>
+        </div>
+      )}
+
+      {/* ── LEFT SIDEBAR: LINE LIST ─────────────────────────────────────────── */}
+      <div className="w-[310px] min-w-[310px] bg-[#0c121e] border-r border-slate-800 flex flex-col z-20 shadow-2xl pt-12">
+        {/* Source File Info Box */}
+        <div className="p-2.5 bg-slate-950 border-b border-slate-800 text-[10px] font-mono space-y-1">
+          <div className="text-slate-400 truncate" title={fileMeta.absolutePath}>
+            📁 <strong className="text-slate-200">Nguồn:</strong> {fileMeta.absolutePath.replace(/\\/g, '/')}
+          </div>
+          <div className="text-slate-400 flex justify-between">
+            <span>SHA-256: <strong className="text-cyan-300">{fileMeta.sha256.slice(0, 12)}...</strong></span>
+            <span>Lines: <strong className="text-white">{stats.lineCount}</strong> | Pts: <strong className="text-white">{stats.totalPoints}</strong></span>
+          </div>
+        </div>
+
+        <div className="p-2 border-b border-slate-800 bg-[#0f172a] flex items-center justify-between">
+          <span className="text-xs font-black tracking-wider text-slate-300 uppercase">DANH SÁCH 38 LINES</span>
+          <span className="text-[11px] font-mono text-cyan-400 font-bold">{lines.length} Tuyến</span>
+        </div>
+
+        <div className="flex-1 overflow-y-auto p-2 space-y-1">
+          {lines.map((line, idx) => {
+            const isSelected = line.id === activeLineId;
+            const lineColor = VIBRANT_LINE_COLORS[idx % VIBRANT_LINE_COLORS.length];
+
+            return (
+              <div
+                key={`${line.id}-${idx}`}
+                onClick={() => {
+                  setActiveLineId(line.id);
+                  if (line.points[0]) {
+                    setSelectedNode({
+                      lineId: line.id,
+                      pointIndex: 0,
+                      origX: line.points[0].x,
+                      origY: line.points[0].y,
+                    });
+                  }
+                }}
+                className={`p-2 rounded-lg border transition cursor-pointer flex items-center justify-between ${
+                  isSelected
+                    ? 'bg-slate-900 border-cyan-500 shadow-md ring-1 ring-cyan-500'
+                    : 'bg-slate-950/70 border-slate-800/80 hover:border-slate-700'
+                }`}
               >
-                {rawLines.map(l => (
-                  <option key={l.id} value={l.id}>
-                    {l.name} ({l.points.length} điểm)
-                  </option>
-                ))}
-              </select>
+                <div className="flex items-center gap-2 min-w-0">
+                  <div
+                    className="w-3 h-3 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: lineColor }}
+                  />
+                  <div className="truncate">
+                    <div className="text-xs font-bold text-slate-200 truncate">{line.name || line.id}</div>
+                    <div className="text-[10px] font-mono text-slate-400">{line.id}</div>
+                  </div>
+                </div>
 
-              <span style={{ fontSize: 11, color: '#fef08a', background: 'rgba(0,0,0,0.35)', padding: '3px 8px', borderRadius: 4, fontWeight: 700 }}>
-                💡 Click chuột trực tiếp lên map để chấm điểm ({activeLine ? activeLine.points.length : 0} điểm)
+                <div className="text-[11px] font-mono font-bold text-slate-400 bg-slate-900 px-1.5 py-0.5 rounded border border-slate-800">
+                  {line.points.length} pts
+                </div>
+              </div>
+            );
+          })}
+        </div>
+
+        {/* Selected Node Coordinates Panel (Strictly LineId + Index + Coords + Explicit Label) */}
+        {selectedNodeDetails && (
+          <div className="p-3 bg-slate-950 border-t border-slate-800 space-y-2">
+            <div className="flex items-center justify-between text-xs">
+              <span className="font-bold text-cyan-400">📍 ĐIỂM ĐANG CHỌN</span>
+              <span className="text-[10px] font-mono bg-cyan-950 text-cyan-300 px-1.5 py-0.5 rounded border border-cyan-800">
+                #{selectedNodeDetails.pointIndex + 1}
               </span>
-
-              <button onClick={undoLastPoint} title="Phím tắt: Backspace" style={{ background: '#334155', color: '#fff', border: '1px solid #475569', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', fontSize: 11 }}>
-                ↩ Xóa điểm vừa chấm (Backspace)
-              </button>
-              <button onClick={clearAllPointsOfActiveLine} style={{ background: '#475569', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', fontSize: 11 }}>
-                🧹 Xóa hết điểm nhánh này
-              </button>
-              <button onClick={deleteActiveLine} style={{ background: '#b91c1c', color: '#fff', border: 'none', borderRadius: 4, padding: '4px 8px', cursor: 'pointer', fontSize: 11 }}>
-                🗑️ Xóa nhánh
-              </button>
             </div>
 
-            <div style={{ display: 'flex', gap: 6 }}>
-              <button onClick={autoMatchRawTraces} style={{ background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4, padding: '5px 12px', cursor: 'pointer', fontWeight: 900, fontSize: 11 }}>
-                ⚡ Tự động khớp Topo 127 Nodes
-              </button>
+            <div className="bg-slate-900/80 p-2 rounded border border-slate-800 text-xs font-mono space-y-1">
+              <div className="flex justify-between text-slate-400">
+                <span>Tuyến:</span>
+                <span className="text-white font-bold">{selectedNodeDetails.line.id}</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Tọa độ:</span>
+                <span className="text-emerald-400 font-bold">({selectedNodeDetails.point.x}, {selectedNodeDetails.point.y})</span>
+              </div>
+              <div className="flex justify-between text-slate-400">
+                <span>Tên hiện tại:</span>
+                <span className={selectedNodeDetails.point.label ? "text-amber-300 font-bold" : "text-slate-500 italic"}>
+                  {selectedNodeDetails.point.label || '(Chưa có tên)'}
+                </span>
+              </div>
+            </div>
+
+            {/* 🏷️ Form Đặt Tên Node Trực Tiếp */}
+            <div className="space-y-1.5 pt-1 border-t border-slate-800">
+              <div className="flex items-center justify-between">
+                <label className="text-[11px] font-bold text-slate-300 flex items-center gap-1">
+                  <span>🏷️ Tên node:</span>
+                </label>
+                {selectedNodeDetails.point.label && (
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setNodeLabelInput('');
+                      handleApplyNodeLabel('');
+                    }}
+                    className="text-[10px] text-rose-400 hover:text-rose-300 underline cursor-pointer"
+                    title="Xóa nhãn của node này"
+                  >
+                    ✕ Xóa nhãn
+                  </button>
+                )}
+              </div>
+              <div className="flex gap-1.5">
+                <input
+                  type="text"
+                  value={nodeLabelInput}
+                  onChange={e => handleLabelChange(e.target.value)}
+                  onBlur={() => handleApplyNodeLabel()}
+                  onKeyDown={e => {
+                    if (e.key === 'Enter') {
+                      e.preventDefault();
+                      handleApplyNodeLabel();
+                    }
+                  }}
+                  placeholder="Nhập tên node (vd: 07L, W1...)"
+                  className="flex-1 px-2.5 py-1.5 bg-slate-900 border border-slate-700 focus:border-cyan-400 focus:ring-1 focus:ring-cyan-400 rounded text-xs font-mono text-white placeholder-slate-500 outline-none"
+                />
+                <button
+                  type="button"
+                  onClick={() => handleApplyNodeLabel()}
+                  className="px-3 py-1.5 bg-cyan-600 hover:bg-cyan-500 active:scale-95 text-white font-bold rounded text-xs cursor-pointer transition shadow flex items-center gap-1 shrink-0"
+                  title="Xác nhận đặt tên (Enter)"
+                >
+                  <span>Đặt tên</span>
+                </button>
+              </div>
+              <div className="text-[10px] text-emerald-400 font-medium leading-tight">
+                ⚡ <em>Tự động nhận tên ngay khi gõ!</em> Nhấn <strong>Lưu (Ctrl+S)</strong> để ghi vào file.
+              </div>
+            </div>
+
+            <div className="text-[10px] text-slate-400 pt-1 border-t border-slate-800/80">
+              💡 Chuột kéo hoặc phím mũi tên <kbd className="bg-slate-800 px-1 rounded">← ↑ ↓ →</kbd> (Shift: 5px)
             </div>
           </div>
         )}
 
-        {/* Canvas Controls Bar */}
-        <div style={{ position: 'absolute', top: 120, left: 16, zIndex: 10, display: 'flex', gap: 10, background: 'rgba(15, 23, 42, 0.92)', backdropFilter: 'blur(8px)', padding: '5px 12px', borderRadius: 6, border: '1px solid #334155', alignItems: 'center', fontSize: 11 }}>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer', color: '#facc15' }}>
-            <input type="checkbox" checked={showProposedNodes} onChange={e => setShowProposedNodes(e.target.checked)} />
-            Hiện Node đề xuất 🟡
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-            <input type="checkbox" checked={showDeltaLines} onChange={e => setShowDeltaLines(e.target.checked)} />
-            Dây sai lệch đỏ 🔴
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-            <input type="checkbox" checked={showRegionSpotlight} onChange={e => setShowRegionSpotlight(e.target.checked)} />
-            Khung vùng 🎯
-          </label>
-          <label style={{ display: 'flex', alignItems: 'center', gap: 5, cursor: 'pointer' }}>
-            <input type="checkbox" checked={showLabels} onChange={e => setShowLabels(e.target.checked)} />
-            Hiện nhãn node
-          </label>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 4, marginLeft: 6 }}>
-            <span>Zoom:</span>
-            <button onClick={() => setZoomLevel(prev => Math.max(0.8, Number((prev - 0.2).toFixed(1))))} style={{ padding: '1px 6px', background: '#334155', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer' }}>-</button>
-            <span style={{ fontWeight: 700 }}>{Math.round(zoomLevel * 100)}%</span>
-            <button onClick={() => setZoomLevel(prev => Math.min(2.5, Number((prev + 0.2).toFixed(1))))} style={{ padding: '1px 6px', background: '#334155', border: 'none', borderRadius: 4, color: '#fff', cursor: 'pointer' }}>+</button>
-          </div>
-          {cursorPos && (
-            <span style={{ color: '#38bdf8', fontFamily: 'monospace', fontWeight: 700, marginLeft: 6 }}>
-              X: {cursorPos.x}, Y: {cursorPos.y}
-            </span>
-          )}
-        </div>
-
-        {/* Main Canvas SVG */}
-        <div style={{ flex: 1, position: 'relative', overflow: 'hidden', background: '#020617', border: '1px solid #1e293b', borderRadius: 8, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
-          <svg
-            ref={svgRef}
-            viewBox={`0 0 ${SVG_WIDTH} ${SVG_HEIGHT}`}
-            style={{
-              width: '100%',
-              height: '100%',
-              transform: `scale(${zoomLevel})`,
-              transformOrigin: 'center center',
-              transition: 'transform 0.15s ease-out',
-              cursor: editorMode === 'RAW_TRACE' ? 'crosshair' : 'default',
-            }}
-            onClick={handleCanvasClick}
-            onMouseMove={handleMouseMove}
-            onMouseUp={handleMouseUp}
-            onMouseLeave={handleMouseUp}
-          >
-            {/* Background Chart Image */}
-            <image href="/anhtren.png" x={0} y={0} width={SVG_WIDTH} height={SVG_HEIGHT} preserveAspectRatio="none" pointerEvents="all" />
-
-            {/* Target Region Spotlight Box (In Guided Mode) */}
-            {editorMode === 'GUIDED' && showRegionSpotlight && selectedNode.region && (
-              <g pointerEvents="none">
-                <rect
-                  x={selectedNode.region.x}
-                  y={selectedNode.region.y}
-                  width={selectedNode.region.w}
-                  height={selectedNode.region.h}
-                  fill="rgba(56, 189, 248, 0.08)"
-                  stroke="#38bdf8"
-                  strokeWidth={2}
-                  strokeDasharray="6,4"
-                  rx={6}
-                />
-              </g>
-            )}
-
-            {/* Current Route Sequential Guide Line (Guided Mode) */}
-            {editorMode === 'GUIDED' && (
-              <g pointerEvents="none">
-                {currentGroupNodes.map((node, idx) => {
-                  if (idx === currentGroupNodes.length - 1) return null;
-                  const nextNode = currentGroupNodes[idx + 1];
-                  const x1 = node.x !== null ? node.x : node.oldX;
-                  const y1 = node.y !== null ? node.y : node.oldY;
-                  const x2 = nextNode.x !== null ? nextNode.x : nextNode.oldX;
-                  const y2 = nextNode.y !== null ? nextNode.y : nextNode.oldY;
-                  const isCurrentSegment = node.id === selectedId || nextNode.id === selectedId;
-
-                  return (
-                    <line
-                      key={`route_line_${node.id}_${nextNode.id}`}
-                      x1={x1}
-                      y1={y1}
-                      x2={x2}
-                      y2={y2}
-                      stroke={isCurrentSegment ? '#facc15' : GROUP_COLORS[node.group] || '#38bdf8'}
-                      strokeWidth={isCurrentSegment ? 3.5 : 1.5}
-                      strokeDasharray={isCurrentSegment ? undefined : '4,3'}
-                      opacity={isCurrentSegment ? 0.95 : 0.45}
-                    />
-                  );
-                })}
-              </g>
-            )}
-
-            {/* Airport Graph Edges (Only shown in Guided mode or when explicitly placing nodes) */}
-            {editorMode === 'GUIDED' && (
-              <g pointerEvents="none" opacity={0.35}>
-                {airportGraph.edges.map(edge => {
-                  const fromNode = nodeMap.get(edge.fromNodeId);
-                  const toNode = nodeMap.get(edge.toNodeId);
-                  if (!fromNode || !toNode) return null;
-
-                  const fromX = fromNode.x !== null ? fromNode.x : fromNode.oldX;
-                  const fromY = fromNode.y !== null ? fromNode.y : fromNode.oldY;
-                  const toX = toNode.x !== null ? toNode.x : toNode.oldX;
-                  const toY = toNode.y !== null ? toNode.y : toNode.oldY;
-
-                  return (
-                    <line
-                      key={edge.id}
-                      x1={fromX}
-                      y1={fromY}
-                      x2={toX}
-                      y2={toY}
-                      stroke="#f97316"
-                      strokeWidth={1.5}
-                    />
-                  );
-                })}
-              </g>
-            )}
-
-            {/* RAW TRACE Polylines (Green #22c55e) */}
-            {rawLines.map(line => {
-              const isActive = line.id === activeLineId;
-              if (line.points.length < 1) return null;
-              return (
-                <g key={`raw_line_${line.id}`} pointerEvents="none">
-                  {line.points.length >= 2 && (
-                    <polyline
-                      points={line.points.map(p => `${p.x},${p.y}`).join(' ')}
-                      fill="none"
-                      stroke={isActive ? '#22c55e' : '#15803d'}
-                      strokeWidth={isActive ? 4 : 2.5}
-                    />
-                  )}
-                  {line.points.map((p, pIdx) => (
-                    <circle key={`pt_${line.id}_${pIdx}`} cx={p.x} cy={p.y} r={isActive ? 4.5 : 3} fill={isActive ? '#22c55e' : '#15803d'} stroke="#ffffff" strokeWidth={1} />
-                  ))}
-                  {line.points.length > 0 && (
-                    <g>
-                      <rect x={line.points[0].x - 4} y={line.points[0].y - 18} width={50} height={14} fill="rgba(15,23,42,0.85)" stroke="#22c55e" strokeWidth={0.8} rx={2} />
-                      <text x={line.points[0].x} y={line.points[0].y - 7} fontSize={8.5} fontWeight={900} fill="#ffffff">
-                        {line.name}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-
-            {/* Detected Junctions (<10px) (Cyan #06b6d4) */}
-            {detectedJunctions.map((j, jIdx) => (
-              <g key={`junc_${jIdx}`} pointerEvents="none">
-                <circle cx={j.pt.x} cy={j.pt.y} r={10} fill="none" stroke="#06b6d4" strokeWidth={2} strokeDasharray="3,2">
-                  <animate attributeName="r" values="8;12;8" dur="2s" repeatCount="indefinite" />
-                </circle>
-              </g>
-            ))}
-
-            {/* Live Mouse Dotting Cursor Preview in RAW TRACE */}
-            {editorMode === 'RAW_TRACE' && cursorPos && (
-              <g pointerEvents="none">
-                <circle cx={cursorPos.x} cy={cursorPos.y} r={5} fill="#22c55e" opacity={0.8}>
-                  <animate attributeName="r" values="4;7;4" dur="1.2s" repeatCount="indefinite" />
-                </circle>
-                {activeLine && activeLine.points.length > 0 && (
-                  <line
-                    x1={activeLine.points[activeLine.points.length - 1].x}
-                    y1={activeLine.points[activeLine.points.length - 1].y}
-                    x2={cursorPos.x}
-                    y2={cursorPos.y}
-                    stroke="#22c55e"
-                    strokeWidth={2}
-                    strokeDasharray="4,3"
-                    opacity={0.7}
-                  />
-                )}
-              </g>
-            )}
-
-            {/* Proposed / Snapped Nodes (Only shown if placed AND enabled) */}
-            {(showProposedNodes || editorMode === 'GUIDED') && nodeStates.map(node => {
-              const isPlaced = node.status === 'placed' && node.x !== null && node.y !== null;
-              if (!isPlaced) return null;
-
-              const posX = node.x!;
-              const posY = node.y!;
-              const isSelected = selectedId === node.id;
-              const isUncertain = node.isUncertain;
-              const color = isUncertain ? '#ef4444' : '#eab308';
-
-              return (
-                <g
-                  key={node.id}
-                  style={{ cursor: draggingId ? 'grabbing' : 'grab' }}
-                  onMouseDown={e => handleMouseDownNode(e, node.id)}
-                >
-                  {/* Delta error line (Only shown if enabled) */}
-                  {showDeltaLines && (node.oldX !== posX || node.oldY !== posY) && (
-                    <line x1={node.oldX} y1={node.oldY} x2={posX} y2={posY} stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3,2" opacity={0.6} />
-                  )}
-
-                  {/* Selected pulse radar */}
-                  {isSelected && (
-                    <circle cx={posX} cy={posY} r={18} fill="none" stroke="#ef4444" strokeWidth={2.5}>
-                      <animate attributeName="r" values="10;22;10" dur="1.4s" repeatCount="indefinite" />
-                    </circle>
-                  )}
-
-                  <circle cx={posX} cy={posY} r={isSelected ? 6.5 : 4.5} fill={color} stroke="#ffffff" strokeWidth={1.5} />
-
-                  {/* Label */}
-                  {showLabels && (
-                    <g pointerEvents="none">
-                      <rect x={posX + 6} y={posY - 8} width={node.routeCode.length * 6 + 6} height={12} fill="rgba(15,23,42,0.85)" stroke={color} strokeWidth={0.8} rx={2} />
-                      <text x={posX + 8} y={posY + 2} fontSize={7.5} fontWeight={900} fill="#ffffff">
-                        {node.routeCode}
-                      </text>
-                    </g>
-                  )}
-                </g>
-              );
-            })}
-          </svg>
+        {/* Status Bar */}
+        <div className="px-3 py-1.5 bg-slate-950 border-t border-slate-800 text-[10px] font-mono text-cyan-400 truncate">
+          {statusMsg}
         </div>
       </div>
 
-      {/* ── Right Area: Sidebar Control & Export Panels ── */}
-      <div style={{ width: 380, flexShrink: 0, background: '#0f172a', borderLeft: '1px solid #1e293b', display: 'flex', flexDirection: 'column', height: '100%' }}>
-        
-        {/* Title & Mode Banner */}
-        <div style={{ padding: 10, borderBottom: '1px solid #1e293b' }}>
-          <h2 style={{ margin: 0, fontSize: 14, fontWeight: 800, color: '#38bdf8' }}>
-            {editorMode === 'RAW_TRACE' ? '✏️ Danh Sách Nhánh Đường (Raw Lines)' : '🧭 Danh Sách 11 Nhóm Tuyến'}
-          </h2>
-        </div>
-
-        {/* Action Buttons for Export / Import */}
-        <div style={{ padding: '8px 10px', borderBottom: '1px solid #1e293b', display: 'flex', flexDirection: 'column', gap: 6 }}>
-          {editorMode === 'RAW_TRACE' ? (
-            <>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={exportRawTracesJSON} style={{ flex: 1, background: '#059669', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 8px', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>
-                  ⬇ Export raw_traces.json
-                </button>
-                <button onClick={() => rawFileInputRef.current?.click()} style={{ flex: 1, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 8px', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>
-                  ⬆ Import raw_traces.json
-                </button>
-                <input ref={rawFileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={importRawTracesJSON} />
-              </div>
-              <button onClick={exportMatchedPositionsJSON} style={{ width: '100%', background: '#d97706', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 8px', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>
-                ⬇ Export raw_trace_matched_positions.proposed.json
-              </button>
-            </>
-          ) : (
-            <>
-              <div style={{ display: 'flex', gap: 6 }}>
-                <button onClick={exportGuidedJSON} style={{ flex: 1, background: '#059669', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 8px', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>
-                  ⬇ Export Proposal JSON
-                </button>
-                <button onClick={() => fileInputRef.current?.click()} style={{ flex: 1, background: '#2563eb', color: '#fff', border: 'none', borderRadius: 4, padding: '6px 8px', fontWeight: 800, cursor: 'pointer', fontSize: 11 }}>
-                  ⬆ Import Proposal JSON
-                </button>
-                <input ref={fileInputRef} type="file" accept=".json" style={{ display: 'none' }} onChange={importGuidedJSON} />
-              </div>
-            </>
-          )}
-        </div>
-
-        {/* List of Raw Lines (In RAW_TRACE Mode) */}
-        {editorMode === 'RAW_TRACE' ? (
-          <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
-            <div style={{ fontSize: 11, color: '#94a3b8', marginBottom: 6, fontWeight: 600 }}>
-              Các nhánh polyline đã vẽ ({rawLines.length} nhánh):
+      {/* ── RIGHT DRAWER: RAW_GAP_AUDIT PANEL (INSPECTION ONLY) ─────────────── */}
+      {showGapPanel && (
+        <div className="w-[360px] min-w-[360px] bg-[#0c121e] border-l border-slate-800 flex flex-col z-20 shadow-2xl pt-12">
+          <div className="p-3 border-b border-slate-800 bg-[#0f172a] flex items-center justify-between">
+            <div>
+              <span className="text-xs font-black tracking-wider text-amber-400 uppercase">📐 RAW GAP AUDIT</span>
+              <p className="text-[10px] text-slate-400">Kiểm tra khoảng cách đầu mút (Chỉ báo cáo)</p>
             </div>
-            {rawLines.map(line => {
-              const isActive = line.id === activeLineId;
+            <button
+              onClick={() => setShowGapPanel(false)}
+              className="text-slate-400 hover:text-white text-sm font-bold"
+            >
+              ✕
+            </button>
+          </div>
+
+          <div className="flex-1 overflow-y-auto p-2 space-y-2">
+            {gapAuditItems.map(item => {
+              const isSelected = highlightedGap?.id === item.id;
+              const badgeBg =
+                item.type === 'EXACT_TOUCHING'
+                  ? 'bg-emerald-950 text-emerald-300 border-emerald-800'
+                  : item.type === 'POINT_ON_SEGMENT'
+                  ? 'bg-cyan-950 text-cyan-300 border-cyan-800'
+                  : item.type === 'CLOSE_ALIGNED'
+                  ? 'bg-purple-950 text-purple-300 border-purple-800'
+                  : 'bg-amber-950 text-amber-300 border-amber-800';
+
               return (
                 <div
-                  key={line.id}
-                  onClick={() => setActiveLineId(line.id)}
-                  style={{
-                    background: isActive ? '#064e3b' : '#020617',
-                    border: isActive ? '1.5px solid #34d399' : '1px solid #1e293b',
-                    borderRadius: 6,
-                    padding: '8px 10px',
-                    marginBottom: 5,
-                    cursor: 'pointer',
-                    display: 'flex',
-                    justifyContent: 'space-between',
-                    alignItems: 'center',
+                  key={item.id}
+                  onClick={() => {
+                    setHighlightedGap(item);
+                    zoomToCoord(item.pointA.x, item.pointA.y, 160);
                   }}
+                  className={`p-2.5 rounded-lg border transition cursor-pointer space-y-1.5 ${
+                    isSelected
+                      ? 'bg-slate-900 border-amber-500 ring-1 ring-amber-500 shadow-lg'
+                      : 'bg-slate-950/70 border-slate-800 hover:border-slate-700'
+                  }`}
                 >
-                  <div>
-                    <span style={{ fontSize: 12, fontWeight: 900, color: isActive ? '#34d399' : '#f8fafc' }}>
-                      {line.name}
-                    </span>
-                    <span style={{ fontSize: 10, color: '#94a3b8', marginLeft: 8 }}>
-                      ({line.points.length} điểm)
+                  <div className="flex items-center justify-between text-xs">
+                    <span className="font-bold text-slate-200">{item.pointA.lineId}</span>
+                    <span className={`text-[10px] px-1.5 py-0.5 rounded border font-mono font-bold ${badgeBg}`}>
+                      {item.type} ({item.distancePx}px)
                     </span>
                   </div>
-                  <span style={{ fontSize: 10, background: '#1e293b', color: '#38bdf8', padding: '1px 6px', borderRadius: 3 }}>
-                    {isActive ? 'Đang vẽ' : 'Chọn vẽ'}
-                  </span>
+
+                  <div className="text-[11px] text-slate-300 font-mono">
+                    {item.description}
+                  </div>
+
+                  <button
+                    onClick={e => {
+                      e.stopPropagation();
+                      setHighlightedGap(item);
+                      zoomToCoord(item.pointA.x, item.pointA.y, 140);
+                    }}
+                    className="w-full py-1 bg-slate-800 hover:bg-slate-700 text-slate-200 text-[10px] rounded font-bold transition"
+                  >
+                    🔍 Phóng to vị trí này ({item.pointA.x}, {item.pointA.y})
+                  </button>
                 </div>
               );
             })}
           </div>
-        ) : (
-          /* Guided Node List */
-          <div style={{ flex: 1, overflowY: 'auto', padding: 8 }}>
-            <div style={{ display: 'flex', gap: 4, marginBottom: 6 }}>
-              <button onClick={() => setStatusFilter('ALL')} style={{ flex: 1, padding: '3px 0', fontSize: 10, background: statusFilter === 'ALL' ? '#3b82f6' : '#1e293b', border: 'none', borderRadius: 3, color: '#fff', cursor: 'pointer' }}>Tất cả</button>
-              <button onClick={() => setStatusFilter('UNPLACED')} style={{ flex: 1, padding: '3px 0', fontSize: 10, background: statusFilter === 'UNPLACED' ? '#d97706' : '#1e293b', border: 'none', borderRadius: 3, color: '#fff', cursor: 'pointer' }}>Chưa đặt</button>
-              <button onClick={() => setStatusFilter('PLACED')} style={{ flex: 1, padding: '3px 0', fontSize: 10, background: statusFilter === 'PLACED' ? '#059669' : '#1e293b', border: 'none', borderRadius: 3, color: '#fff', cursor: 'pointer' }}>Đã đặt</button>
-            </div>
-            <input
-              type="text"
-              value={searchQuery}
-              onChange={e => setSearchQuery(e.target.value)}
-              placeholder="Tìm theo mã số (W6-01...)"
-              style={{ width: '100%', boxSizing: 'border-box', background: '#020617', color: '#f8fafc', border: '1px solid #334155', borderRadius: 4, padding: '4px 6px', fontSize: 11, marginBottom: 6 }}
-            />
-            {filteredNodes.map(node => {
-              const isSelected = selectedId === node.id;
-              const isPlaced = node.status === 'placed' && node.x !== null;
+        </div>
+      )}
+
+      {/* ── MAIN SVG VIEWPORT ─────────────────────────────────────────────── */}
+      <div className="flex-1 relative bg-[#070b14] overflow-hidden pt-12">
+        <svg
+          ref={svgRef}
+          viewBox={`${view.x} ${view.y} ${view.w} ${view.h}`}
+          className="w-full h-full cursor-crosshair"
+          preserveAspectRatio="xMidYMid meet"
+          shapeRendering="geometricPrecision"
+          onMouseMove={handleSvgMouseMove}
+          onMouseDown={handleSvgMouseDown}
+          onMouseUp={handleSvgMouseUp}
+        >
+          {/* Background Image: Strictly /anhchinh.png */}
+          <image
+            href="/anhchinh.png"
+            x={0}
+            y={0}
+            width={SVG_WIDTH}
+            height={SVG_HEIGHT}
+            opacity={1.0}
+            preserveAspectRatio="none"
+            pointerEvents="none"
+          />
+
+          {/* 1. All 38 Raw Lines Polyline (Sequential Edges Within Each Line Only) */}
+          <g className="raw-lines" pointerEvents="none">
+            {lines.map((line, idx) => {
+              if (line.points.length < 2) return null;
+              const isLineActive = line.id === activeLineId;
+              const lineColor = VIBRANT_LINE_COLORS[idx % VIBRANT_LINE_COLORS.length];
+              const ptsStr = line.points.map(p => `${p.x},${p.y}`).join(' ');
+
               return (
-                <div
-                  key={node.id}
-                  onClick={() => setSelectedId(node.id)}
-                  style={{
-                    background: isSelected ? '#1e293b' : '#020617',
-                    border: isSelected ? '1.5px solid #38bdf8' : '1px solid #1e293b',
-                    borderRadius: 6,
-                    padding: '6px 8px',
-                    marginBottom: 4,
-                    cursor: 'pointer',
-                  }}
-                >
-                  <div style={{ display: 'flex', justifyContent: 'space-between' }}>
-                    <span style={{ fontWeight: 900, color: isSelected ? '#38bdf8' : '#f8fafc' }}>
-                      {node.routeCode} ({node.id})
-                    </span>
-                    <span style={{ fontSize: 9.5, background: isPlaced ? '#065f46' : '#78350f', color: isPlaced ? '#34d399' : '#fef3c7', padding: '1px 4px', borderRadius: 3 }}>
-                      {isPlaced ? '✓ Đã đặt' : 'Chưa đặt'}
-                    </span>
-                  </div>
-                </div>
+                <g key={`raw-line-${line.id}-${idx}`}>
+                  {/* Glow under active line */}
+                  {isLineActive && (
+                    <polyline
+                      points={ptsStr}
+                      fill="none"
+                      stroke={lineColor}
+                      strokeWidth={5.5}
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      opacity={0.35}
+                    />
+                  )}
+                  {/* Main Polyline */}
+                  <polyline
+                    points={ptsStr}
+                    fill="none"
+                    stroke={lineColor}
+                    strokeWidth={isLineActive ? 2.8 : 2.0}
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    opacity={isLineActive ? 1.0 : 0.85}
+                  />
+
+                  {/* Line Name Label */}
+                  {showLineNames && line.points[0] && (
+                    <text
+                      x={line.points[0].x + 4}
+                      y={line.points[0].y - 4}
+                      fontSize={6.5}
+                      fontWeight={900}
+                      fill={lineColor}
+                      fontFamily="monospace"
+                    >
+                      {line.name || line.id}
+                    </text>
+                  )}
+                </g>
               );
             })}
+          </g>
+
+          {/* 2. Gap Audit Highlight Overlays (Inspection Only) */}
+          {highlightedGap && (
+            <g className="gap-highlight" pointerEvents="none">
+              <circle
+                cx={highlightedGap.pointA.x}
+                cy={highlightedGap.pointA.y}
+                r={14}
+                fill="none"
+                stroke="#fbbf24"
+                strokeWidth={2.0}
+                strokeDasharray="4,3"
+                className="animate-pulse"
+              />
+              {highlightedGap.pointB && (
+                <>
+                  <circle
+                    cx={highlightedGap.pointB.x}
+                    cy={highlightedGap.pointB.y}
+                    r={14}
+                    fill="none"
+                    stroke="#38bdf8"
+                    strokeWidth={2.0}
+                    strokeDasharray="4,3"
+                  />
+                  <line
+                    x1={highlightedGap.pointA.x}
+                    y1={highlightedGap.pointA.y}
+                    x2={highlightedGap.pointB.x}
+                    y2={highlightedGap.pointB.y}
+                    stroke="#fbbf24"
+                    strokeWidth={1.5}
+                    strokeDasharray="2,2"
+                  />
+                </>
+              )}
+            </g>
+          )}
+
+          {/* 3. Raw Points & Touch Targets */}
+          {showPoints && (
+            <g className="raw-points">
+              {lines.map((line, lIdx) => {
+                const lineColor = VIBRANT_LINE_COLORS[lIdx % VIBRANT_LINE_COLORS.length];
+
+                return (
+                  <g key={`raw-pts-group-${line.id}-${lIdx}`}>
+                    {line.points.map((p, pIdx) => {
+                      const isSelected = selectedNode?.lineId === line.id && selectedNode?.pointIndex === pIdx;
+                      const isNamed = !!p.label;
+
+                      return (
+                        <g
+                          key={`pt-${line.id}-${pIdx}`}
+                          onMouseDown={e => handleNodeMouseDown(e, line.id, pIdx)}
+                          className="cursor-pointer"
+                        >
+                          {/* Invisible Extra-Large Touch Target (16px radius) */}
+                          <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r={16}
+                            fill="transparent"
+                            stroke="none"
+                            className="cursor-grab active:cursor-grabbing"
+                          />
+
+                          {/* Outer selection ring */}
+                          {isSelected && (
+                            <circle
+                              cx={p.x}
+                              cy={p.y}
+                              r={8.5}
+                              fill="none"
+                              stroke="#ffffff"
+                              strokeWidth={1.8}
+                              strokeDasharray="3,2"
+                              className="animate-pulse"
+                            />
+                          )}
+
+                          {/* Center Node Dot */}
+                          <circle
+                            cx={p.x}
+                            cy={p.y}
+                            r={isSelected ? 6.0 : isNamed ? 4.5 : 3.0}
+                            fill={isSelected ? '#ffffff' : isNamed ? '#fbbf24' : lineColor}
+                            stroke="#0c121e"
+                            strokeWidth={1.2}
+                            className="hover:scale-125 transition-transform"
+                          />
+
+                          {/* Explicit Operational Label Only */}
+                          {p.label && (
+                            <text
+                              x={p.x + 5}
+                              y={p.y - 4}
+                              fontSize={6.5}
+                              fontWeight={900}
+                              fill="#fbbf24"
+                              fontFamily="monospace"
+                              pointerEvents="none"
+                            >
+                              {p.label}
+                            </text>
+                          )}
+
+                          {/* Point Index (#1, #2...) */}
+                          {showPointIndices && (
+                            <text
+                              x={p.x}
+                              y={p.y + 7.5}
+                              fontSize={5}
+                              fontWeight={900}
+                              fill="#ffffff"
+                              textAnchor="middle"
+                              fontFamily="monospace"
+                              pointerEvents="none"
+                            >
+                              {pIdx + 1}
+                            </text>
+                          )}
+                        </g>
+                      );
+                    })}
+                  </g>
+                );
+              })}
+            </g>
+          )}
+        </svg>
+
+        {/* Live Cursor Coordinate Pill */}
+        {cursor && (
+          <div className="absolute bottom-3 right-3 bg-slate-950/90 border border-slate-700/80 px-2.5 py-1 rounded text-xs font-mono text-cyan-300 pointer-events-none shadow-xl">
+            X: {cursor.x} | Y: {cursor.y}
           </div>
         )}
       </div>
@@ -1278,60 +1300,7 @@ function GuidedNodeEditor() {
   );
 }
 
-class SafeErrorBoundary extends React.Component<{ children: React.ReactNode }, { hasError: boolean; error: Error | null }> {
-  constructor(props: { children: React.ReactNode }) {
-    super(props);
-    this.state = { hasError: false, error: null };
-  }
-
-  static getDerivedStateFromError(error: Error) {
-    return { hasError: true, error };
-  }
-
-  componentDidCatch(error: Error, errorInfo: any) {
-    console.error('ErrorBoundary caught:', error, errorInfo);
-  }
-
-  handleReset = () => {
-    localStorage.removeItem(RAW_LINES_STORAGE_KEY);
-    localStorage.removeItem(AUTOSAVE_BACKUP_KEY);
-    window.location.reload();
-  };
-
-  render() {
-    if (this.state.hasError) {
-      return (
-        <div style={{ padding: 30, background: '#0f172a', color: '#f8fafc', fontFamily: 'system-ui', height: '100vh', display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center' }}>
-          <h2 style={{ color: '#ef4444', marginBottom: 12 }}>⚠️ Đã phát hiện lỗi định dạng dữ liệu</h2>
-          <p style={{ color: '#94a3b8', maxWidth: 600, textAlign: 'center', marginBottom: 20 }}>
-            {this.state.error?.message || 'Một file dữ liệu không đúng định dạng vừa được nạp vào.'}
-          </p>
-          <div style={{ display: 'flex', gap: 10 }}>
-            <button
-              onClick={this.handleReset}
-              style={{ background: '#059669', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 20px', fontWeight: 800, cursor: 'pointer' }}
-            >
-              🔄 Khôi Phục Lại Bản Chuẩn 44 Nhánh
-            </button>
-            <button
-              onClick={() => window.location.reload()}
-              style={{ background: '#334155', color: '#fff', border: 'none', borderRadius: 6, padding: '10px 20px', fontWeight: 800, cursor: 'pointer' }}
-            >
-              Tải Lại Trang
-            </button>
-          </div>
-        </div>
-      );
-    }
-    return this.props.children;
-  }
-}
-
-const rootElement = document.getElementById('root');
-if (rootElement) {
-  createRoot(rootElement).render(
-    <SafeErrorBoundary>
-      <GuidedNodeEditor />
-    </SafeErrorBoundary>
-  );
+if (typeof document !== 'undefined') {
+  const container = document.getElementById('root');
+  if (container) createRoot(container).render(<PrecisionChartPenAnnotator />);
 }

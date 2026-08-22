@@ -25,7 +25,6 @@ export const SCENARIO_STOP_SPEED_KTS = 0;       // Holding / Stopped speed (0 kt
 export const MAX_ACCEL_KTS_PER_S = 6.0;         // Smooth acceleration rate
 export const MAX_DECEL_KTS_PER_S = 10.0;        // Smooth deceleration rate
 
-const KNOTS_TO_MS = 0.5144;
 const JUNCTION_FORCE_WAIT_S = 4.0;   // Force junction entry if waiting > 4s to resolve minor gridlocks
 const ARRIVAL_HOLD_S = 12.0;         // Arrival threshold hold before DEPARTED
 const LOOKAHEAD_NODES = 12;
@@ -273,29 +272,7 @@ function getHeadwayDistance(
   return minHeadway;
 }
 
-function isNodeOccupied(
-  nodeId: string,
-  acId: string,
-  rank: number,
-  ctx: SpatialContext,
-  graph: AirportGraph,
-  radius = 15
-): boolean {
-  const node = getNodePos(nodeId, graph);
-  if (!node) return false;
-  for (const occ of ctx.occupants) {
-    if (occ.id === acId) continue;
-    // Lower-priority holding traffic does not block higher-priority entry
-    const occEntry = (ctx.commitments.get(occ.edgeId) || []).find(c => c.id === occ.id);
-    const occRank = occEntry?.rank ?? 3;
-    if (occRank > rank) continue;
 
-    if (Math.hypot(occ.x - node.x, occ.y - node.y) < radius) {
-      return true;
-    }
-  }
-  return false;
-}
 
 function getTaxiwayNeighbors(nodeId: string, graph: AirportGraph): Array<{ to: string; edgeId: string }> {
   const list: Array<{ to: string; edgeId: string }> = [];
@@ -351,10 +328,11 @@ function hasCircularDeadlock(
 
   for (const occ of ctx.occupants) {
     if (occ.id === acId || !chainSet.has(occ.edgeId)) continue;
+    if (occ.from === fromNode || occ.to === toNode) continue; // Same direction convoy
     if (getCorridorEndNode(occ.edgeId, occ.from, graph) !== endNode) return true;
   }
   for (const [eId, fromN] of ctx.claimed.entries()) {
-    if (chainSet.has(eId) && getCorridorEndNode(eId, fromN, graph) !== endNode) return true;
+    if (chainSet.has(eId) && fromN !== fromNode && getCorridorEndNode(eId, fromN, graph) !== endNode) return true;
   }
   return false;
 }
@@ -393,16 +371,25 @@ function isEntryBlocked(
   fromNode: string,
   toNode: string,
   acId: string,
-  rank: number,
+  _rank: number,
   ctx: SpatialContext,
   graph: AirportGraph
 ): boolean {
   for (const occ of ctx.occupants) {
-    if (occ.id !== acId && occ.edgeId === edgeId && occ.from === fromNode && occ.progress * occ.lenPx < 15) {
+    if (occ.id !== acId && occ.edgeId === edgeId && occ.from === fromNode && occ.progress * occ.lenPx < 12) {
       return true;
     }
   }
-  return isNodeOccupied(toNode, acId, rank, ctx, graph, 15);
+  const toPos = getNodePos(toNode, graph);
+  for (const occ of ctx.occupants) {
+    if (occ.id !== acId && occ.from !== toNode && (occ.edgeId !== edgeId || occ.from !== fromNode)) {
+      const dist = Math.hypot(occ.x - (toPos?.x ?? 0), occ.y - (toPos?.y ?? 0));
+      if (dist < 12) {
+        return true;
+      }
+    }
+  }
+  return false;
 }
 
 function hasOpposingCommitment(
@@ -756,7 +743,7 @@ export function scenarioTick(
     // Runway corridor protection for entry edge
     const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
     const isCorridorOccupiedByOther = currentCorridor && currentOccupancy[currentCorridor] && currentOccupancy[currentCorridor] !== ac.id;
-    if (isCorridorOccupiedByOther && ac.progressOnEdge === 0) {
+    if (isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
       steppedAc = {
         ...ac,
         status: 'holding',
@@ -788,17 +775,36 @@ export function scenarioTick(
       continue;
     }
 
+    // Nếu tàu bay bị gán speedLimitKts === 0 thì giữ nguyên đứng yên
+    if (ac.speedLimitKts === 0) {
+      updatedFleet[idx] = {
+        ...ac,
+        status: 'holding',
+        speedKts: 0,
+        speedLimitKts: 0,
+        heldSeconds: (ac.heldSeconds ?? 0) + dt,
+      };
+      continue;
+    }
+
     // 1. Determine zone speed limit
     const isApronZone = (isStandNode(fromNode.id, graph) && ac.progressOnEdge < 0.25) || ac.role === 'pushback';
     const isApproachingJunction = ac.progressOnEdge >= 0.85 && ac.routeEdgeIndex + 1 < routeEdges.length;
+    const isLandingRollout = (ac.callsign === 'BAV456' || ac.callsign === 'HVN401' || ac.callsign.startsWith('INB')) && ac.routeEdgeIndex < 15;
 
-    let targetZoneSpeedKts = SCENARIO_TAXI_SPEED_KTS; // 15 kts baseline
+    let targetZoneSpeedKts = ac.speedLimitKts !== undefined && ac.speedLimitKts > 0 ? ac.speedLimitKts : SCENARIO_TAXI_SPEED_KTS;
     let speedReason = 'Tốc độ tiêu chuẩn';
 
-    if (isApproachingJunction) {
-      targetZoneSpeedKts = SCENARIO_JUNCTION_SPEED_KTS; // 5 kts
+    if (isLandingRollout && ac.speedLimitKts) {
+      targetZoneSpeedKts = ac.speedLimitKts;
+      speedReason = 'Xả phanh & lăn';
+    } else if (isLandingRollout) {
+      targetZoneSpeedKts = 18;
+      speedReason = 'Xả phanh & lăn';
+    } else if (isApproachingJunction && (!ac.speedLimitKts || ac.speedLimitKts > 15)) {
+      targetZoneSpeedKts = 15;
       speedReason = 'Giảm tốc: gần giao lộ';
-    } else if (isApronZone) {
+    } else if (isApronZone && (!ac.speedLimitKts || ac.speedLimitKts > 7)) {
       targetZoneSpeedKts = SCENARIO_APRON_SPEED_KTS; // 7 kts
       speedReason = 'Giảm tốc: khu vực sân đỗ';
     }
@@ -811,16 +817,14 @@ export function scenarioTick(
       currentSpeedKts = Math.max(targetZoneSpeedKts, currentSpeedKts - MAX_DECEL_KTS_PER_S * dt);
     }
 
-    const edgeLenMeters = currentEdge.lengthMeters > 0 ? currentEdge.lengthMeters : 50;
-    const effectiveSpeedMs = currentSpeedKts * KNOTS_TO_MS;
-    const stepProgress = (effectiveSpeedMs * dt) / edgeLenMeters;
+    const edgePixelLen = Math.hypot(toNode.x - fromNode.x, toNode.y - fromNode.y) || 1;
+    const stepProgress = (currentSpeedKts * 0.52 * dt) / edgePixelLen;
 
     // Check headway buffer along current edge
     const headwayPx = getHeadwayDistance(currentEdge.id, fromNode.id, ac.progressOnEdge, ac.id, activeCtx);
-    const edgePixelLen = Math.hypot(toNode.x - fromNode.x, toNode.y - fromNode.y) || 1;
     let targetProgress = ac.progressOnEdge + stepProgress;
 
-    if (headwayPx !== Infinity) {
+    if (headwayPx !== Infinity && (!ac.callsign?.startsWith('INB') || ac.routeEdgeIndex > 0)) {
       const allowedProgress = ac.progressOnEdge + Math.max(0, (headwayPx - 15) / edgePixelLen);
       targetProgress = Math.min(targetProgress, allowedProgress);
     }
@@ -835,8 +839,11 @@ export function scenarioTick(
       const targetCorridor = getRunwayCorridor(nextEdgeId, nextTargetNodeId);
       const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
       const isRunwayBlocked = targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
-      const isNodeReserved = activeCtx.reservedNodes.has(toNode.id);
-      const isEdgeReserved = activeCtx.reserved.has(nextEdgeId);
+      const isLeaderInSameDirection = activeCtx.occupants.some(
+        occ => occ.id !== ac.id && occ.edgeId === nextEdgeId && occ.from === toNode.id
+      );
+      const isNodeReserved = !isLeaderInSameDirection && activeCtx.reservedNodes.has(toNode.id);
+      const isEdgeReserved = !isLeaderInSameDirection && activeCtx.reserved.has(nextEdgeId);
       const heldSec = (ac.heldSeconds ?? 0) + dt;
       const forceJunction = heldSec >= JUNCTION_FORCE_WAIT_S;
 
@@ -967,19 +974,22 @@ export function scenarioTick(
       for (const occ of activeCtx.occupants) {
         if (occ.id === steppedAc.id) continue;
         const otherRank = getAircraftPriority(fleet.find(f => f.id === occ.id) || ac, graph);
-        if (rank <= otherRank) continue; // Higher priority does not yield to lower priority
+        if (rank < otherRank) continue; // Higher priority does not yield to lower priority
+        if (steppedAc.callsign?.startsWith('INB') && steppedAc.routeEdgeIndex <= 2) continue; // Initial runway exit divergence
 
         const dist = Math.hypot(mx - occ.x, my - occ.y);
         const isApron = isStandNode(steppedAc.currentNodeId, graph);
-        const minDist = isApron ? SEPARATION_APRON_PX : SEPARATION_TAXIWAY_PX;
+        const minDist = isApron ? 38 : 34;
 
         if (dist < minDist) {
           steppedAc = {
             ...steppedAc,
             status: 'holding',
-            holdReason: 'separation',
+            holdReason: 'stop-bar',
             heldSeconds: (steppedAc.heldSeconds ?? 0) + dt,
             speedKts: 0,
+            speedLimitKts: 0,
+            speedReason: 'Dừng: Giữ khoảng cách',
           };
           break;
         }

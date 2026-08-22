@@ -7,6 +7,7 @@ import { airportGraph } from '../data/airportGraph';
 
 interface Props {
   graph?: AirportGraph;
+  isRunwayEmergencyRed?: boolean;
 }
 
 // ── Hằng số tinh chỉnh đèn ──────────────────────────────────────────────────
@@ -97,6 +98,17 @@ function getRunwayThresholds(graph: AirportGraph): Array<[string, string]> {
   const has25L = graph.nodes.some(n => n.id === 'RWY25L_THR');
   if (has07R && has25L) pairs.push(['RWY07R_THR', 'RWY25L_THR']);
 
+  // Graph V3 support (07L -> STOP BAR 25R and 07R -> STOP BAR 25L)
+  if (pairs.length === 0) {
+    const v3_07l = graph.nodes.find(n => n.id === 'v3_line_01_p00' || n.label === '07L');
+    const v3_25r = graph.nodes.find(n => n.id === 'v3_line_01_p03' || n.label === 'STOP BAR 25R');
+    if (v3_07l && v3_25r) pairs.push([v3_07l.id, v3_25r.id]);
+
+    const v3_07r = graph.nodes.find(n => n.id === 'v3_line_05_p00' || n.label === '07R');
+    const v3_25l = graph.nodes.find(n => n.id === 'v3_line_05_p07' || n.id === 'v3_line_17_p16' || n.label === 'STOP BAR 25L');
+    if (v3_07r && v3_25l) pairs.push([v3_07r.id, v3_25l.id]);
+  }
+
   return pairs;
 }
 
@@ -136,7 +148,7 @@ function buildPavement(graph: AirportGraph): Strip[] {
 }
 
 // ── Sinh toàn bộ vị trí đèn tĩnh từ graph hiện tại ───────────────────────────
-function buildLights(graph: AirportGraph): LightPoint[] {
+function buildLights(graph: AirportGraph, isRunwayEmergencyRed: boolean = false): LightPoint[] {
   const lights: LightPoint[] = [];
   const isV2 = graph.nodes.length > 50;
 
@@ -170,7 +182,7 @@ function buildLights(graph: AirportGraph): LightPoint[] {
       lights.push({ x: cx - nx, y: cy - ny, r: RWY_EDGE_RADIUS, color });
     }
 
-    // Đèn tâm
+    // Đèn tâm (Chấm tròn phát quang trên tim đường băng)
     const countCenter = Math.floor(len / RWY_CTR_STEP);
     for (let i = 1; i < countCenter; i++) {
       const t = i / countCenter;
@@ -178,8 +190,14 @@ function buildLights(graph: AirportGraph): LightPoint[] {
       const cy = a.y + dy * t;
       const distEnd = Math.min(t, 1 - t);
       let color: LightColor = 'white';
-      if (distEnd < RED_ZONE) color = 'red';
-      else if (distEnd < ALTERNATE_ZONE) color = i % 2 === 0 ? 'red' : 'white';
+
+      if (isRunwayEmergencyRed) {
+        // Khi khẩn nguy: toàn bộ chấm đèn tim 2 đường băng chuyển sang màu ĐỎ
+        color = 'red';
+      } else {
+        if (distEnd < RED_ZONE) color = 'red';
+        else if (distEnd < ALTERNATE_ZONE) color = i % 2 === 0 ? 'red' : 'white';
+      }
 
       lights.push({ x: cx, y: cy, r: RWY_CTR_RADIUS, color });
     }
@@ -225,11 +243,11 @@ function buildLights(graph: AirportGraph): LightPoint[] {
   return lights;
 }
 
-function AirportLighting({ graph = airportGraph }: Props) {
-  // Hình học tính toán ĐỘNG THEO GRAPH HIỆN TẠI (useMemo phụ thuộc [graph])
+function AirportLighting({ graph = airportGraph, isRunwayEmergencyRed = false }: Props) {
+  // Hình học tính toán ĐỘNG THEO GRAPH HIỆN TẠI (useMemo phụ thuộc [graph, isRunwayEmergencyRed])
   const currentGraph = graph || airportGraph;
   const pavement = useMemo(() => buildPavement(currentGraph), [currentGraph]);
-  const lights   = useMemo(() => buildLights(currentGraph), [currentGraph]);
+  const lights   = useMemo(() => buildLights(currentGraph, isRunwayEmergencyRed), [currentGraph, isRunwayEmergencyRed]);
 
   const roadGlow: JSX.Element[] = pavement.map((s, i) => (
     <line

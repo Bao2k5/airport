@@ -1,0 +1,1970 @@
+{
+  "exportDate": "2026-08-21T13:07:03.105Z",
+  "exportTimestamp": 1787317623106,
+  "summary": {
+    "totalConfirmed": 67,
+    "totalRejected": 0,
+    "totalPending": 0
+  },
+  "confirmedJunctions": [
+    {
+      "junctionId": "J01",
+      "fromNodeId": "v3_line_01_p01",
+      "toNodeId": "v3_line_04_p00",
+      "fromTraceId": "line_01",
+      "toTraceId": "line_04",
+      "fromCoords": {
+        "x": 225,
+        "y": 400
+      },
+      "toCoords": {
+        "x": 224,
+        "y": 400
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_01 và line_04 (1px)"
+    },
+    {
+      "junctionId": "J02",
+      "fromNodeId": "v3_line_03_p01",
+      "toNodeId": "v3_line_16_p00",
+      "fromTraceId": "line_03",
+      "toTraceId": "line_16",
+      "fromCoords": {
+        "x": 66,
+        "y": 703
+      },
+      "toCoords": {
+        "x": 67,
+        "y": 704
+      },
+      "geometryDistancePx": 1.4,
+      "lengthMeters": 4.2,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_03 và line_16 (1.4px)"
+    },
+    {
+      "junctionId": "J03",
+      "fromNodeId": "v3_line_05_p03",
+      "toNodeId": "v3_line_19_p00",
+      "fromTraceId": "line_05",
+      "toTraceId": "line_19",
+      "fromCoords": {
+        "x": 633,
+        "y": 421
+      },
+      "toCoords": {
+        "x": 633,
+        "y": 422
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_05 và line_19 (1px)"
+    },
+    {
+      "junctionId": "J04",
+      "fromNodeId": "v3_line_05_p04",
+      "toNodeId": "v3_line_06_p03",
+      "fromTraceId": "line_05",
+      "toTraceId": "line_06",
+      "fromCoords": {
+        "x": 819,
+        "y": 331
+      },
+      "toCoords": {
+        "x": 821,
+        "y": 331
+      },
+      "geometryDistancePx": 2,
+      "lengthMeters": 6,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_05 và line_06 (2px)"
+    },
+    {
+      "junctionId": "J05",
+      "fromNodeId": "v3_line_05_p04",
+      "toNodeId": "v3_line_12_p00",
+      "fromTraceId": "line_05",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 819,
+        "y": 331
+      },
+      "toCoords": {
+        "x": 820,
+        "y": 330
+      },
+      "geometryDistancePx": 1.4,
+      "lengthMeters": 4.2,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_05 và line_12 (1.4px)"
+    },
+    {
+      "junctionId": "J06",
+      "fromNodeId": "v3_line_05_p07",
+      "toNodeId": "v3_line_17_p16",
+      "fromTraceId": "line_05",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 1136,
+        "y": 177
+      },
+      "toCoords": {
+        "x": 1136,
+        "y": 176
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_05 và line_17 (1px)"
+    },
+    {
+      "junctionId": "J07",
+      "fromNodeId": "v3_line_06_p02",
+      "toNodeId": "v3_line_07_p00",
+      "fromTraceId": "line_06",
+      "toTraceId": "line_07",
+      "fromCoords": {
+        "x": 826,
+        "y": 280
+      },
+      "toCoords": {
+        "x": 825,
+        "y": 281
+      },
+      "geometryDistancePx": 1.4,
+      "lengthMeters": 4.2,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_06 và line_07 (1.4px)"
+    },
+    {
+      "junctionId": "J08",
+      "fromNodeId": "v3_line_06_p03",
+      "toNodeId": "v3_line_12_p00",
+      "fromTraceId": "line_06",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 821,
+        "y": 331
+      },
+      "toCoords": {
+        "x": 820,
+        "y": 330
+      },
+      "geometryDistancePx": 1.4,
+      "lengthMeters": 4.2,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_06 và line_12 (1.4px)"
+    },
+    {
+      "junctionId": "J09",
+      "fromNodeId": "v3_line_08_p03",
+      "toNodeId": "v3_line_13_p00",
+      "fromTraceId": "line_08",
+      "toTraceId": "line_13",
+      "fromCoords": {
+        "x": 920,
+        "y": 280
+      },
+      "toCoords": {
+        "x": 920,
+        "y": 280
+      },
+      "geometryDistancePx": 0,
+      "lengthMeters": 0,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_08 và line_13 (0px)"
+    },
+    {
+      "junctionId": "J10",
+      "fromNodeId": "v3_line_12_p03",
+      "toNodeId": "v3_line_29_p00",
+      "fromTraceId": "line_12",
+      "toTraceId": "line_29",
+      "fromCoords": {
+        "x": 796,
+        "y": 620
+      },
+      "toCoords": {
+        "x": 797,
+        "y": 620
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_12 và line_29 (1px)"
+    },
+    {
+      "junctionId": "J11",
+      "fromNodeId": "v3_line_12_p03",
+      "toNodeId": "v3_line_31_p01",
+      "fromTraceId": "line_12",
+      "toTraceId": "line_31",
+      "fromCoords": {
+        "x": 796,
+        "y": 620
+      },
+      "toCoords": {
+        "x": 796,
+        "y": 618
+      },
+      "geometryDistancePx": 2,
+      "lengthMeters": 6,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_12 và line_31 (2px)"
+    },
+    {
+      "junctionId": "J12",
+      "fromNodeId": "v3_line_35_p01",
+      "toNodeId": "v3_line_37_p01",
+      "fromTraceId": "line_35",
+      "toTraceId": "line_37",
+      "fromCoords": {
+        "x": 815,
+        "y": 770
+      },
+      "toCoords": {
+        "x": 815,
+        "y": 771
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_35 và line_37 (1px)"
+    },
+    {
+      "junctionId": "J13",
+      "fromNodeId": "v3_line_36_p01",
+      "toNodeId": "v3_line_38_p01",
+      "fromTraceId": "line_36",
+      "toTraceId": "line_38",
+      "fromCoords": {
+        "x": 836,
+        "y": 772
+      },
+      "toCoords": {
+        "x": 835,
+        "y": 772
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "exact_coincident",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction exact_coincident giữa line_36 và line_38 (1px)"
+    },
+    {
+      "junctionId": "J14",
+      "fromNodeId": "v3_line_03_p01",
+      "toNodeId": "v3_line_05_p00",
+      "fromTraceId": "line_03",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 66,
+        "y": 703
+      },
+      "toCoords": {
+        "x": 52,
+        "y": 712
+      },
+      "geometryDistancePx": 1.6,
+      "lengthMeters": 4.8,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_03 và line_05 (1.6px)",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "07R",
+        "segP2": "v3_line_05_p01",
+        "splitParamT": 0.082,
+        "projection": {
+          "x": 66.74745497259201,
+          "y": 704.4624119028974
+        }
+      }
+    },
+    {
+      "junctionId": "J15",
+      "fromNodeId": "v3_line_05_p05",
+      "toNodeId": "v3_line_13_p00",
+      "fromTraceId": "line_05",
+      "toTraceId": "line_13",
+      "fromCoords": {
+        "x": 919,
+        "y": 282
+      },
+      "toCoords": {
+        "x": 920,
+        "y": 280
+      },
+      "geometryDistancePx": 0.7,
+      "lengthMeters": 2.1,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_05 và line_13 (0.7px)",
+      "extra": {
+        "segmentLine": "line_13",
+        "segP1": "v3_line_13_p00",
+        "segP2": "v3_line_13_p01",
+        "splitParamT": 0.081,
+        "projection": {
+          "x": 919.6763005780347,
+          "y": 282.1040462427746
+        }
+      }
+    },
+    {
+      "junctionId": "J16",
+      "fromNodeId": "v3_line_07_p01",
+      "toNodeId": "v3_line_05_p04",
+      "fromTraceId": "line_07",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 852,
+        "y": 316
+      },
+      "toCoords": {
+        "x": 819,
+        "y": 331
+      },
+      "geometryDistancePx": 1.1,
+      "lengthMeters": 3.3,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_07 và line_05 (1.1px)",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "v3_line_05_p04",
+        "segP2": "T63",
+        "splitParamT": 0.325,
+        "projection": {
+          "x": 851.5376985726957,
+          "y": 315.0565276993791
+        }
+      }
+    },
+    {
+      "junctionId": "J17",
+      "fromNodeId": "v3_line_09_p00",
+      "toNodeId": "v3_line_08_p02",
+      "fromTraceId": "line_09",
+      "toTraceId": "line_08",
+      "fromCoords": {
+        "x": 924,
+        "y": 234
+      },
+      "toCoords": {
+        "x": 926,
+        "y": 226
+      },
+      "geometryDistancePx": 1.1,
+      "lengthMeters": 3.3,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_09 và line_08 (1.1px)",
+      "extra": {
+        "segmentLine": "line_08",
+        "segP1": "HS12",
+        "segP2": "v3_line_08_p03",
+        "splitParamT": 0.15,
+        "projection": {
+          "x": 925.0975609756098,
+          "y": 234.1219512195122
+        }
+      }
+    },
+    {
+      "junctionId": "J18",
+      "fromNodeId": "v3_line_09_p01",
+      "toNodeId": "v3_line_05_p06",
+      "fromTraceId": "line_09",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 950,
+        "y": 266
+      },
+      "toCoords": {
+        "x": 965,
+        "y": 260
+      },
+      "geometryDistancePx": 1.1,
+      "lengthMeters": 3.3,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_09 và line_05 (1.1px)",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "T63",
+        "segP2": "v3_line_05_p06",
+        "splitParamT": 0.684,
+        "projection": {
+          "x": 950.4569230769231,
+          "y": 266.9553846153846
+        }
+      }
+    },
+    {
+      "junctionId": "J19",
+      "fromNodeId": "v3_line_10_p04",
+      "toNodeId": "v3_line_17_p06",
+      "fromTraceId": "line_10",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 432,
+        "y": 651
+      },
+      "toCoords": {
+        "x": 446,
+        "y": 645
+      },
+      "geometryDistancePx": 0.8,
+      "lengthMeters": 2.4,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_10 và line_17 (0.8px)",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p05",
+        "segP2": "T27",
+        "splitParamT": 0.884,
+        "projection": {
+          "x": 432.3489125404905,
+          "y": 651.7098565478944
+        }
+      }
+    },
+    {
+      "junctionId": "J20",
+      "fromNodeId": "v3_line_11_p00",
+      "toNodeId": "v3_line_10_p03",
+      "fromTraceId": "line_11",
+      "toTraceId": "line_10",
+      "fromCoords": {
+        "x": 439,
+        "y": 619
+      },
+      "toCoords": {
+        "x": 441,
+        "y": 624
+      },
+      "geometryDistancePx": 1.1,
+      "lengthMeters": 3.3,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_11 và line_10 (1.1px)",
+      "extra": {
+        "segmentLine": "line_10",
+        "segP1": "T26",
+        "segP2": "v3_line_10_p03",
+        "splitParamT": 0.89,
+        "projection": {
+          "x": 440.1165860096788,
+          "y": 618.8099428068632
+        }
+      }
+    },
+    {
+      "junctionId": "J21",
+      "fromNodeId": "v3_line_13_p03",
+      "toNodeId": "v3_line_17_p10",
+      "fromTraceId": "line_13",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 911,
+        "y": 430
+      },
+      "toCoords": {
+        "x": 839,
+        "y": 461
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_13 và line_17 (1px)",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.336,
+        "projection": {
+          "x": 910.5860756701106,
+          "y": 429.071938081406
+        }
+      }
+    },
+    {
+      "junctionId": "J22",
+      "fromNodeId": "v3_line_15_p00",
+      "toNodeId": "v3_line_13_p02",
+      "fromTraceId": "line_15",
+      "toTraceId": "line_13",
+      "fromCoords": {
+        "x": 910,
+        "y": 408
+      },
+      "toCoords": {
+        "x": 910,
+        "y": 399
+      },
+      "geometryDistancePx": 0.3,
+      "lengthMeters": 0.9,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_15 và line_13 (0.3px)",
+      "extra": {
+        "segmentLine": "line_13",
+        "segP1": "v3_line_13_p02",
+        "segP2": "v3_line_13_p03",
+        "splitParamT": 0.29,
+        "projection": {
+          "x": 910.2900207900208,
+          "y": 407.9906444906445
+        }
+      }
+    },
+    {
+      "junctionId": "J23",
+      "fromNodeId": "v3_line_15_p01",
+      "toNodeId": "v3_line_17_p10",
+      "fromTraceId": "line_15",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 926,
+        "y": 423
+      },
+      "toCoords": {
+        "x": 839,
+        "y": 461
+      },
+      "geometryDistancePx": 0.7,
+      "lengthMeters": 2.1,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_15 và line_17 (0.7px)",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.407,
+        "projection": {
+          "x": 925.7013457366621,
+          "y": 422.3303857043056
+        }
+      }
+    },
+    {
+      "junctionId": "J24",
+      "fromNodeId": "v3_line_16_p00",
+      "toNodeId": "v3_line_05_p00",
+      "fromTraceId": "line_16",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 67,
+        "y": 704
+      },
+      "toCoords": {
+        "x": 52,
+        "y": 712
+      },
+      "geometryDistancePx": 0.3,
+      "lengthMeters": 0.9,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_16 và line_05 (0.3px)",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "07R",
+        "segP2": "v3_line_05_p01",
+        "splitParamT": 0.084,
+        "projection": {
+          "x": 67.13508222396241,
+          "y": 704.2642913077525
+        }
+      }
+    },
+    {
+      "junctionId": "J25",
+      "fromNodeId": "v3_line_17_p09",
+      "toNodeId": "v3_line_12_p02",
+      "fromTraceId": "line_17",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 809,
+        "y": 476
+      },
+      "toCoords": {
+        "x": 811,
+        "y": 436
+      },
+      "geometryDistancePx": 1.3,
+      "lengthMeters": 3.9,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_17 và line_12 (1.3px)",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.217,
+        "projection": {
+          "x": 807.7474545934685,
+          "y": 475.8978903201197
+        }
+      }
+    },
+    {
+      "junctionId": "J26",
+      "fromNodeId": "v3_line_19_p03",
+      "toNodeId": "v3_line_17_p07",
+      "fromTraceId": "line_19",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 735,
+        "y": 509
+      },
+      "toCoords": {
+        "x": 716,
+        "y": 517
+      },
+      "geometryDistancePx": 0.5,
+      "lengthMeters": 1.5,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_19 và line_17 (0.5px)",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "L21_P3",
+        "segP2": "v3_line_17_p08",
+        "splitParamT": 0.495,
+        "projection": {
+          "x": 734.8136180034622,
+          "y": 508.5833814195037
+        }
+      }
+    },
+    {
+      "junctionId": "J27",
+      "fromNodeId": "v3_line_23_p00",
+      "toNodeId": "v3_line_17_p11",
+      "fromTraceId": "line_23",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 946,
+        "y": 412
+      },
+      "toCoords": {
+        "x": 1052,
+        "y": 366
+      },
+      "geometryDistancePx": 1.2,
+      "lengthMeters": 3.6,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_23 và line_17 (1.2px)",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.505,
+        "projection": {
+          "x": 946.4750523954848,
+          "y": 413.0651174761922
+        }
+      }
+    },
+    {
+      "junctionId": "J28",
+      "fromNodeId": "v3_line_24_p00",
+      "toNodeId": "v3_line_17_p11",
+      "fromTraceId": "line_24",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 981,
+        "y": 398
+      },
+      "toCoords": {
+        "x": 1052,
+        "y": 366
+      },
+      "geometryDistancePx": 0.3,
+      "lengthMeters": 0.9,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_24 và line_17 (0.3px)",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.666,
+        "projection": {
+          "x": 980.8759973526492,
+          "y": 397.72197301172923
+        }
+      }
+    },
+    {
+      "junctionId": "J29",
+      "fromNodeId": "v3_line_25_p00",
+      "toNodeId": "v3_line_17_p11",
+      "fromTraceId": "line_25",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 1018,
+        "y": 383
+      },
+      "toCoords": {
+        "x": 1052,
+        "y": 366
+      },
+      "geometryDistancePx": 1.7,
+      "lengthMeters": 5.1,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_25 và line_17 (1.7px)",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.837,
+        "projection": {
+          "x": 1017.3171121814906,
+          "y": 381.46889362797367
+        }
+      }
+    },
+    {
+      "junctionId": "J30",
+      "fromNodeId": "v3_line_27_p00",
+      "toNodeId": "v3_line_12_p03",
+      "fromTraceId": "line_27",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 803,
+        "y": 532
+      },
+      "toCoords": {
+        "x": 796,
+        "y": 620
+      },
+      "geometryDistancePx": 0.2,
+      "lengthMeters": 0.6,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_27 và line_12 (0.2px)",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.522,
+        "projection": {
+          "x": 803.1727648836595,
+          "y": 532.0140840937765
+        }
+      }
+    },
+    {
+      "junctionId": "J31",
+      "fromNodeId": "v3_line_28_p00",
+      "toNodeId": "v3_line_12_p03",
+      "fromTraceId": "line_28",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 800,
+        "y": 575
+      },
+      "toCoords": {
+        "x": 796,
+        "y": 620
+      },
+      "geometryDistancePx": 0.3,
+      "lengthMeters": 0.9,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_28 và line_12 (0.3px)",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.755,
+        "projection": {
+          "x": 799.670666940524,
+          "y": 574.9731521962384
+        }
+      }
+    },
+    {
+      "junctionId": "J32",
+      "fromNodeId": "v3_line_30_p01",
+      "toNodeId": "v3_line_12_p03",
+      "fromTraceId": "line_30",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 798,
+        "y": 583
+      },
+      "toCoords": {
+        "x": 796,
+        "y": 620
+      },
+      "geometryDistancePx": 1,
+      "lengthMeters": 3,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_30 và line_12 (1px)",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.799,
+        "projection": {
+          "x": 799.0095947888854,
+          "y": 583.082303923007
+        }
+      }
+    },
+    {
+      "junctionId": "J33",
+      "fromNodeId": "v3_line_32_p01",
+      "toNodeId": "v3_line_12_p03",
+      "fromTraceId": "line_32",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 791,
+        "y": 661
+      },
+      "toCoords": {
+        "x": 796,
+        "y": 620
+      },
+      "geometryDistancePx": 1.8,
+      "lengthMeters": 5.4,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_32 và line_12 (1.8px)",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "T69",
+        "segP2": "v3_line_12_p04",
+        "splitParamT": 0.245,
+        "projection": {
+          "x": 792.816504067904,
+          "y": 661.1405628147783
+        }
+      }
+    },
+    {
+      "junctionId": "J34",
+      "fromNodeId": "v3_line_33_p01",
+      "toNodeId": "v3_line_12_p03",
+      "fromTraceId": "line_33",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 789,
+        "y": 700
+      },
+      "toCoords": {
+        "x": 796,
+        "y": 620
+      },
+      "geometryDistancePx": 0.8,
+      "lengthMeters": 2.4,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_33 và line_12 (0.8px)",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "T69",
+        "segP2": "v3_line_12_p04",
+        "splitParamT": 0.477,
+        "projection": {
+          "x": 789.8047053851301,
+          "y": 700.0622688690875
+        }
+      }
+    },
+    {
+      "junctionId": "J35",
+      "fromNodeId": "v3_line_34_p00",
+      "toNodeId": "v3_line_12_p04",
+      "fromTraceId": "line_34",
+      "toTraceId": "line_12",
+      "fromCoords": {
+        "x": 786,
+        "y": 768
+      },
+      "toCoords": {
+        "x": 783,
+        "y": 788
+      },
+      "geometryDistancePx": 1.4,
+      "lengthMeters": 4.2,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_34 và line_12 (1.4px)",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "T69",
+        "segP2": "v3_line_12_p04",
+        "splitParamT": 0.88,
+        "projection": {
+          "x": 784.5562638678548,
+          "y": 767.8882823231078
+        }
+      }
+    },
+    {
+      "junctionId": "J36",
+      "fromNodeId": "v3_line_35_p01",
+      "toNodeId": "v3_line_34_p00",
+      "fromTraceId": "line_35",
+      "toTraceId": "line_34",
+      "fromCoords": {
+        "x": 815,
+        "y": 770
+      },
+      "toCoords": {
+        "x": 786,
+        "y": 768
+      },
+      "geometryDistancePx": 1.9,
+      "lengthMeters": 5.7,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_35 và line_34 (1.9px)",
+      "extra": {
+        "segmentLine": "line_34",
+        "segP1": "NS1_SOUTH_END_V2",
+        "segP2": "v3_line_34_p01",
+        "splitParamT": 0.429,
+        "projection": {
+          "x": 814.7498905908096,
+          "y": 771.8619256017505
+        }
+      }
+    },
+    {
+      "junctionId": "J37",
+      "fromNodeId": "v3_line_37_p01",
+      "toNodeId": "v3_line_34_p00",
+      "fromTraceId": "line_37",
+      "toTraceId": "line_34",
+      "fromCoords": {
+        "x": 815,
+        "y": 771
+      },
+      "toCoords": {
+        "x": 786,
+        "y": 768
+      },
+      "geometryDistancePx": 0.9,
+      "lengthMeters": 2.7,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction point_on_segment giữa line_37 và line_34 (0.9px)",
+      "extra": {
+        "segmentLine": "line_34",
+        "segP1": "NS1_SOUTH_END_V2",
+        "segP2": "v3_line_34_p01",
+        "splitParamT": 0.431,
+        "projection": {
+          "x": 814.8818380743983,
+          "y": 771.8796498905908
+        }
+      }
+    },
+    {
+      "junctionId": "J38",
+      "fromNodeId": "v3_line_01_p00",
+      "toNodeId": "v3_line_04_p00",
+      "fromTraceId": "line_01",
+      "toTraceId": "line_04",
+      "fromCoords": {
+        "x": 56,
+        "y": 486
+      },
+      "toCoords": {
+        "x": 224,
+        "y": 400
+      },
+      "geometryDistancePx": 188.7,
+      "lengthMeters": 566.1,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_01 và line_04 (188.7px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 224,
+          "y": 401,
+          "ua": 0.9939929328621908,
+          "ub": 0.01519434628975265
+        },
+        "segmentA": {
+          "line": "line_01",
+          "p1": "07L",
+          "p2": "v3_line_01_p01"
+        },
+        "segmentB": {
+          "line": "line_04",
+          "p1": "v3_line_04_p00",
+          "p2": "v3_line_04_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J39",
+      "fromNodeId": "v3_line_04_p03",
+      "toNodeId": "v3_line_05_p01",
+      "fromTraceId": "line_04",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 227,
+        "y": 603
+      },
+      "toCoords": {
+        "x": 232,
+        "y": 620
+      },
+      "geometryDistancePx": 17.7,
+      "lengthMeters": 53.1,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_04 và line_05 (17.7px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 235,
+          "y": 619,
+          "ua": 0.975328947368421,
+          "ub": 0.013157894736842105
+        },
+        "segmentA": {
+          "line": "line_04",
+          "p1": "v3_line_04_p03",
+          "p2": "v3_line_04_p04"
+        },
+        "segmentB": {
+          "line": "line_05",
+          "p1": "v3_line_05_p01",
+          "p2": "v3_line_05_p02"
+        }
+      }
+    },
+    {
+      "junctionId": "J40",
+      "fromNodeId": "v3_line_05_p04",
+      "toNodeId": "v3_line_06_p02",
+      "fromTraceId": "line_05",
+      "toTraceId": "line_06",
+      "fromCoords": {
+        "x": 819,
+        "y": 331
+      },
+      "toCoords": {
+        "x": 826,
+        "y": 280
+      },
+      "geometryDistancePx": 51.5,
+      "lengthMeters": 154.5,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_05 và line_06 (51.5px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 821,
+          "y": 330,
+          "ua": 0.021009268795056643,
+          "ub": 0.9798146240988671
+        },
+        "segmentA": {
+          "line": "line_05",
+          "p1": "v3_line_05_p04",
+          "p2": "T63"
+        },
+        "segmentB": {
+          "line": "line_06",
+          "p1": "v3_line_06_p02",
+          "p2": "v3_line_06_p03"
+        }
+      }
+    },
+    {
+      "junctionId": "J41",
+      "fromNodeId": "v3_line_05_p04",
+      "toNodeId": "v3_line_07_p00",
+      "fromTraceId": "line_05",
+      "toTraceId": "line_07",
+      "fromCoords": {
+        "x": 819,
+        "y": 331
+      },
+      "toCoords": {
+        "x": 825,
+        "y": 281
+      },
+      "geometryDistancePx": 50.4,
+      "lengthMeters": 151.2,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_05 và line_07 (50.4px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 851,
+          "y": 315,
+          "ua": 0.32345013477088946,
+          "ub": 0.9757412398921833
+        },
+        "segmentA": {
+          "line": "line_05",
+          "p1": "v3_line_05_p04",
+          "p2": "T63"
+        },
+        "segmentB": {
+          "line": "line_07",
+          "p1": "NS1_MID_JUNCTION_V2",
+          "p2": "v3_line_07_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J42",
+      "fromNodeId": "v3_line_08_p02",
+      "toNodeId": "v3_line_13_p00",
+      "fromTraceId": "line_08",
+      "toTraceId": "line_13",
+      "fromCoords": {
+        "x": 926,
+        "y": 226
+      },
+      "toCoords": {
+        "x": 920,
+        "y": 280
+      },
+      "geometryDistancePx": 54.3,
+      "lengthMeters": 162.9,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_08 và line_13 (54.3px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 920,
+          "y": 280,
+          "ua": 1,
+          "ub": 0
+        },
+        "segmentA": {
+          "line": "line_08",
+          "p1": "HS12",
+          "p2": "v3_line_08_p03"
+        },
+        "segmentB": {
+          "line": "line_13",
+          "p1": "v3_line_13_p00",
+          "p2": "v3_line_13_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J43",
+      "fromNodeId": "v3_line_10_p02",
+      "toNodeId": "v3_line_11_p00",
+      "fromTraceId": "line_10",
+      "toTraceId": "line_11",
+      "fromCoords": {
+        "x": 433,
+        "y": 577
+      },
+      "toCoords": {
+        "x": 439,
+        "y": 619
+      },
+      "geometryDistancePx": 42.4,
+      "lengthMeters": 127.2,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_10 và line_11 (42.4px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 440,
+          "y": 620,
+          "ua": 0.9230769230769231,
+          "ub": 0.06923076923076923
+        },
+        "segmentA": {
+          "line": "line_10",
+          "p1": "T26",
+          "p2": "v3_line_10_p03"
+        },
+        "segmentB": {
+          "line": "line_11",
+          "p1": "v3_line_11_p00",
+          "p2": "v3_line_11_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J44",
+      "fromNodeId": "v3_line_11_p00",
+      "toNodeId": "v3_line_17_p06",
+      "fromTraceId": "line_11",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 439,
+        "y": 619
+      },
+      "toCoords": {
+        "x": 446,
+        "y": 645
+      },
+      "geometryDistancePx": 26.9,
+      "lengthMeters": 80.7,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_11 và line_17 (26.9px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 459,
+          "y": 639,
+          "ua": 0.9944723618090452,
+          "ub": 0.04773869346733668
+        },
+        "segmentA": {
+          "line": "line_11",
+          "p1": "v3_line_11_p00",
+          "p2": "v3_line_11_p01"
+        },
+        "segmentB": {
+          "line": "line_17",
+          "p1": "T27",
+          "p2": "L21_P3"
+        }
+      }
+    },
+    {
+      "junctionId": "J45",
+      "fromNodeId": "v3_line_12_p02",
+      "toNodeId": "v3_line_17_p08",
+      "fromTraceId": "line_12",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 811,
+        "y": 436
+      },
+      "toCoords": {
+        "x": 754,
+        "y": 500
+      },
+      "geometryDistancePx": 85.7,
+      "lengthMeters": 257.1,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_12 và line_17 (85.7px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 808,
+          "y": 477,
+          "ua": 0.22049180327868853,
+          "ub": 0.9762295081967213
+        },
+        "segmentA": {
+          "line": "line_12",
+          "p1": "v3_line_12_p02",
+          "p2": "T69"
+        },
+        "segmentB": {
+          "line": "line_17",
+          "p1": "v3_line_17_p08",
+          "p2": "L14_P6"
+        }
+      }
+    },
+    {
+      "junctionId": "J46",
+      "fromNodeId": "v3_line_12_p02",
+      "toNodeId": "v3_line_27_p00",
+      "fromTraceId": "line_12",
+      "toTraceId": "line_27",
+      "fromCoords": {
+        "x": 811,
+        "y": 436
+      },
+      "toCoords": {
+        "x": 803,
+        "y": 532
+      },
+      "geometryDistancePx": 96.3,
+      "lengthMeters": 288.9,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_12 và line_27 (96.3px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 803,
+          "y": 532,
+          "ua": 0.521807879826064,
+          "ub": 0.00421662933192779
+        },
+        "segmentA": {
+          "line": "line_12",
+          "p1": "v3_line_12_p02",
+          "p2": "T69"
+        },
+        "segmentB": {
+          "line": "line_27",
+          "p1": "v3_line_27_p00",
+          "p2": "v3_line_27_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J47",
+      "fromNodeId": "v3_line_13_p02",
+      "toNodeId": "v3_line_17_p10",
+      "fromTraceId": "line_13",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 910,
+        "y": 399
+      },
+      "toCoords": {
+        "x": 839,
+        "y": 461
+      },
+      "geometryDistancePx": 94.3,
+      "lengthMeters": 282.9,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_13 và line_17 (94.3px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 911,
+          "y": 429,
+          "ua": 0.9646163033741415,
+          "ub": 0.33786204837264855
+        },
+        "segmentA": {
+          "line": "line_13",
+          "p1": "v3_line_13_p02",
+          "p2": "v3_line_13_p03"
+        },
+        "segmentB": {
+          "line": "line_17",
+          "p1": "v3_line_17_p10",
+          "p2": "v3_line_17_p11"
+        }
+      }
+    },
+    {
+      "junctionId": "J48",
+      "fromNodeId": "v3_line_17_p07",
+      "toNodeId": "v3_line_19_p02",
+      "fromTraceId": "line_17",
+      "toTraceId": "line_19",
+      "fromCoords": {
+        "x": 716,
+        "y": 517
+      },
+      "toCoords": {
+        "x": 717,
+        "y": 490
+      },
+      "geometryDistancePx": 27,
+      "lengthMeters": 81,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_17 và line_19 (27px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 735,
+          "y": 509,
+          "ua": 0.4912451361867704,
+          "ub": 0.9815175097276264
+        },
+        "segmentA": {
+          "line": "line_17",
+          "p1": "L21_P3",
+          "p2": "v3_line_17_p08"
+        },
+        "segmentB": {
+          "line": "line_19",
+          "p1": "v3_line_19_p02",
+          "p2": "L21_P3"
+        }
+      }
+    },
+    {
+      "junctionId": "J49",
+      "fromNodeId": "v3_line_17_p10",
+      "toNodeId": "v3_line_23_p00",
+      "fromTraceId": "line_17",
+      "toTraceId": "line_23",
+      "fromCoords": {
+        "x": 839,
+        "y": 461
+      },
+      "toCoords": {
+        "x": 946,
+        "y": 412
+      },
+      "geometryDistancePx": 117.7,
+      "lengthMeters": 353.1,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_17 và line_23 (117.7px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 946,
+          "y": 413,
+          "ua": 0.5039596005968093,
+          "ub": 0.03121772064730862
+        },
+        "segmentA": {
+          "line": "line_17",
+          "p1": "v3_line_17_p10",
+          "p2": "v3_line_17_p11"
+        },
+        "segmentB": {
+          "line": "line_23",
+          "p1": "INTL_S3",
+          "p2": "v3_line_23_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J50",
+      "fromNodeId": "v3_line_17_p11",
+      "toNodeId": "v3_line_26_p03",
+      "fromTraceId": "line_17",
+      "toTraceId": "line_26",
+      "fromCoords": {
+        "x": 1052,
+        "y": 366
+      },
+      "toCoords": {
+        "x": 1063,
+        "y": 356
+      },
+      "geometryDistancePx": 14.9,
+      "lengthMeters": 44.7,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_17 và line_26 (14.9px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 1064,
+          "y": 361,
+          "ua": 0.5453629032258065,
+          "ub": 0.11088709677419355
+        },
+        "segmentA": {
+          "line": "line_17",
+          "p1": "v3_line_17_p11",
+          "p2": "T39"
+        },
+        "segmentB": {
+          "line": "line_26",
+          "p1": "T39",
+          "p2": "v3_line_26_p04"
+        }
+      }
+    },
+    {
+      "junctionId": "J51",
+      "fromNodeId": "v3_line_34_p00",
+      "toNodeId": "v3_line_37_p00",
+      "fromTraceId": "line_34",
+      "toTraceId": "line_37",
+      "fromCoords": {
+        "x": 786,
+        "y": 768
+      },
+      "toCoords": {
+        "x": 811,
+        "y": 812
+      },
+      "geometryDistancePx": 50.6,
+      "lengthMeters": 151.8,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_34 và line_37 (50.6px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 815,
+          "y": 772,
+          "ua": 0.4315486884656845,
+          "ub": 0.9784405318002156
+        },
+        "segmentA": {
+          "line": "line_34",
+          "p1": "NS1_SOUTH_END_V2",
+          "p2": "v3_line_34_p01"
+        },
+        "segmentB": {
+          "line": "line_37",
+          "p1": "v3_line_37_p00",
+          "p2": "v3_line_37_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J52",
+      "fromNodeId": "v3_line_34_p00",
+      "toNodeId": "v3_line_38_p00",
+      "fromTraceId": "line_34",
+      "toTraceId": "line_38",
+      "fromCoords": {
+        "x": 786,
+        "y": 768
+      },
+      "toCoords": {
+        "x": 831,
+        "y": 810
+      },
+      "geometryDistancePx": 61.6,
+      "lengthMeters": 184.8,
+      "junctionType": "crossing",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction crossing giữa line_34 và line_38 (61.6px)",
+      "extra": {
+        "intersectionCoord": {
+          "x": 835,
+          "y": 775,
+          "ua": 0.7273431448489543,
+          "ub": 0.9329976762199845
+        },
+        "segmentA": {
+          "line": "line_34",
+          "p1": "NS1_SOUTH_END_V2",
+          "p2": "v3_line_34_p01"
+        },
+        "segmentB": {
+          "line": "line_38",
+          "p1": "v3_line_38_p00",
+          "p2": "v3_line_38_p01"
+        }
+      }
+    },
+    {
+      "junctionId": "J53",
+      "fromNodeId": "v3_line_01_p00",
+      "toNodeId": "v3_line_03_p00",
+      "fromTraceId": "line_01",
+      "toTraceId": "line_03",
+      "fromCoords": {
+        "x": 56,
+        "y": 486
+      },
+      "toCoords": {
+        "x": 63,
+        "y": 484
+      },
+      "geometryDistancePx": 7.3,
+      "lengthMeters": 21.9,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_01 và line_03 (7.3px)",
+      "extra": {
+        "note": "Endpoint line_01[#1] is 7px from line_03[#1]"
+      }
+    },
+    {
+      "junctionId": "J54",
+      "fromNodeId": "v3_line_01_p03",
+      "toNodeId": "v3_line_08_p00",
+      "fromTraceId": "line_01",
+      "toTraceId": "line_08",
+      "fromCoords": {
+        "x": 931,
+        "y": 57
+      },
+      "toCoords": {
+        "x": 934,
+        "y": 58
+      },
+      "geometryDistancePx": 3.2,
+      "lengthMeters": 9.6,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_01 và line_08 (3.2px)",
+      "extra": {
+        "note": "Endpoint line_01[#4] is 3px from line_08[#1]"
+      }
+    },
+    {
+      "junctionId": "J55",
+      "fromNodeId": "v3_line_04_p04",
+      "toNodeId": "v3_line_05_p01",
+      "fromTraceId": "line_04",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 235,
+        "y": 619
+      },
+      "toCoords": {
+        "x": 232,
+        "y": 620
+      },
+      "geometryDistancePx": 3.2,
+      "lengthMeters": 9.6,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_04 và line_05 (3.2px)",
+      "extra": {
+        "note": "Endpoint line_04[#6] is 3px from line_05[#2]"
+      }
+    },
+    {
+      "junctionId": "J56",
+      "fromNodeId": "v3_line_04_p04",
+      "toNodeId": "v3_line_18_p00",
+      "fromTraceId": "line_04",
+      "toTraceId": "line_18",
+      "fromCoords": {
+        "x": 235,
+        "y": 619
+      },
+      "toCoords": {
+        "x": 236,
+        "y": 622
+      },
+      "geometryDistancePx": 3.2,
+      "lengthMeters": 9.6,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_04 và line_18 (3.2px)",
+      "extra": {
+        "note": "Endpoint line_04[#6] is 3px from line_18[#1]"
+      }
+    },
+    {
+      "junctionId": "J57",
+      "fromNodeId": "v3_line_06_p00",
+      "toNodeId": "v3_line_01_p02",
+      "fromTraceId": "line_06",
+      "toTraceId": "line_01",
+      "fromCoords": {
+        "x": 837,
+        "y": 102
+      },
+      "toCoords": {
+        "x": 843,
+        "y": 97
+      },
+      "geometryDistancePx": 7.8,
+      "lengthMeters": 23.4,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_06 và line_01 (7.8px)",
+      "extra": {
+        "note": "Endpoint line_06[#1] is 8px from line_01[#3]"
+      }
+    },
+    {
+      "junctionId": "J58",
+      "fromNodeId": "v3_line_08_p03",
+      "toNodeId": "v3_line_05_p05",
+      "fromTraceId": "line_08",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 920,
+        "y": 280
+      },
+      "toCoords": {
+        "x": 919,
+        "y": 282
+      },
+      "geometryDistancePx": 2.2,
+      "lengthMeters": 6.6,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_08 và line_05 (2.2px)",
+      "extra": {
+        "note": "Endpoint line_08[#4] is 2px from line_05[#6]"
+      }
+    },
+    {
+      "junctionId": "J59",
+      "fromNodeId": "v3_line_10_p00",
+      "toNodeId": "v3_line_05_p02",
+      "fromTraceId": "line_10",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 440,
+        "y": 520
+      },
+      "toCoords": {
+        "x": 445,
+        "y": 514
+      },
+      "geometryDistancePx": 7.8,
+      "lengthMeters": 23.4,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_10 và line_05 (7.8px)",
+      "extra": {
+        "note": "Endpoint line_10[#1] is 8px from line_05[#3]"
+      }
+    },
+    {
+      "junctionId": "J60",
+      "fromNodeId": "v3_line_13_p03",
+      "toNodeId": "v3_line_22_p00",
+      "fromTraceId": "line_13",
+      "toTraceId": "line_22",
+      "fromCoords": {
+        "x": 911,
+        "y": 430
+      },
+      "toCoords": {
+        "x": 915,
+        "y": 430
+      },
+      "geometryDistancePx": 4,
+      "lengthMeters": 12,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_13 và line_22 (4px)",
+      "extra": {
+        "note": "Endpoint line_13[#4] is 4px from line_22[#1]"
+      }
+    },
+    {
+      "junctionId": "J61",
+      "fromNodeId": "v3_line_16_p04",
+      "toNodeId": "v3_line_17_p03",
+      "fromTraceId": "line_16",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 127,
+        "y": 801
+      },
+      "toCoords": {
+        "x": 126,
+        "y": 799
+      },
+      "geometryDistancePx": 2.2,
+      "lengthMeters": 6.6,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_16 và line_17 (2.2px)",
+      "extra": {
+        "note": "Endpoint line_16[#5] is 2px from line_17[#4]"
+      }
+    },
+    {
+      "junctionId": "J62",
+      "fromNodeId": "v3_line_18_p00",
+      "toNodeId": "v3_line_05_p01",
+      "fromTraceId": "line_18",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 236,
+        "y": 622
+      },
+      "toCoords": {
+        "x": 232,
+        "y": 620
+      },
+      "geometryDistancePx": 4.5,
+      "lengthMeters": 13.5,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_18 và line_05 (4.5px)",
+      "extra": {
+        "note": "Endpoint line_18[#1] is 4px from line_05[#2]"
+      }
+    },
+    {
+      "junctionId": "J63",
+      "fromNodeId": "v3_line_18_p03",
+      "toNodeId": "v3_line_17_p05",
+      "fromTraceId": "line_18",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 320,
+        "y": 707
+      },
+      "toCoords": {
+        "x": 328,
+        "y": 703
+      },
+      "geometryDistancePx": 8.9,
+      "lengthMeters": 26.7,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_18 và line_17 (8.9px)",
+      "extra": {
+        "note": "Endpoint line_18[#4] is 9px from line_17[#6]"
+      }
+    },
+    {
+      "junctionId": "J64",
+      "fromNodeId": "v3_line_26_p00",
+      "toNodeId": "v3_line_05_p06",
+      "fromTraceId": "line_26",
+      "toTraceId": "line_05",
+      "fromCoords": {
+        "x": 969,
+        "y": 259
+      },
+      "toCoords": {
+        "x": 965,
+        "y": 260
+      },
+      "geometryDistancePx": 4.1,
+      "lengthMeters": 12.3,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_26 và line_05 (4.1px)",
+      "extra": {
+        "note": "Endpoint line_26[#1] is 4px from line_05[#7]"
+      }
+    },
+    {
+      "junctionId": "J65",
+      "fromNodeId": "v3_line_28_p00",
+      "toNodeId": "v3_line_30_p01",
+      "fromTraceId": "line_28",
+      "toTraceId": "line_30",
+      "fromCoords": {
+        "x": 800,
+        "y": 575
+      },
+      "toCoords": {
+        "x": 798,
+        "y": 583
+      },
+      "geometryDistancePx": 8.2,
+      "lengthMeters": 24.6,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_28 và line_30 (8.2px)",
+      "extra": {
+        "note": "Endpoint line_28[#1] is 8px from line_30[#2]"
+      }
+    },
+    {
+      "junctionId": "J66",
+      "fromNodeId": "v3_line_29_p00",
+      "toNodeId": "v3_line_31_p01",
+      "fromTraceId": "line_29",
+      "toTraceId": "line_31",
+      "fromCoords": {
+        "x": 797,
+        "y": 620
+      },
+      "toCoords": {
+        "x": 796,
+        "y": 618
+      },
+      "geometryDistancePx": 2.2,
+      "lengthMeters": 6.6,
+      "junctionType": "manual_review",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Xác nhận junction manual_review giữa line_29 và line_31 (2.2px)",
+      "extra": {
+        "note": "Endpoint line_29[#1] is 2px from line_31[#2]"
+      }
+    },
+    {
+      "junctionId": "J67",
+      "fromNodeId": "v3_line_21_p00",
+      "toNodeId": "v3_line_17_p10",
+      "fromTraceId": "line_21",
+      "toTraceId": "line_17",
+      "fromCoords": {
+        "x": 878,
+        "y": 447
+      },
+      "toCoords": {
+        "x": 839,
+        "y": 461
+      },
+      "geometryDistancePx": 41.4,
+      "lengthMeters": 124.2,
+      "junctionType": "point_on_segment",
+      "verifiedByUser": true,
+      "allowedDirections": "bidirectional",
+      "note": "Nối STAND_16 (line_21) vào trục lăn E6 (line_17)"
+    }
+  ]
+}

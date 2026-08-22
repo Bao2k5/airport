@@ -1,0 +1,1760 @@
+{
+  "auditTitle": "V3 Raw Endpoint Gap Analysis (Inspection Only - 0 Auto Edges)",
+  "generatedAt": "2026-08-21T13:57:36.565Z",
+  "totalEndpointsAnalyzed": 72,
+  "summary": {
+    "exactTouchingLe2px": 19,
+    "pointOnSegmentLe2px": 24,
+    "closeAlignedLe5px": 8,
+    "drawingGapGt5px": 21
+  },
+  "endpointGaps": [
+    {
+      "lineId": "line_01",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 56,
+        "y": 486
+      },
+      "label": "07L",
+      "nearestPoint": {
+        "lineId": "line_03",
+        "pointIndex": 0,
+        "distancePx": 7.3
+      },
+      "nearestSegment": {
+        "lineId": "line_03",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 7,
+        "projectionParamT": 0.009
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_01",
+      "endpointType": "END",
+      "pointIndex": 3,
+      "coord": {
+        "x": 931,
+        "y": 57
+      },
+      "label": "25R",
+      "nearestPoint": {
+        "lineId": "line_08",
+        "pointIndex": 0,
+        "distancePx": 3.2
+      },
+      "nearestSegment": {
+        "lineId": "line_08",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 3.2,
+        "projectionParamT": 0
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_03",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 63,
+        "y": 484
+      },
+      "label": "W5/07L",
+      "nearestPoint": {
+        "lineId": "line_01",
+        "pointIndex": 0,
+        "distancePx": 7.3
+      },
+      "nearestSegment": {
+        "lineId": "line_01",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 1.4,
+        "projectionParamT": 0.038
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_03",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 66,
+        "y": 703
+      },
+      "label": "W1",
+      "nearestPoint": {
+        "lineId": "line_16",
+        "pointIndex": 0,
+        "distancePx": 1.4
+      },
+      "nearestSegment": {
+        "lineId": "line_16",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 1.4,
+        "projectionParamT": 0
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_04",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 224,
+        "y": 400
+      },
+      "nearestPoint": {
+        "lineId": "line_01",
+        "pointIndex": 1,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_01",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 0.5,
+        "projectionParamT": 0.995
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_04",
+      "endpointType": "END",
+      "pointIndex": 5,
+      "coord": {
+        "x": 235,
+        "y": 619
+      },
+      "nearestPoint": {
+        "lineId": "line_05",
+        "pointIndex": 1,
+        "distancePx": 3.2
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          1,
+          2
+        ],
+        "distancePx": 0.4,
+        "projectionParamT": 0.013
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_05",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 52,
+        "y": 712
+      },
+      "label": "07R",
+      "nearestPoint": {
+        "lineId": "line_03",
+        "pointIndex": 1,
+        "distancePx": 16.6
+      },
+      "nearestSegment": {
+        "lineId": "line_16",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 16,
+        "projectionParamT": 0.214
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_05",
+      "endpointType": "END",
+      "pointIndex": 7,
+      "coord": {
+        "x": 1136,
+        "y": 177
+      },
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 16,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          15,
+          16
+        ],
+        "distancePx": 0.8,
+        "projectionParamT": 0.991
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_06",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 837,
+        "y": 102
+      },
+      "label": "L12_P0",
+      "nearestPoint": {
+        "lineId": "line_01",
+        "pointIndex": 2,
+        "distancePx": 7.8
+      },
+      "nearestSegment": {
+        "lineId": "line_01",
+        "segmentIndices": [
+          1,
+          2
+        ],
+        "distancePx": 1.8,
+        "projectionParamT": 0.989
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_06",
+      "endpointType": "END",
+      "pointIndex": 3,
+      "coord": {
+        "x": 821,
+        "y": 331
+      },
+      "nearestPoint": {
+        "lineId": "line_12",
+        "pointIndex": 0,
+        "distancePx": 1.4
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          4,
+          5
+        ],
+        "distancePx": 0.9,
+        "projectionParamT": 0.016
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_07",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 825,
+        "y": 281
+      },
+      "label": "NS1_MID_JUNCTION_V2",
+      "nearestPoint": {
+        "lineId": "line_06",
+        "pointIndex": 2,
+        "distancePx": 1.4
+      },
+      "nearestSegment": {
+        "lineId": "line_06",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 0.9,
+        "projectionParamT": 0.021
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_07",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 852,
+        "y": 316
+      },
+      "nearestPoint": {
+        "lineId": "line_06",
+        "pointIndex": 3,
+        "distancePx": 34.4
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          4,
+          5
+        ],
+        "distancePx": 1.1,
+        "projectionParamT": 0.325
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_08",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 934,
+        "y": 58
+      },
+      "label": "W7",
+      "nearestPoint": {
+        "lineId": "line_01",
+        "pointIndex": 3,
+        "distancePx": 3.2
+      },
+      "nearestSegment": {
+        "lineId": "line_01",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 3.2,
+        "projectionParamT": 1
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_08",
+      "endpointType": "END",
+      "pointIndex": 3,
+      "coord": {
+        "x": 920,
+        "y": 280
+      },
+      "nearestPoint": {
+        "lineId": "line_13",
+        "pointIndex": 0,
+        "distancePx": 0
+      },
+      "nearestSegment": {
+        "lineId": "line_13",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 0,
+        "projectionParamT": 0
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_09",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 924,
+        "y": 234
+      },
+      "nearestPoint": {
+        "lineId": "line_08",
+        "pointIndex": 2,
+        "distancePx": 8.2
+      },
+      "nearestSegment": {
+        "lineId": "line_08",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 1.1,
+        "projectionParamT": 0.15
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_09",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 950,
+        "y": 266
+      },
+      "nearestPoint": {
+        "lineId": "line_05",
+        "pointIndex": 6,
+        "distancePx": 16.2
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          5,
+          6
+        ],
+        "distancePx": 1.1,
+        "projectionParamT": 0.684
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_10",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 440,
+        "y": 520
+      },
+      "nearestPoint": {
+        "lineId": "line_05",
+        "pointIndex": 2,
+        "distancePx": 7.8
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          1,
+          2
+        ],
+        "distancePx": 3.1,
+        "projectionParamT": 0.97
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_10",
+      "endpointType": "END",
+      "pointIndex": 4,
+      "coord": {
+        "x": 432,
+        "y": 651
+      },
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 6,
+        "distancePx": 15.2
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          5,
+          6
+        ],
+        "distancePx": 0.8,
+        "projectionParamT": 0.884
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_11",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 439,
+        "y": 619
+      },
+      "nearestPoint": {
+        "lineId": "line_10",
+        "pointIndex": 3,
+        "distancePx": 5.4
+      },
+      "nearestSegment": {
+        "lineId": "line_10",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 1.1,
+        "projectionParamT": 0.89
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_11",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 459,
+        "y": 639
+      },
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 6,
+        "distancePx": 14.3
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          6,
+          7
+        ],
+        "distancePx": 0.1,
+        "projectionParamT": 0.048
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_12",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 820,
+        "y": 330
+      },
+      "nearestPoint": {
+        "lineId": "line_05",
+        "pointIndex": 4,
+        "distancePx": 1.4
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          4,
+          5
+        ],
+        "distancePx": 0.5,
+        "projectionParamT": 0.012
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_12",
+      "endpointType": "END",
+      "pointIndex": 4,
+      "coord": {
+        "x": 783,
+        "y": 788
+      },
+      "nearestPoint": {
+        "lineId": "line_34",
+        "pointIndex": 0,
+        "distancePx": 20.2
+      },
+      "nearestSegment": {
+        "lineId": "line_34",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 20.2,
+        "projectionParamT": 0
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_13",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 920,
+        "y": 280
+      },
+      "nearestPoint": {
+        "lineId": "line_08",
+        "pointIndex": 3,
+        "distancePx": 0
+      },
+      "nearestSegment": {
+        "lineId": "line_08",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 0,
+        "projectionParamT": 1
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_13",
+      "endpointType": "END",
+      "pointIndex": 3,
+      "coord": {
+        "x": 911,
+        "y": 430
+      },
+      "nearestPoint": {
+        "lineId": "line_22",
+        "pointIndex": 0,
+        "distancePx": 4
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 1,
+        "projectionParamT": 0.336
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_15",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 910,
+        "y": 408
+      },
+      "label": "INTL_S2",
+      "nearestPoint": {
+        "lineId": "line_13",
+        "pointIndex": 2,
+        "distancePx": 9
+      },
+      "nearestSegment": {
+        "lineId": "line_13",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 0.3,
+        "projectionParamT": 0.29
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_15",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 926,
+        "y": 423
+      },
+      "label": "INTL_S2",
+      "nearestPoint": {
+        "lineId": "line_22",
+        "pointIndex": 0,
+        "distancePx": 13
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 0.7,
+        "projectionParamT": 0.407
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_16",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 67,
+        "y": 704
+      },
+      "nearestPoint": {
+        "lineId": "line_03",
+        "pointIndex": 1,
+        "distancePx": 1.4
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 0.3,
+        "projectionParamT": 0.084
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_16",
+      "endpointType": "END",
+      "pointIndex": 4,
+      "coord": {
+        "x": 127,
+        "y": 801
+      },
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 3,
+        "distancePx": 2.2
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          3,
+          4
+        ],
+        "distancePx": 2.1,
+        "projectionParamT": 0.058
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_17",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 86,
+        "y": 697
+      },
+      "label": "L03_P3",
+      "nearestPoint": {
+        "lineId": "line_16",
+        "pointIndex": 0,
+        "distancePx": 20.2
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 2.1,
+        "projectionParamT": 0.184
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_17",
+      "endpointType": "END",
+      "pointIndex": 16,
+      "coord": {
+        "x": 1136,
+        "y": 176
+      },
+      "nearestPoint": {
+        "lineId": "line_05",
+        "pointIndex": 7,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          6,
+          7
+        ],
+        "distancePx": 1,
+        "projectionParamT": 1
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_18",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 236,
+        "y": 622
+      },
+      "nearestPoint": {
+        "lineId": "line_04",
+        "pointIndex": 4,
+        "distancePx": 3.2
+      },
+      "nearestSegment": {
+        "lineId": "line_04",
+        "segmentIndices": [
+          3,
+          4
+        ],
+        "distancePx": 3.2,
+        "projectionParamT": 1
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_18",
+      "endpointType": "END",
+      "pointIndex": 3,
+      "coord": {
+        "x": 320,
+        "y": 707
+      },
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 5,
+        "distancePx": 8.9
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          4,
+          5
+        ],
+        "distancePx": 0.1,
+        "projectionParamT": 0.957
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_19",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 633,
+        "y": 422
+      },
+      "nearestPoint": {
+        "lineId": "line_05",
+        "pointIndex": 3,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 0.9,
+        "projectionParamT": 0.998
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_19",
+      "endpointType": "END",
+      "pointIndex": 3,
+      "coord": {
+        "x": 735,
+        "y": 509
+      },
+      "label": "L21_P3",
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 7,
+        "distancePx": 20.6
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          7,
+          8
+        ],
+        "distancePx": 0.5,
+        "projectionParamT": 0.495
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_21",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 878,
+        "y": 447
+      },
+      "nearestPoint": {
+        "lineId": "line_13",
+        "pointIndex": 3,
+        "distancePx": 37.1
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 3.1,
+        "projectionParamT": 0.177
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_21",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 887,
+        "y": 482
+      },
+      "nearestPoint": {
+        "lineId": "line_22",
+        "pointIndex": 1,
+        "distancePx": 41.2
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 38.7,
+        "projectionParamT": 0.151
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_22",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 915,
+        "y": 430
+      },
+      "nearestPoint": {
+        "lineId": "line_13",
+        "pointIndex": 3,
+        "distancePx": 4
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 2.6,
+        "projectionParamT": 0.352
+      },
+      "gapStatus": "CLOSE_ALIGNED"
+    },
+    {
+      "lineId": "line_22",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 925,
+        "y": 466
+      },
+      "nearestPoint": {
+        "lineId": "line_23",
+        "pointIndex": 1,
+        "distancePx": 36.7
+      },
+      "nearestSegment": {
+        "lineId": "line_23",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 36.7,
+        "projectionParamT": 1
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_23",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 946,
+        "y": 412
+      },
+      "label": "INTL_S3",
+      "nearestPoint": {
+        "lineId": "line_15",
+        "pointIndex": 1,
+        "distancePx": 22.8
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 1.2,
+        "projectionParamT": 0.505
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_23",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 957,
+        "y": 448
+      },
+      "nearestPoint": {
+        "lineId": "line_24",
+        "pointIndex": 1,
+        "distancePx": 35.8
+      },
+      "nearestSegment": {
+        "lineId": "line_22",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 35.7,
+        "projectionParamT": 0.765
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_24",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 981,
+        "y": 398
+      },
+      "label": "INTL_S4",
+      "nearestPoint": {
+        "lineId": "line_23",
+        "pointIndex": 0,
+        "distancePx": 37.7
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 0.3,
+        "projectionParamT": 0.666
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_24",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 990,
+        "y": 434
+      },
+      "nearestPoint": {
+        "lineId": "line_23",
+        "pointIndex": 1,
+        "distancePx": 35.8
+      },
+      "nearestSegment": {
+        "lineId": "line_23",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 35.7,
+        "projectionParamT": 0.9
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_25",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 1018,
+        "y": 383
+      },
+      "label": "T38",
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 11,
+        "distancePx": 38
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 1.7,
+        "projectionParamT": 0.837
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_25",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 1029,
+        "y": 415
+      },
+      "nearestPoint": {
+        "lineId": "line_24",
+        "pointIndex": 1,
+        "distancePx": 43.4
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          10,
+          11
+        ],
+        "distancePx": 35.4,
+        "projectionParamT": 0.824
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_26",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 969,
+        "y": 259
+      },
+      "nearestPoint": {
+        "lineId": "line_05",
+        "pointIndex": 6,
+        "distancePx": 4.1
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          6,
+          7
+        ],
+        "distancePx": 0.8,
+        "projectionParamT": 0.021
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_26",
+      "endpointType": "END",
+      "pointIndex": 4,
+      "coord": {
+        "x": 1072,
+        "y": 397
+      },
+      "nearestPoint": {
+        "lineId": "line_17",
+        "pointIndex": 11,
+        "distancePx": 36.9
+      },
+      "nearestSegment": {
+        "lineId": "line_17",
+        "segmentIndices": [
+          11,
+          12
+        ],
+        "distancePx": 36.5,
+        "projectionParamT": 0.223
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_27",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 803,
+        "y": 532
+      },
+      "nearestPoint": {
+        "lineId": "line_28",
+        "pointIndex": 0,
+        "distancePx": 43.1
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 0.2,
+        "projectionParamT": 0.522
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_27",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 844,
+        "y": 535
+      },
+      "nearestPoint": {
+        "lineId": "line_28",
+        "pointIndex": 1,
+        "distancePx": 44.3
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 40.9,
+        "projectionParamT": 0.52
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_28",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 800,
+        "y": 575
+      },
+      "nearestPoint": {
+        "lineId": "line_30",
+        "pointIndex": 1,
+        "distancePx": 8.2
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 0.3,
+        "projectionParamT": 0.755
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_28",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 839,
+        "y": 579
+      },
+      "nearestPoint": {
+        "lineId": "line_30",
+        "pointIndex": 1,
+        "distancePx": 41.2
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 39.5,
+        "projectionParamT": 0.76
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_29",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 797,
+        "y": 620
+      },
+      "nearestPoint": {
+        "lineId": "line_12",
+        "pointIndex": 3,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 1,
+        "projectionParamT": 1
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_29",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 835,
+        "y": 623
+      },
+      "nearestPoint": {
+        "lineId": "line_12",
+        "pointIndex": 3,
+        "distancePx": 39.1
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 39.1,
+        "projectionParamT": 0.999
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_30",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 765,
+        "y": 579
+      },
+      "label": "T46",
+      "nearestPoint": {
+        "lineId": "line_28",
+        "pointIndex": 0,
+        "distancePx": 35.2
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 34.2,
+        "projectionParamT": 0.792
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_30",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 798,
+        "y": 583
+      },
+      "label": "L28_ENT",
+      "nearestPoint": {
+        "lineId": "line_28",
+        "pointIndex": 0,
+        "distancePx": 8.2
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 1,
+        "projectionParamT": 0.799
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_31",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 761,
+        "y": 615
+      },
+      "label": "T47",
+      "nearestPoint": {
+        "lineId": "line_12",
+        "pointIndex": 3,
+        "distancePx": 35.4
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 35.3,
+        "projectionParamT": 0.988
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_31",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 796,
+        "y": 618
+      },
+      "nearestPoint": {
+        "lineId": "line_12",
+        "pointIndex": 3,
+        "distancePx": 2
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          2,
+          3
+        ],
+        "distancePx": 0.2,
+        "projectionParamT": 0.989
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_32",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 762,
+        "y": 658
+      },
+      "nearestPoint": {
+        "lineId": "line_33",
+        "pointIndex": 0,
+        "distancePx": 39.1
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          3,
+          4
+        ],
+        "distancePx": 31,
+        "projectionParamT": 0.24
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_32",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 791,
+        "y": 661
+      },
+      "nearestPoint": {
+        "lineId": "line_33",
+        "pointIndex": 1,
+        "distancePx": 39.1
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          3,
+          4
+        ],
+        "distancePx": 1.8,
+        "projectionParamT": 0.245
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_33",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 759,
+        "y": 697
+      },
+      "nearestPoint": {
+        "lineId": "line_32",
+        "pointIndex": 0,
+        "distancePx": 39.1
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          3,
+          4
+        ],
+        "distancePx": 30.9,
+        "projectionParamT": 0.473
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_33",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 789,
+        "y": 700
+      },
+      "nearestPoint": {
+        "lineId": "line_32",
+        "pointIndex": 1,
+        "distancePx": 39.1
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          3,
+          4
+        ],
+        "distancePx": 0.8,
+        "projectionParamT": 0.477
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_34",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 786,
+        "y": 768
+      },
+      "label": "NS1_SOUTH_END_V2",
+      "nearestPoint": {
+        "lineId": "line_12",
+        "pointIndex": 4,
+        "distancePx": 20.2
+      },
+      "nearestSegment": {
+        "lineId": "line_12",
+        "segmentIndices": [
+          3,
+          4
+        ],
+        "distancePx": 1.4,
+        "projectionParamT": 0.88
+      },
+      "gapStatus": "POINT_ON_SEGMENT"
+    },
+    {
+      "lineId": "line_34",
+      "endpointType": "END",
+      "pointIndex": 2,
+      "coord": {
+        "x": 852,
+        "y": 814
+      },
+      "nearestPoint": {
+        "lineId": "line_38",
+        "pointIndex": 0,
+        "distancePx": 21.4
+      },
+      "nearestSegment": {
+        "lineId": "line_38",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 21.4,
+        "projectionParamT": 0
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_35",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 817,
+        "y": 743
+      },
+      "nearestPoint": {
+        "lineId": "line_36",
+        "pointIndex": 0,
+        "distancePx": 22
+      },
+      "nearestSegment": {
+        "lineId": "line_36",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 22,
+        "projectionParamT": 0.048
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_35",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 815,
+        "y": 770
+      },
+      "nearestPoint": {
+        "lineId": "line_37",
+        "pointIndex": 1,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_37",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 1,
+        "projectionParamT": 1
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_36",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 839,
+        "y": 744
+      },
+      "nearestPoint": {
+        "lineId": "line_35",
+        "pointIndex": 0,
+        "distancePx": 22
+      },
+      "nearestSegment": {
+        "lineId": "line_35",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 22,
+        "projectionParamT": 0
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_36",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 836,
+        "y": 772
+      },
+      "nearestPoint": {
+        "lineId": "line_38",
+        "pointIndex": 1,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_38",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 1,
+        "projectionParamT": 1
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_37",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 811,
+        "y": 812
+      },
+      "nearestPoint": {
+        "lineId": "line_38",
+        "pointIndex": 0,
+        "distancePx": 20.1
+      },
+      "nearestSegment": {
+        "lineId": "line_38",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 20.1,
+        "projectionParamT": 0
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_37",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 815,
+        "y": 771
+      },
+      "nearestPoint": {
+        "lineId": "line_35",
+        "pointIndex": 1,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_34",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 0.9,
+        "projectionParamT": 0.431
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_38",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 831,
+        "y": 810
+      },
+      "nearestPoint": {
+        "lineId": "line_37",
+        "pointIndex": 0,
+        "distancePx": 20.1
+      },
+      "nearestSegment": {
+        "lineId": "line_37",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 19.7,
+        "projectionParamT": 0.095
+      },
+      "gapStatus": "DRAWING_GAP"
+    },
+    {
+      "lineId": "line_38",
+      "endpointType": "END",
+      "pointIndex": 1,
+      "coord": {
+        "x": 835,
+        "y": 772
+      },
+      "nearestPoint": {
+        "lineId": "line_36",
+        "pointIndex": 1,
+        "distancePx": 1
+      },
+      "nearestSegment": {
+        "lineId": "line_36",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 1,
+        "projectionParamT": 1
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_16",
+      "endpointType": "START",
+      "pointIndex": 0,
+      "coord": {
+        "x": 67,
+        "y": 704
+      },
+      "nearestPoint": {
+        "lineId": "line_03",
+        "pointIndex": 1,
+        "distancePx": 1.4
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 0.3,
+        "projectionParamT": 0.084
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    },
+    {
+      "lineId": "line_16",
+      "endpointType": "END",
+      "pointIndex": 0,
+      "coord": {
+        "x": 67,
+        "y": 704
+      },
+      "nearestPoint": {
+        "lineId": "line_03",
+        "pointIndex": 1,
+        "distancePx": 1.4
+      },
+      "nearestSegment": {
+        "lineId": "line_05",
+        "segmentIndices": [
+          0,
+          1
+        ],
+        "distancePx": 0.3,
+        "projectionParamT": 0.084
+      },
+      "gapStatus": "EXACT_TOUCHING"
+    }
+  ]
+}

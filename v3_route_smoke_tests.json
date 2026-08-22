@@ -1,0 +1,234 @@
+[
+  {
+    "name": "STAND_1 ↔ STOP BAR 25L",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 11,
+      "distPx": 884,
+      "path": [
+        "v3_line_37_p00",
+        "v3_line_34_p00",
+        "v3_line_12_p04",
+        "v3_line_12_p03",
+        "v3_line_12_p02",
+        "v3_line_12_p01",
+        "v3_line_12_p00",
+        "v3_line_05_p04",
+        "v3_line_05_p05",
+        "v3_line_05_p06",
+        "v3_line_05_p07"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 11,
+      "distPx": 884,
+      "path": [
+        "v3_line_05_p07",
+        "v3_line_05_p06",
+        "v3_line_05_p05",
+        "v3_line_05_p04",
+        "v3_line_12_p00",
+        "v3_line_12_p01",
+        "v3_line_12_p02",
+        "v3_line_12_p03",
+        "v3_line_12_p04",
+        "v3_line_34_p00",
+        "v3_line_37_p00"
+      ]
+    }
+  },
+  {
+    "name": "STAND_5 ↔ STOP BAR 25R",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 16,
+      "distPx": 944,
+      "path": [
+        "v3_line_36_p00",
+        "v3_line_36_p01",
+        "v3_line_38_p01",
+        "v3_line_38_p00",
+        "v3_line_34_p00",
+        "v3_line_12_p04",
+        "v3_line_12_p03",
+        "v3_line_12_p02",
+        "v3_line_12_p01",
+        "v3_line_12_p00",
+        "v3_line_06_p03",
+        "v3_line_06_p02",
+        "v3_line_06_p01",
+        "v3_line_06_p00",
+        "v3_line_01_p02",
+        "v3_line_01_p03"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 16,
+      "distPx": 944,
+      "path": [
+        "v3_line_01_p03",
+        "v3_line_01_p02",
+        "v3_line_06_p00",
+        "v3_line_06_p01",
+        "v3_line_06_p02",
+        "v3_line_06_p03",
+        "v3_line_12_p00",
+        "v3_line_12_p01",
+        "v3_line_12_p02",
+        "v3_line_12_p03",
+        "v3_line_12_p04",
+        "v3_line_34_p00",
+        "v3_line_38_p00",
+        "v3_line_38_p01",
+        "v3_line_36_p01",
+        "v3_line_36_p00"
+      ]
+    }
+  },
+  {
+    "name": "STAND_10 ↔ E6",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 9,
+      "distPx": 712,
+      "path": [
+        "v3_line_33_p00",
+        "v3_line_33_p01",
+        "v3_line_12_p03",
+        "v3_line_12_p02",
+        "v3_line_17_p09",
+        "v3_line_17_p10",
+        "v3_line_17_p11",
+        "v3_line_17_p12",
+        "v3_line_17_p13"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 9,
+      "distPx": 712,
+      "path": [
+        "v3_line_17_p13",
+        "v3_line_17_p12",
+        "v3_line_17_p11",
+        "v3_line_17_p10",
+        "v3_line_17_p09",
+        "v3_line_12_p02",
+        "v3_line_12_p03",
+        "v3_line_33_p01",
+        "v3_line_33_p00"
+      ]
+    }
+  },
+  {
+    "name": "STAND_17 ↔ W5/07L",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 20,
+      "distPx": 1249,
+      "path": [
+        "v3_line_22_p01",
+        "v3_line_22_p00",
+        "v3_line_13_p03",
+        "v3_line_17_p10",
+        "v3_line_17_p09",
+        "v3_line_17_p08",
+        "v3_line_17_p07",
+        "v3_line_17_p06",
+        "v3_line_17_p05",
+        "v3_line_18_p03",
+        "v3_line_18_p02",
+        "v3_line_18_p01",
+        "v3_line_18_p00",
+        "v3_line_04_p04",
+        "v3_line_04_p03",
+        "v3_line_04_p02",
+        "v3_line_04_p01",
+        "v3_line_04_p00",
+        "v3_line_01_p00",
+        "v3_line_03_p00"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 20,
+      "distPx": 1249,
+      "path": [
+        "v3_line_03_p00",
+        "v3_line_01_p00",
+        "v3_line_04_p00",
+        "v3_line_04_p01",
+        "v3_line_04_p02",
+        "v3_line_04_p03",
+        "v3_line_04_p04",
+        "v3_line_18_p00",
+        "v3_line_18_p01",
+        "v3_line_18_p02",
+        "v3_line_18_p03",
+        "v3_line_17_p05",
+        "v3_line_17_p06",
+        "v3_line_17_p07",
+        "v3_line_17_p08",
+        "v3_line_17_p09",
+        "v3_line_17_p10",
+        "v3_line_13_p03",
+        "v3_line_22_p00",
+        "v3_line_22_p01"
+      ]
+    }
+  },
+  {
+    "name": "STAND_22 ↔ W11/07R",
+    "passed": true,
+    "forward": {
+      "found": true,
+      "nodes": 15,
+      "distPx": 1186,
+      "path": [
+        "v3_line_26_p04",
+        "v3_line_26_p03",
+        "v3_line_17_p11",
+        "v3_line_17_p10",
+        "v3_line_17_p09",
+        "v3_line_17_p08",
+        "v3_line_17_p07",
+        "v3_line_17_p06",
+        "v3_line_17_p05",
+        "v3_line_17_p04",
+        "v3_line_17_p03",
+        "v3_line_16_p04",
+        "v3_line_16_p03",
+        "v3_line_16_p02",
+        "v3_line_16_p01"
+      ]
+    },
+    "backward": {
+      "found": true,
+      "nodes": 15,
+      "distPx": 1186,
+      "path": [
+        "v3_line_16_p01",
+        "v3_line_16_p02",
+        "v3_line_16_p03",
+        "v3_line_16_p04",
+        "v3_line_17_p03",
+        "v3_line_17_p04",
+        "v3_line_17_p05",
+        "v3_line_17_p06",
+        "v3_line_17_p07",
+        "v3_line_17_p08",
+        "v3_line_17_p09",
+        "v3_line_17_p10",
+        "v3_line_17_p11",
+        "v3_line_26_p03",
+        "v3_line_26_p04"
+      ]
+    }
+  }
+]

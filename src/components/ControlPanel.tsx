@@ -4,6 +4,7 @@ import React from 'react';
 import { airportGraph } from '../data/airportGraph';
 import { AIRLINES, type AirlineCode } from '../data/airlineTypes';
 import { useActionLock } from '../utils/useActionLock';
+import { V3_EXACT_OPERATIONAL_NODES, toSafeNodeId } from '../data/v3OperationalNodes';
 import type { AirportGraph, Aircraft, SimulationConfig } from '../types';
 
 interface Props {
@@ -26,6 +27,9 @@ interface Props {
   onToggleAutoIncidents: () => void;
   onTriggerIncident: () => void;
   onClearIncidents: () => void;
+  onOpenPathInspector?: () => void;
+  onCaptureAudit?: () => void;
+  isCapturing?: boolean;
 }
 
 export default function ControlPanel({
@@ -48,6 +52,9 @@ export default function ControlPanel({
   onToggleAutoIncidents,
   onTriggerIncident,
   onClearIncidents,
+  onOpenPathInspector,
+  onCaptureAudit,
+  isCapturing = false,
 }: Props) {
   const { executeAction, getActionState } = useActionLock(2000);
 
@@ -59,35 +66,31 @@ export default function ControlPanel({
   const currentStartNodeId = selectedAircraft?.currentNodeId ?? config.startNodeId;
   const currentDestNodeId = selectedAircraft?.targetNodeId ?? config.destinationNodeId;
 
-  const startOptions = React.useMemo(() => {
-    const priority = (n: typeof graph.nodes[0]) => {
-      if (n.type === 'holding_point' || n.id.startsWith('H') || n.id.startsWith('HS')) return 1;
-      if (n.type === 'stand' || n.id.startsWith('DOM_S') || n.id.startsWith('INTL_S') || n.id.startsWith('ST') || n.id.startsWith('P')) return 2;
-      if (n.type === 'runway_entry' || n.type === 'runway_exit') return 3;
-      return 4;
-    };
-    
-    const sorted = [...graph.nodes].sort((a, b) => priority(a) - priority(b) || a.id.localeCompare(b.id));
-    return sorted.map(n => ({
-      value: n.id,
-      label: `${n.label || n.id} — ${n.description || n.type}`,
-    }));
+  const operationalDropdownOptions = React.useMemo(() => {
+    // Strictly format the exact 44 Operational Nodes in user-specified order
+    return V3_EXACT_OPERATIONAL_NODES.map((opDef) => {
+      // Find matching node ID in current graph
+      const matchedNode = graph.nodes.find(
+        n => n.label === opDef.label || n.id === opDef.id || toSafeNodeId(n.id) === opDef.id
+      );
+
+      const nodeId = matchedNode ? matchedNode.id : opDef.id;
+      let label = opDef.label;
+      if (opDef.id === 'STOP_BAR_25R') {
+        label = 'STOP BAR 25R (Nơi máy bay hạ cánh)';
+      } else if (opDef.id === 'STOP_BAR_25L') {
+        label = 'STOP BAR 25L (Nơi máy bay cất cánh)';
+      }
+
+      return {
+        value: nodeId,
+        label,
+      };
+    });
   }, [graph]);
 
-  const destOptions = React.useMemo(() => {
-    const priority = (n: typeof graph.nodes[0]) => {
-      if (n.type === 'runway_entry' || n.type === 'runway_exit' || n.id.includes('THR')) return 1;
-      if (n.type === 'holding_point' || n.id.startsWith('H') || n.id.startsWith('HS')) return 2;
-      if (n.type === 'stand' || n.id.startsWith('DOM_S') || n.id.startsWith('INTL_S') || n.id.startsWith('ST') || n.id.startsWith('P')) return 3;
-      return 4;
-    };
-    
-    const sorted = [...graph.nodes].sort((a, b) => priority(a) - priority(b) || a.id.localeCompare(b.id));
-    return sorted.map(n => ({
-      value: n.id,
-      label: `${n.label || n.id} — ${n.description || n.type}`,
-    }));
-  }, [graph]);
+  const startOptions = operationalDropdownOptions;
+  const destOptions = operationalDropdownOptions;
 
   return (
     <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
@@ -413,6 +416,31 @@ export default function ControlPanel({
             ? 'Thử lại đặt lại'
             : `Đặt lại máy bay: ${selectedAircraft?.callsign || selectedAircraftId}`}
         </button>
+
+        {/* Nút Xem Path & Chụp ảnh kiểm tra Path */}
+        <div className="grid grid-cols-2 gap-2 mt-1">
+          <button
+            data-testid="inspect-path-btn"
+            onClick={onOpenPathInspector}
+            disabled={routeStatus !== 'accepted' || !canStart}
+            className="w-full bg-[#1C67DA] hover:bg-[#1558BC] active:bg-[#0F4499] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer min-h-[38px]"
+            title={routeStatus === 'accepted' ? 'Xem chi tiết Node & Edge của tuyến hiện tại' : 'Chỉ khả dụng sau khi bấm Chấp nhận tuyến'}
+          >
+            <span>🔍</span>
+            <span>Xem Path</span>
+          </button>
+
+          <button
+            data-testid="capture-path-audit-btn"
+            onClick={onCaptureAudit}
+            disabled={routeStatus !== 'accepted' || isCapturing}
+            className="w-full bg-[#0F766E] hover:bg-[#115E59] active:bg-[#134E4A] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer min-h-[38px]"
+            title={routeStatus === 'accepted' ? 'Tự động chụp và lưu 4 ảnh bằng chứng kiểm tra Path' : 'Chỉ khả dụng sau khi bấm Chấp nhận tuyến'}
+          >
+            <span>📷</span>
+            <span>{isCapturing ? 'Đang chụp...' : 'Chụp ảnh Path'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

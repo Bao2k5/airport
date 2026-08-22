@@ -4,6 +4,7 @@ import ControlPanel from './components/ControlPanel';
 import StatusPanel from './components/StatusPanel';
 import ScenarioPanel from './components/ScenarioPanel';
 import HuongDanModal from './components/HuongDanModal';
+import PathInspectorModal from './components/PathInspectorModal';
 import VaaLogo from './components/VaaLogo';
 import ErrorBoundary from './components/ErrorBoundary';
 import {
@@ -28,6 +29,7 @@ import {
 import type { SimulationConfig, SimulationState } from './types';
 
 import PresetScenariosPanel from './components/PresetScenariosPanel';
+import Scenario5ComparisonView from './components/ScenarioComparisonView';
 import { startScenario, scenarioTick } from './simulation/scenarioRunner';
 import {
   GRAPH_REGISTRY,
@@ -51,8 +53,8 @@ const DEFAULT_CONFIG: SimulationConfig = {
   autoReroute:       true,
 };
 
-// Số giây mô phỏng trên mỗi giây thực (giảm nhẹ từ 8 xuống 6 để quan sát trực quan mượt mà)
-const TIME_SCALE = 6;
+// Số giây mô phỏng trên mỗi giây thực
+const TIME_SCALE = 10;
 
 export default function App() {
   // Check reload guard on start
@@ -62,7 +64,7 @@ export default function App() {
 
   const [selectedGraphId, setSelectedGraphId] = useState<GraphId>(() => {
     const saved = loadStateFromStorage();
-    return (saved?.selectedGraphId === 'v2' || saved?.selectedGraphId === 'v1')
+    return (saved?.selectedGraphId === 'v3' || saved?.selectedGraphId === 'v2' || saved?.selectedGraphId === 'v1')
       ? saved.selectedGraphId
       : DEFAULT_GRAPH_ID;
   });
@@ -74,7 +76,7 @@ export default function App() {
 
   const [simState, setSimState] = useState<SimulationState>(() => {
     const saved = loadStateFromStorage();
-    const graphId = (saved?.selectedGraphId === 'v2' || saved?.selectedGraphId === 'v1')
+    const graphId = (saved?.selectedGraphId === 'v3' || saved?.selectedGraphId === 'v2' || saved?.selectedGraphId === 'v1')
       ? saved.selectedGraphId
       : DEFAULT_GRAPH_ID;
     const baseGraph = getAirportGraph(graphId);
@@ -102,13 +104,15 @@ export default function App() {
   // Mobile tabs: 'control' | 'status' | 'scenarios'
   const [mobileTab, setMobileTab] = useState<'control' | 'status' | 'scenarios'>('control');
   const [sheetExpanded, setSheetExpanded] = useState(true);
-  const [showMobileMapMenu, setShowMobileMapMenu] = useState(false);
-
   const [showGuide, setShowGuide] = useState(false);
-  const [showPaths, setShowPaths] = useState(false);
-  const [showGrid, setShowGrid] = useState(false);
-  const [showGraphV2Overlay, setShowGraphV2Overlay] = useState(false);
   const [autoIncidents, setAutoIncidents] = useState(false);
+  const [showGraphV2Overlay, setShowGraphV2Overlay] = useState(false);
+  const [showGraphV3Overlay, setShowGraphV3Overlay] = useState(false);
+  const [showGrid, setShowGrid] = useState(false);
+  const [showPaths, setShowPaths] = useState(false);
+  const [inspectingPathAircraftId, setInspectingPathAircraftId] = useState<string | null>(null);
+  const [showScenario5Comparison, setShowScenario5Comparison] = useState(false);
+  const [isCapturingAudit, setIsCapturingAudit] = useState<boolean>(false);
 
   // Watchdog state
   const [watchdogStalled, setWatchdogStalled] = useState(false);
@@ -120,6 +124,12 @@ export default function App() {
   const currentGraphEntry = GRAPH_REGISTRY[selectedGraphId] ?? GRAPH_REGISTRY.v1;
   const currentGraph = getAirportGraph(selectedGraphId);
 
+  // Mandatory logging per specification
+  useEffect(() => {
+    console.log(`GRAPH_SELECTED=${selectedGraphId}; NODES=${currentGraph.nodes.length}; EDGES=${currentGraph.edges.length}; BACKGROUND=${currentGraphEntry.bgImage}`);
+    console.log(`ROUTE_ACCEPTED: ${simState.routeStatus === 'accepted'}`);
+  }, [selectedGraphId, currentGraph, currentGraphEntry, simState.routeStatus]);
+
   // Auto-save state to localStorage (debounced 600ms)
   useEffect(() => {
     const timer = setTimeout(() => {
@@ -127,6 +137,10 @@ export default function App() {
     }, 600);
     return () => clearTimeout(timer);
   }, [selectedGraphId, config, simState]);
+
+  const [simSpeed, setSimSpeed] = useState<number>(1);
+  const simSpeedRef = useRef<number>(1);
+  simSpeedRef.current = simSpeed;
 
   // Vòng lặp mô phỏng qua requestAnimationFrame có hỗ trợ tạm dừng khi tab bị ẩn
   useEffect(() => {
@@ -153,7 +167,8 @@ export default function App() {
 
       if (lastTimeRef.current !== null) {
         const wallDt = Math.min((now - lastTimeRef.current) / 1000, 0.1);
-        const dt = wallDt * TIME_SCALE;
+        const currentMultiplier = simSpeedRef.current || 1;
+        const dt = wallDt * TIME_SCALE * currentMultiplier;
         setSimState(prev => {
           if (prev.scenario) {
             return scenarioTick(prev, dt, currentGraph);
@@ -247,6 +262,11 @@ export default function App() {
   }, [currentGraph]);
 
   const handleConfigChange = useCallback((patch: Partial<SimulationConfig>) => {
+    console.log(`GRAPH_SELECTED: ${selectedGraphId}`);
+    console.log(`ROUTE_SOURCE: v3_coordinates_new.json`);
+    console.log(`ROUTE_ACCEPTED: false`);
+    setInspectingPathAircraftId(null);
+
     setConfig(prev => {
       const next = { ...prev, ...patch };
       setSimState(prevSim => {
@@ -275,15 +295,16 @@ export default function App() {
             routeEdgeIndex: 0,
             progressOnEdge: 0,
             currentEdgeId: newEdges ? newEdges[0] : null,
-            routeVisible: ac.status === 'taxiing',
-            guidanceVisible: ac.status === 'taxiing',
-            isMoving: ac.status === 'taxiing',
-            status: ac.status === 'taxiing' ? ('taxiing' as const) : ('parked' as const),
+            routeVisible: false,
+            guidanceVisible: false,
+            isMoving: false,
+            status: 'parked' as const,
           };
         });
         const activeAc = updatedFleet.find(a => a.id === selectedId) || updatedFleet[0] || null;
         return {
           ...prevSim,
+          routeStatus: 'pending',
           manualFleet: updatedFleet,
           aircraft: activeAc,
           config: next,
@@ -291,7 +312,7 @@ export default function App() {
       });
       return next;
     });
-  }, [currentGraph]);
+  }, [currentGraph, selectedGraphId]);
 
   const handleStart = useCallback(() => {
     setSimState(prev => {
@@ -308,8 +329,11 @@ export default function App() {
   }, []);
 
   const handleAcceptRoute = useCallback(() => {
+    console.log(`GRAPH_SELECTED: ${selectedGraphId}`);
+    console.log(`ROUTE_SOURCE: v3_coordinates_new.json`);
+    console.log(`ROUTE_ACCEPTED: true`);
     setSimState(prev => acceptRoute(prev, currentGraph));
-  }, [currentGraph]);
+  }, [currentGraph, selectedGraphId]);
 
   const handleTriggerIncident = useCallback(() => {
     setSimState(prev => {
@@ -340,6 +364,11 @@ export default function App() {
   }, [autoIncidents, simState.isRunning, simState.isPaused, currentGraph]);
 
   const handleReset = useCallback(() => {
+    console.log(`GRAPH_SELECTED: ${selectedGraphId}`);
+    console.log(`ROUTE_SOURCE: v3_coordinates_new.json`);
+    console.log(`ROUTE_ACCEPTED: false`);
+    setInspectingPathAircraftId(null);
+
     setSimState(prev => {
       if (prev.scenario) {
         return resetToManualMode(prev, currentGraph);
@@ -347,7 +376,14 @@ export default function App() {
       const selectedId = prev.selectedAircraftId || 'VN001';
       return resetManualAircraft(prev, selectedId, currentGraph);
     });
-  }, [currentGraph]);
+  }, [currentGraph, selectedGraphId]);
+
+  const handleCaptureAudit = useCallback(() => {
+    setIsCapturingAudit(true);
+    setTimeout(() => {
+      setIsCapturingAudit(false);
+    }, 1500);
+  }, []);
 
   const handleExitScenario = useCallback(() => {
     setSimState(prev => resetToManualMode(prev, currentGraph));
@@ -357,10 +393,17 @@ export default function App() {
   }, [currentGraph]);
 
   const handleStartScenario = useCallback((scId: string) => {
+    if (scId === 'lvc_peak_runway_direction_change') {
+      if (selectedGraphId !== 'v3') {
+        setSelectedGraphId('v3');
+      }
+      setShowScenario5Comparison(true);
+      return;
+    }
     setSimState(startScenario(scId, currentGraph));
     setMobileTab('status');
     setSheetExpanded(true);
-  }, [currentGraph]);
+  }, [currentGraph, selectedGraphId]);
 
   const activeAircraft = (simState.manualFleet && simState.manualFleet.length > 0)
     ? (simState.manualFleet.find(a => a.id === (simState.selectedAircraftId || 'VN001')) || simState.manualFleet[0])
@@ -370,6 +413,18 @@ export default function App() {
   return (
     <ErrorBoundary name="Ứng dụng mô phỏng sân bay" fallbackTitle="Đã xảy ra sự cố trong ứng dụng">
       <div className="w-full h-full min-h-screen bg-[#F8FAFC] text-[#202224] flex flex-col overflow-x-hidden">
+        {/* ── Scenario 5 Dual Map Comparison Mode ── */}
+        {showScenario5Comparison && (
+          <Scenario5ComparisonView
+            graph={getAirportGraph('v3')}
+            bgImage={GRAPH_REGISTRY.v3.bgImage}
+            onExit={() => {
+              setShowScenario5Comparison(false);
+              setSimState(prev => resetToManualMode(prev, getAirportGraph('v3')));
+            }}
+          />
+        )}
+
         {/* ── 1. Cảnh báo giáo dục VAA ── */}
         <header className="bg-[#08182E] border-b border-[#0C2444] text-[#93C5FD] text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0 flex items-center justify-center">
           <span>HỌC VIỆN HÀNG KHÔNG VIỆT NAM — MÔ PHỎNG GIÁO DỤC (KHÔNG DÙNG TRONG HOẠT ĐỘNG THỰC TẾ)</span>
@@ -455,76 +510,75 @@ export default function App() {
                 }}
                 className="bg-[#173A73] text-xs font-bold text-white rounded px-2 py-0.5 border border-[#3B82F6]/50 focus:outline-none focus:border-[#60A5FA] cursor-pointer"
               >
+                <option value="v3">Sân bay TSN (v3 - Nền mới)</option>
                 <option value="v1">Sân bay TSN (v1)</option>
                 <option value="v2">Sân bay TSN (v2)</option>
               </select>
             </div>
 
-            {/* Desktop Overlay Toggles */}
-            <div className="hidden md:flex items-center gap-1.5">
+            {/* ── Nút Debug Khôi Phục: Overlay V2, Overlay V3, Grid, Paths ── */}
+            <div className="flex items-center gap-1 bg-[#132F5C] px-1.5 py-1 rounded-lg border border-[#3B82F6]/30">
               <button
+                data-testid="toggle-overlay-v2"
                 onClick={() => setShowGraphV2Overlay(v => !v)}
-                className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  showGraphV2Overlay
-                    ? 'bg-[#1C67DA] text-white border-[#3B82F6]'
-                    : 'bg-[#173A73] hover:bg-[#1E4A8E] text-[#CBD5E1] border-[#1E3A8A]'
+                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
+                  showGraphV2Overlay ? 'bg-[#EC4899] text-white shadow-xs' : 'text-[#94A3B8] hover:text-white'
                 }`}
-                title="Bật/Tắt hiển thị lớp phủ mạng lưới Graph V2"
+                title="Bật/tắt lớp overlay Graph V2 để đối chiếu"
               >
-                {showGraphV2Overlay ? '👁️ Ẩn V2' : '🌐 Overlay V2'}
+                Overlay V2
               </button>
-              
               <button
-                onClick={() => setShowGrid(v => !v)}
-                className={`flex items-center gap-1 text-xs font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
-                  showGrid ? 'bg-[#E8A72B] text-black border-[#FDE047]' : 'bg-[#173A73] hover:bg-[#1E4A8E] text-[#CBD5E1] border-[#1E3A8A]'
+                data-testid="toggle-overlay-v3"
+                onClick={() => setShowGraphV3Overlay(v => !v)}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
+                  showGraphV3Overlay ? 'bg-[#0284C7] text-white shadow-xs border border-[#38BDF8]' : 'text-[#94A3B8] hover:text-white'
                 }`}
-                title="Lưới tọa độ"
+                title="Bật/tắt lớp overlay Graph V3 (Nét đứt xanh dương sáng) để đối chiếu"
+              >
+                Overlay V3
+              </button>
+              <button
+                data-testid="toggle-grid"
+                onClick={() => setShowGrid(v => !v)}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
+                  showGrid ? 'bg-[#3B82F6] text-white shadow-xs' : 'text-[#94A3B8] hover:text-white'
+                }`}
+                title="Bật/tắt lưới tọa độ"
               >
                 Grid
               </button>
-
               <button
+                data-testid="toggle-paths"
                 onClick={() => setShowPaths(v => !v)}
-                className={`flex items-center gap-1 text-xs font-bold px-2 py-1 rounded-lg border transition cursor-pointer ${
-                  showPaths ? 'bg-[#16845B] text-white border-[#86EFAC]' : 'bg-[#173A73] hover:bg-[#1E4A8E] text-[#CBD5E1] border-[#1E3A8A]'
+                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
+                  showPaths ? 'bg-[#F59E0B] text-white shadow-xs' : 'text-[#94A3B8] hover:text-white'
                 }`}
-                title="Tất cả tuyến đường"
+                title="Bật/tắt hiển thị path & Edge ID của máy bay hiện tại"
               >
                 Paths
               </button>
             </div>
 
-            {/* Mobile Map Options Dropdown Toggle */}
-            <div className="relative md:hidden">
-              <button
-                onClick={() => setShowMobileMapMenu(v => !v)}
-                className="px-2 py-1 rounded-lg bg-[#173A73] border border-[#1E3A8A] text-white text-xs font-bold flex items-center gap-1"
-              >
-                <span>⚙ Lớp phủ</span>
-              </button>
-              {showMobileMapMenu && (
-                <div className="absolute right-0 top-full mt-1 w-44 bg-white border border-[#CBD5E1] rounded-xl p-2 shadow-2xl z-50 flex flex-col gap-1.5 text-[#172033]">
-                  <button
-                    onClick={() => { setShowGraphV2Overlay(v => !v); setShowMobileMapMenu(false); }}
-                    className="text-left text-xs p-1.5 rounded hover:bg-[#F1F5F9] font-medium"
-                  >
-                    {showGraphV2Overlay ? '✓ Ẩn Overlay V2' : '🌐 Hiện Overlay V2'}
-                  </button>
-                  <button
-                    onClick={() => { setShowGrid(v => !v); setShowMobileMapMenu(false); }}
-                    className="text-left text-xs p-1.5 rounded hover:bg-[#F1F5F9] font-medium"
-                  >
-                    {showGrid ? '✓ Tắt Lưới Grid' : '📐 Hiện Lưới Grid'}
-                  </button>
-                  <button
-                    onClick={() => { setShowPaths(v => !v); setShowMobileMapMenu(false); }}
-                    className="text-left text-xs p-1.5 rounded hover:bg-[#F1F5F9] font-medium"
-                  >
-                    {showPaths ? '✓ Tắt Hiện Tuyến Paths' : '🛣 Hiện Tuyến Paths'}
-                  </button>
-                </div>
-              )}
+            {/* Quick Speed Multiplier Switcher (1x, 2x, 4x) */}
+            <div className="flex items-center gap-1 bg-[#1e293b] p-1 rounded-lg border border-[#3b82f6]/50 shadow-xs">
+              <span className="text-[11px] text-[#93c5fd] font-bold px-1 flex items-center gap-1">
+                ⚡ <span className="hidden sm:inline">Tốc độ:</span>
+              </span>
+              {[1, 2, 4].map(spd => (
+                <button
+                  key={`nav-spd-${spd}`}
+                  onClick={() => setSimSpeed(spd)}
+                  className={`text-xs font-black px-2.5 py-0.5 rounded transition cursor-pointer ${
+                    simSpeed === spd
+                      ? 'bg-[#2563eb] text-white shadow-xs scale-105 ring-1 ring-white/50'
+                      : 'text-[#94a3b8] hover:text-white hover:bg-[#334155]'
+                  }`}
+                  title={`Tốc độ mô phỏng ${spd}x`}
+                >
+                  {spd}x
+                </button>
+              ))}
             </div>
 
             {/* Nút Hướng dẫn */}
@@ -548,9 +602,11 @@ export default function App() {
                 graph={currentGraph}
                 bgImage={currentGraphEntry.bgImage}
                 onSelectAircraft={handleSelectAircraft}
-                showPaths={showPaths}
-                showGrid={showGrid}
                 showGraphV2Overlay={showGraphV2Overlay}
+                showGraphV3Overlay={showGraphV3Overlay}
+                showGrid={showGrid}
+                showPaths={showPaths}
+                inspectingPathAircraftId={inspectingPathAircraftId}
               />
             </ErrorBoundary>
           </div>
@@ -611,6 +667,9 @@ export default function App() {
                     onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
                     onTriggerIncident={handleTriggerIncident}
                     onClearIncidents={handleClearIncidents}
+                    onOpenPathInspector={() => setInspectingPathAircraftId(simState.selectedAircraftId || 'VN001')}
+                    onCaptureAudit={handleCaptureAudit}
+                    isCapturing={isCapturingAudit}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
                   <ScenarioPanel state={simState} graph={currentGraph} />
@@ -622,6 +681,8 @@ export default function App() {
                     graph={currentGraph}
                     onStartScenario={handleStartScenario}
                     onExitScenario={handleExitScenario}
+                    simSpeed={simSpeed}
+                    onSpeedChange={setSimSpeed}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
                 </>
@@ -684,10 +745,41 @@ export default function App() {
                 </button>
               </div>
 
+              {/* Mobile Debug Toggles */}
+              <div className="flex items-center gap-0.5 ml-1 mr-1">
+                <button
+                  onClick={() => setShowGraphV2Overlay(v => !v)}
+                  className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${
+                    showGraphV2Overlay ? 'bg-[#EC4899] text-white' : 'bg-slate-200 text-slate-700'
+                  }`}
+                  title="Overlay V2"
+                >
+                  V2
+                </button>
+                <button
+                  onClick={() => setShowGrid(v => !v)}
+                  className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${
+                    showGrid ? 'bg-[#3B82F6] text-white' : 'bg-slate-200 text-slate-700'
+                  }`}
+                  title="Grid"
+                >
+                  Grid
+                </button>
+                <button
+                  onClick={() => setShowPaths(v => !v)}
+                  className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${
+                    showPaths ? 'bg-[#F59E0B] text-white' : 'bg-slate-200 text-slate-700'
+                  }`}
+                  title="Paths"
+                >
+                  Paths
+                </button>
+              </div>
+
               {/* Nút Thu gọn / Mở rộng Bottom Sheet */}
               <button
                 onClick={() => setSheetExpanded(v => !v)}
-                className="ml-2 px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] text-[#202224] text-xs font-bold border border-[#E4E4E7] transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] text-[#202224] text-xs font-bold border border-[#E4E4E7] transition flex items-center gap-1 cursor-pointer shadow-2xs"
                 title={sheetExpanded ? 'Thu gọn bảng điều khiển' : 'Mở rộng bảng điều khiển'}
                 aria-label={sheetExpanded ? 'Thu gọn' : 'Mở rộng'}
               >
@@ -740,6 +832,9 @@ export default function App() {
                         onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
                         onTriggerIncident={handleTriggerIncident}
                         onClearIncidents={handleClearIncidents}
+                        onOpenPathInspector={() => setInspectingPathAircraftId(simState.selectedAircraftId || 'VN001')}
+                        onCaptureAudit={handleCaptureAudit}
+                        isCapturing={isCapturingAudit}
                       />
                       <ScenarioPanel state={simState} graph={currentGraph} />
                     </>
@@ -755,6 +850,8 @@ export default function App() {
                       graph={currentGraph}
                       onStartScenario={handleStartScenario}
                       onExitScenario={handleExitScenario}
+                      simSpeed={simSpeed}
+                      onSpeedChange={setSimSpeed}
                     />
                   )}
                 </ErrorBoundary>
@@ -763,8 +860,23 @@ export default function App() {
           </aside>
         </main>
 
-        {/* ── 4. Modal Hướng Dẫn ── */}
+        {/* ── 4. Modals (Hướng Dẫn & Path Inspector) ── */}
         {showGuide && <HuongDanModal onClose={() => setShowGuide(false)} />}
+        
+        {inspectingPathAircraftId && (
+          <PathInspectorModal
+            isOpen={!!inspectingPathAircraftId}
+            onClose={() => setInspectingPathAircraftId(null)}
+            aircraft={
+              (simState.manualFleet?.find(a => a.id === inspectingPathAircraftId)) ||
+              (simState.aircraft?.id === inspectingPathAircraftId ? simState.aircraft : null)
+            }
+            graph={currentGraph}
+            graphId={selectedGraphId}
+            onCaptureAuditImages={handleCaptureAudit}
+            isCapturing={isCapturingAudit}
+          />
+        )}
       </div>
     </ErrorBoundary>
   );

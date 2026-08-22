@@ -49,7 +49,8 @@ export function findPath(
       if (visited.has(neighborId)) continue;
 
       // Cost is edge length (could weight by speed limits in future)
-      const newCost = dist[current.id] + edge.lengthMeters;
+      const edgeLen = edge.lengthMeters ?? (edge as any).length ?? 10;
+      const newCost = dist[current.id] + edgeLen;
       if (newCost < dist[neighborId]) {
         dist[neighborId] = newCost;
         prev[neighborId] = current.id;
@@ -70,21 +71,13 @@ export function findPath(
   return path;
 }
 
-const VIRTUAL_STAND_CONNECTORS: AirportEdge[] = [
-  { id: 'V_ST7_T57', fromNodeId: 'L27_ENT', toNodeId: 'T57', lengthMeters: 10.4, maxSpeedKts: 15, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-  { id: 'V_ST8_T57', fromNodeId: 'L26_ENT', toNodeId: 'T57', lengthMeters: 31.3, maxSpeedKts: 15, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-  { id: 'V_ST6_T57', fromNodeId: 'L28_ENT', toNodeId: 'T57', lengthMeters: 50.0, maxSpeedKts: 15, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-  { id: 'V_ST5_T57', fromNodeId: 'L29_ENT', toNodeId: 'T69', lengthMeters: 10.0, maxSpeedKts: 15, type: 'apron', bidirectional: true, status: 'open', trafficLevel: 'low' },
-];
-
 /** Get edges the aircraft can use from a given node */
 function getTraversableEdges(
   nodeId: string,
   edges: AirportEdge[],
   blockedEdgeIds: Set<string>
 ): AirportEdge[] {
-  const allEdges = [...edges, ...VIRTUAL_STAND_CONNECTORS];
-  return allEdges.filter(e => {
+  return edges.filter(e => {
     if (blockedEdgeIds.has(e.id)) return false;
     if (e.status === 'closed' || e.status === 'restricted') return false;
     if (e.fromNodeId === nodeId) return true;
@@ -102,12 +95,12 @@ function getOtherEnd(edge: AirportEdge, fromNodeId: string): string {
  * Returns null if any consecutive pair has no connecting edge.
  */
 export function routeToEdges(route: string[], edges: AirportEdge[]): string[] | null {
-  const allEdges = [...edges, ...VIRTUAL_STAND_CONNECTORS];
+  if (!route || route.length < 2) return [];
   const edgeIds: string[] = [];
   for (let i = 0; i < route.length - 1; i++) {
     const from = route[i];
     const to = route[i + 1];
-    const edge = allEdges.find(e =>
+    const edge = edges.find(e =>
       (e.fromNodeId === from && e.toNodeId === to) ||
       (e.bidirectional && e.fromNodeId === to && e.toNodeId === from)
     );
