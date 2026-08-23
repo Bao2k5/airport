@@ -991,10 +991,10 @@ export function scenarioTick(
     const stepProgress = (currentSpeedKts * 0.52 * dt) / edgePixelLen;
 
     // Check headway buffer along current edge
-    const headwayPx = getHeadwayDistance(currentEdge.id, fromNode.id, ac.progressOnEdge, ac.id, activeCtx);
+    const headwayPx = ac.callsign === 'RESCUE01' ? Infinity : getHeadwayDistance(currentEdge.id, fromNode.id, ac.progressOnEdge, ac.id, activeCtx);
     let targetProgress = ac.progressOnEdge + stepProgress;
 
-    if (headwayPx !== Infinity && (!ac.callsign?.startsWith('INB') || ac.routeEdgeIndex > 0)) {
+    if (headwayPx !== Infinity && ac.callsign !== 'RESCUE01' && (!ac.callsign?.startsWith('INB') || ac.routeEdgeIndex > 0)) {
       const allowedProgress = ac.progressOnEdge + Math.max(0, (headwayPx - 15) / edgePixelLen);
       targetProgress = Math.min(targetProgress, allowedProgress);
     }
@@ -1017,7 +1017,7 @@ export function scenarioTick(
       const heldSec = (ac.heldSeconds ?? 0) + dt;
       const forceJunction = heldSec >= JUNCTION_FORCE_WAIT_S;
 
-      const isEmergency = ac.role === 'emergency' || ac.priority === 0;
+      const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
       const canProceed = isEmergency || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
       if (!canProceed) {
@@ -1096,7 +1096,7 @@ export function scenarioTick(
         const isNodeReserved = activeCtx.reservedNodes.has(toNode.id);
         const isEdgeReserved = activeCtx.reserved.has(nextEdgeId);
 
-        const isEmergency = ac.role === 'emergency' || ac.priority === 0;
+        const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
         const canProceed = isEmergency || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
         if (canProceed) {

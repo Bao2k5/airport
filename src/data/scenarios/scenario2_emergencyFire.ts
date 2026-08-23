@@ -270,132 +270,18 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         },
       },
       {
-        atSeconds: 8,
+        atSeconds: 2,
         apply: (state: any) => {
-          state.scenarioAircraft = state.scenarioAircraft?.map((ac: any) => {
-            if (ac.callsign === 'RESCUE01') {
-              return {
-                ...ac,
-                status: 'taxiing',
-                holdReason: undefined,
-                heldSeconds: 0,
-                speedKts: 35,
-                speedLimitKts: 35,
-                isMoving: true,
-                scenarioLabel: 'XE CỨU HỎA TIẾP CẬN BAV315',
-              };
-            }
-            if (ac.callsign === 'HVN123') {
-              return {
-                ...ac,
-                hidden: false,
-                status: 'taxiing',
-                speedKts: 22,
-                speedLimitKts: 22,
-                scenarioLabel: 'HẠ CÁNH 25L ➔ VỀ STAND 17',
-              };
-            }
-            if (ac.callsign === 'BAV456') {
-              return {
-                ...ac,
-                hidden: false,
-                status: 'holding',
-                holdReason: 'stop-bar',
-                heldSeconds: 0,
-                speedKts: 0,
-                speedLimitKts: 15,
-                scenarioLabel: '⛔ DỪNG CHỜ TẠI E6/E4 NHƯỜNG HVN123',
-              };
-            }
-            if (ac.callsign === 'THA101') {
-              return {
-                ...ac,
-                hidden: false,
-                status: 'holding',
-                holdReason: 'stop-bar',
-                heldSeconds: 0,
-                speedKts: 0,
-                speedLimitKts: 12,
-                scenarioLabel: '⛔ DỪNG CHỜ TẠI STAND 10 NHƯỜNG HVN123',
-              };
-            }
-            return ac;
-          });
           if (state.scenario) {
             state.scenario.events.push({
               atSeconds: state.elapsedSeconds,
-              message: '[STAGE_2_START] BAV315 đã cách ly tại W5 MID — HVN123 lăn về Stand 17, BAV456 và THA101 dừng chờ nhường đường',
+              message: '[EMERGENCY_DECLARED] BAV315 báo cháy động cơ sau khi hạ cánh RWY 25R, ưu tiên độc quyền di chuyển',
               severity: 'critical',
             });
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 18,
-        apply: (state: any) => {
-          state.scenarioAircraft = state.scenarioAircraft?.map((ac: any) => {
-            if (ac.callsign === 'BAV456') {
-              return {
-                ...ac,
-                status: 'taxiing',
-                holdReason: undefined,
-                heldSeconds: 0,
-                speedKts: 18,
-                speedLimitKts: 18,
-                scenarioLabel: 'ĐÃ GIẢI TỎA: QUA E6 ➔ STOP BAR 25L CẤT CÁNH',
-              };
-            }
-            if (ac.callsign === 'THA101') {
-              return {
-                ...ac,
-                status: 'taxiing',
-                holdReason: undefined,
-                heldSeconds: 0,
-                speedKts: 14,
-                speedLimitKts: 14,
-                scenarioLabel: 'ĐÃ GIẢI TỎA: PUSHBACK ➔ QUA HS NS ➔ QUA E6 ➔ 25L CẤT CÁNH',
-              };
-            }
-            return ac;
-          });
-          if (state.scenario) {
             state.scenario.events.push({
               atSeconds: state.elapsedSeconds,
-              message: '[TRAFFIC_RELEASED] HVN123 đã về Stand 17 an toàn — Cấp lệnh cho BAV456 và THA101 lăn qua E6 lên STOP BAR 25L cất cánh',
-              severity: 'info',
-            });
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 20,
-        apply: (state: any) => {
-          state.scenarioAircraft = state.scenarioAircraft?.map((ac: any) => {
-            if (ac.callsign === 'BAV315') {
-              return {
-                ...ac,
-                isFireExtinguished: true,
-                scenarioLabel: 'ĐÃ CÁCH LY / ĐÃ DẬP TẮT LỬA',
-              };
-            }
-            if (ac.callsign === 'RESCUE01') {
-              return {
-                ...ac,
-                status: 'arrived',
-                speedKts: 0,
-                speedLimitKts: 0,
-                scenarioLabel: 'ĐÃ DẬP TẮT LỬA AN TOÀN',
-              };
-            }
-            return ac;
-          });
-          if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '[FIRE_EXTINGUISHED] Đội cứu hỏa đã dập tắt đám cháy thành công sau 10s ứng trực! BAV315 an toàn tuyệt đối',
-              severity: 'info',
+              message: '[RUNWAY_PROTECTED] 2 đường băng 25R và 25L chuyển ĐỎ bảo vệ tuyệt đối',
+              severity: 'critical',
             });
           }
           return state;
