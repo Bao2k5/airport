@@ -1,5 +1,4 @@
 ﻿{
-  "cleanUrls": true,
   "rewrites": [
     {
       "source": "/annotate",
@@ -10,7 +9,7 @@
       "destination": "/annotate_junctions.html"
     },
     {
-      "source": "/((?!assets/|.*\\..*).*)",
+      "source": "/(.*)",
       "destination": "/index.html"
     }
   ]
