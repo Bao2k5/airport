@@ -151,20 +151,22 @@ export function setupScenario5Traditional(g: AirportGraph = airportGraphV3) {
 
 /** Khởi tạo luồng Follow-the-Greens cho Kịch bản 5 */
 export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
-  // INB01: B747 Heavy - Hạ cánh 25R -> rẽ sớm W5 -> chạy trên 25L -> rẽ phải E4 -> Stand 17
+  // INB01: B747 Heavy - Xuất phát từ STOPBAR 25R -> W5 -> RWY 25L -> rẽ phải E4 -> Stand 17
   const pInb1 = [
-    'v3_line_01_p01', 'v3_line_04_p00', 'v3_line_03_p00', 'v3_line_03_p_mid', 'v3_line_03_p01',
-    'v3_line_16_p00', 'v3_line_17_p00', 'v3_line_05_p01', 'v3_line_04_p04', 'v3_line_04_p05',
-    'v3_line_10_p00', 'v3_line_05_p02', 'v3_line_19_p00', 'v3_line_05_p03', 'v3_line_05_p04',
-    'v3_line_06_p03', 'v3_line_07_p01', 'v3_line_05_p05', 'v3_line_13_p00', 'v3_line_09_p01',
-    'v3_line_05_p06', 'v3_line_26_p00', 'v3_line_26_p01', // E4/25L
+    'v3_line_01_p03', 'v3_line_01_p02', 'v3_line_06_p00', 'v3_line_01_p01', 'v3_line_04_p00',
+    'v3_line_03_p00', 'v3_line_03_p_mid', 'v3_line_03_p01', 'v3_line_16_p00', 'v3_line_17_p00',
+    'v3_line_05_p01', 'v3_line_04_p04', 'v3_line_04_p05', 'v3_line_10_p00', 'v3_line_05_p02',
+    'v3_line_19_p00', 'v3_line_05_p03', 'v3_line_05_p04', 'v3_line_06_p03', 'v3_line_07_p01',
+    'v3_line_05_p05', 'v3_line_13_p00', 'v3_line_09_p01', 'v3_line_05_p06', 'v3_line_26_p00',
+    'v3_line_26_p01', // E4/25L
     'v3_line_26_p02', 'v3_line_26_p03', 'v3_line_17_p12', 'v3_line_17_p11', 'v3_line_25_p00',
-    'v3_line_24_p00', 'v3_line_23_p00', 'v3_line_15_p01', 'v3_line_22_p00', 'v3_line_22_p01'  // STAND_17
+    'v3_line_24_p00', 'v3_line_23_p00', 'v3_line_15_p01', 'v3_line_22_p00', 'v3_line_22_p01' // STAND_17
   ];
 
-  // INB02: A320 Light - Hạ cánh 25R sau INB01 -> rẽ W4 -> chạy trên 25L sau B747 -> rẽ phải E4 -> Stand 20
+  // INB02: A320 Light - Xuất phát từ STOPBAR 25R sau INB01 -> W4 -> RWY 25L -> rẽ phải E4 -> Stand 20
   const pInb2 = [
-    'v3_line_01_p01', 'v3_line_04_p00', 'v3_line_04_p01', 'v3_line_04_p02', 'v3_line_04_p03', // W4/25L
+    'v3_line_01_p03', 'v3_line_01_p02', 'v3_line_06_p00', 'v3_line_01_p01', 'v3_line_04_p00',
+    'v3_line_04_p01', 'v3_line_04_p02', 'v3_line_04_p03', // W4/25L
     'v3_line_05_p01', 'v3_line_04_p04', 'v3_line_04_p05', 'v3_line_10_p00', 'v3_line_05_p02',
     'v3_line_19_p00', 'v3_line_05_p03', 'v3_line_05_p04', 'v3_line_06_p03', 'v3_line_07_p01',
     'v3_line_05_p05', 'v3_line_13_p00', 'v3_line_09_p01', 'v3_line_05_p06', 'v3_line_26_p00',
@@ -173,8 +175,38 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     'v3_line_24_p00', 'v3_line_24_p01' // STAND_20
   ];
 
-  const pOut1 = findPath(g, 'v3_line_30_p01', 'v3_line_05_p00') || [];
-  const pOut2 = findPath(g, 'v3_line_31_p01', 'v3_line_05_p00') || [];
+  // OUT01: Stand 13 -> HS_NS -> rẽ phải E6 -> STOPBAR 25L -> T63 -> NS2/25L -> HS_NS -> rẽ trái -> 07R
+  const pOut1 = [
+    'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', 'v3_line_17_p09', // HS_NS
+    'v3_line_17_p10', 'v3_line_21_p00', 'v3_line_13_p03', 'v3_line_22_p00', 'v3_line_15_p01',
+    'v3_line_23_p00', 'v3_line_24_p00', 'v3_line_25_p00', 'v3_line_17_p11', 'v3_line_17_p12',
+    'v3_line_17_p13', 'v3_line_17_p14', 'v3_line_17_p15', 'v3_line_05_p07',
+    'v3_line_17_p16', // STOP BAR 25L
+    'v3_line_05_p07', 'v3_line_26_p00', 'v3_line_05_p06', 'v3_line_09_p01', 'v3_line_13_p00',
+    'v3_line_05_p05', // T63
+    'v3_line_07_p01', 'v3_line_06_p03', 'v3_line_05_p04', 'v3_line_12_p01', // NS2/25L
+    'v3_line_12_p02', 'v3_line_17_p09', // HS_NS
+    'v3_line_17_p08', 'v3_line_19_p03', 'v3_line_19_p02', 'v3_line_19_p01', 'v3_line_19_p00',
+    'v3_line_05_p02', 'v3_line_10_p00', 'v3_line_04_p05', 'v3_line_04_p04', 'v3_line_05_p01',
+    'v3_line_17_p00', 'v3_line_16_p00', 'v3_line_03_p01', 'v3_line_05_p00' // 07R
+  ];
+
+  // OUT02: Stand 12 -> HS_NS -> rẽ phải E6 -> STOPBAR 25L -> T63 -> NS2/25L -> HS_NS -> rẽ trái -> 07R
+  const pOut2 = [
+    'v3_line_31_p01', 'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', 'v3_line_17_p09', // HS_NS
+    'v3_line_17_p10', 'v3_line_21_p00', 'v3_line_13_p03', 'v3_line_22_p00', 'v3_line_15_p01',
+    'v3_line_23_p00', 'v3_line_24_p00', 'v3_line_25_p00', 'v3_line_17_p11', 'v3_line_17_p12',
+    'v3_line_17_p13', 'v3_line_17_p14', 'v3_line_17_p15', 'v3_line_05_p07',
+    'v3_line_17_p16', // STOP BAR 25L
+    'v3_line_05_p07', 'v3_line_26_p00', 'v3_line_05_p06', 'v3_line_09_p01', 'v3_line_13_p00',
+    'v3_line_05_p05', // T63
+    'v3_line_07_p01', 'v3_line_06_p03', 'v3_line_05_p04', 'v3_line_12_p01', // NS2/25L
+    'v3_line_12_p02', 'v3_line_17_p09', // HS_NS
+    'v3_line_17_p08', 'v3_line_19_p03', 'v3_line_19_p02', 'v3_line_19_p01', 'v3_line_19_p00',
+    'v3_line_05_p02', 'v3_line_10_p00', 'v3_line_04_p05', 'v3_line_04_p04', 'v3_line_05_p01',
+    'v3_line_17_p00', 'v3_line_16_p00', 'v3_line_03_p01', 'v3_line_05_p00' // 07R
+  ];
+
   const pOut3 = findPath(g, 'v3_line_32_p01', 'v3_line_05_p00') || [];
   const pOut4 = findPath(g, 'v3_line_33_p01', 'v3_line_05_p00') || [];
 
@@ -192,13 +224,13 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     {
       id: 'S1', callsign: 'OUT01', airlineCode: 'VN', airlineName: vnDef.name, aircraftAsset: vnDef.asset, aircraftType: 'A321',
       currentNodeId: pOut1[0], targetNodeId: pOut1[pOut1.length - 1], currentEdgeId: routeToEdges(pOut1, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 12, speedLimitKts: 12, status: 'taxiing', assignedRoute: pOut1, routeEdgeIndex: 0,
-      role: 'departing', priority: 2, scenarioLabel: 'CẤT CÁNH 07R (PHA 1: OUT01/OUT02)', routeVisible: true, guidanceVisible: true,
+      progressOnEdge: 0, speedKts: 18, speedLimitKts: 18, status: 'taxiing', assignedRoute: pOut1, routeEdgeIndex: 0,
+      role: 'departing', priority: 2, scenarioLabel: 'CẤT CÁNH 07R (HS_NS ➔ E6 ➔ 25L ➔ T63 ➔ 07R)', routeVisible: true, guidanceVisible: true,
     },
     {
       id: 'S2', callsign: 'OUT02', airlineCode: 'VJ', airlineName: vjDef.name, aircraftAsset: vjDef.asset, aircraftType: 'A321',
       currentNodeId: pOut2[0], targetNodeId: pOut2[pOut2.length - 1], currentEdgeId: routeToEdges(pOut2, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 11, speedLimitKts: 11, status: 'taxiing', assignedRoute: pOut2, routeEdgeIndex: 0,
+      progressOnEdge: 0, speedKts: 16, speedLimitKts: 16, status: 'taxiing', assignedRoute: pOut2, routeEdgeIndex: 0,
       role: 'departing', priority: 2, scenarioLabel: 'CẤT CÁNH 07R (XẾP HÀNG SAU OUT01)', routeVisible: true, guidanceVisible: true,
     },
     {
@@ -216,14 +248,14 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     {
       id: 'S5', callsign: 'INB01', airlineCode: 'SQ', airlineName: sqDef.name, aircraftAsset: sqDef.asset, aircraftType: 'B747',
       currentNodeId: pInb1[0], targetNodeId: pInb1[pInb1.length - 1], currentEdgeId: routeToEdges(pInb1, g.edges)?.[0] ?? null,
-      progressOnEdge: 0.60, speedKts: 22, speedLimitKts: 22, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
-      role: 'arriving', priority: 1, scenarioLabel: 'B747 HEAVY ➔ W5 ➔ 25L ➔ E4 ➔ STAND 17', routeVisible: true, guidanceVisible: true,
+      progressOnEdge: 0.10, speedKts: 26, speedLimitKts: 26, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
+      role: 'arriving', priority: 1, scenarioLabel: 'B747 HEAVY (25R ➔ W5 ➔ 25L ➔ E4 ➔ STAND 17)', routeVisible: true, guidanceVisible: true,
     },
     {
       id: 'S6', callsign: 'INB02', airlineCode: 'TG', airlineName: tgDef.name, aircraftAsset: tgDef.asset, aircraftType: 'A320',
       currentNodeId: pInb2[0], targetNodeId: pInb2[pInb2.length - 1], currentEdgeId: routeToEdges(pInb2, g.edges)?.[0] ?? null,
-      progressOnEdge: 0.00, speedKts: 16, speedLimitKts: 16, status: 'taxiing', assignedRoute: pInb2, routeEdgeIndex: 0,
-      role: 'arriving', priority: 1, scenarioLabel: 'A320 LIGHT ➔ W4 ➔ 25L ➔ E4 ➔ STAND 20', routeVisible: true, guidanceVisible: true,
+      progressOnEdge: 0.00, speedKts: 20, speedLimitKts: 20, status: 'taxiing', assignedRoute: pInb2, routeEdgeIndex: 0,
+      role: 'arriving', priority: 1, scenarioLabel: 'A320 LIGHT (25R ➔ W4 ➔ 25L ➔ E4 ➔ STAND 20)', routeVisible: true, guidanceVisible: true,
     },
     {
       id: 'S7', callsign: 'PUSH01', airlineCode: 'QH', airlineName: qhDef.name, aircraftAsset: qhDef.asset, aircraftType: 'A321',
