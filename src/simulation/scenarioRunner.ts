@@ -1020,10 +1020,10 @@ export function scenarioTick(
     } else if (isLandingRollout) {
       targetZoneSpeedKts = 18;
       speedReason = 'Xả phanh & lăn';
-    } else if (isApproachingJunction && (!ac.speedLimitKts || ac.speedLimitKts > 15) && ac.role !== 'emergency') {
+    } else if (isApproachingJunction && !ac.speedLimitKts && ac.role !== 'emergency') {
       targetZoneSpeedKts = 15;
       speedReason = 'Giảm tốc: gần giao lộ';
-    } else if (isApronZone && (!ac.speedLimitKts || ac.speedLimitKts > 7)) {
+    } else if (isApronZone && !ac.speedLimitKts) {
       targetZoneSpeedKts = SCENARIO_APRON_SPEED_KTS; // 7 kts
       speedReason = 'Giảm tốc: khu vực sân đỗ';
     }
@@ -1044,8 +1044,11 @@ export function scenarioTick(
     let targetProgress = ac.progressOnEdge + stepProgress;
 
     if (headwayPx !== Infinity && ac.callsign !== 'RESCUE01' && (!ac.callsign?.startsWith('INB') || ac.routeEdgeIndex > 0)) {
-      const allowedProgress = ac.progressOnEdge + Math.max(0, (headwayPx - 15) / edgePixelLen);
-      targetProgress = Math.min(targetProgress, allowedProgress);
+      const safeBufferPx = 15;
+      if (headwayPx < safeBufferPx) {
+        const speedFactor = Math.max(0.25, (headwayPx - 4) / (safeBufferPx - 4));
+        targetProgress = ac.progressOnEdge + stepProgress * speedFactor;
+      }
     }
 
     const isHoldingAtJunction = ac.status === 'holding' && ac.progressOnEdge >= 0.9;
@@ -1090,30 +1093,18 @@ export function scenarioTick(
     }
 
     if (targetProgress < 1 && !isHoldingAtJunction) {
-      if (targetProgress <= ac.progressOnEdge + 1e-6) {
-        steppedAc = {
-          ...ac,
-          status: 'holding',
-          holdReason: 'separation',
-          heldSeconds: (ac.heldSeconds ?? 0) + dt,
-          speedKts: 0,
-          speedLimitKts: 0,
-          speedReason: 'Giảm tốc: giữ khoảng cách',
-        };
-      } else {
-        steppedAc = {
-          ...ac,
-          progressOnEdge: targetProgress,
-          currentNodeId: fromNode.id,
-          currentEdgeId: currentEdge.id,
-          status: 'taxiing',
-          heldSeconds: 0,
-          holdReason: undefined,
-          speedKts: currentSpeedKts,
-          speedLimitKts: targetZoneSpeedKts,
-          speedReason,
-        };
-      }
+      steppedAc = {
+        ...ac,
+        progressOnEdge: targetProgress,
+        currentNodeId: fromNode.id,
+        currentEdgeId: currentEdge.id,
+        status: 'taxiing',
+        heldSeconds: 0,
+        holdReason: undefined,
+        speedKts: currentSpeedKts,
+        speedLimitKts: targetZoneSpeedKts,
+        speedReason,
+      };
     } else {
       // Reached junction (progress >= 1 or currently holding at junction)
       const heldSec = (ac.heldSeconds ?? 0) + dt;

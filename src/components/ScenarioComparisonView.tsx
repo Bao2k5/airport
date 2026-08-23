@@ -390,11 +390,11 @@ export default function Scenario5ComparisonView({
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: ac.callsign.startsWith('INB') ? 14 : 8,
-          speedLimitKts: ac.callsign.startsWith('INB') ? 14 : 8,
+          speedKts: ac.callsign === 'OUT01' ? 30 : ac.callsign === 'OUT02' ? 26 : ac.callsign.startsWith('INB') ? 22 : 15,
+          speedLimitKts: ac.callsign === 'OUT01' ? 30 : ac.callsign === 'OUT02' ? 26 : ac.callsign.startsWith('INB') ? 22 : 15,
           routeVisible: true,
           guidanceVisible: true,
-          scenarioLabel: 'LĂN CHẬM BAN ĐẦU (ĐÈN GREEN)',
+          scenarioLabel: 'LĂN LIÊN TỤC THEO ĐÈN GREEN',
         };
       }
 
