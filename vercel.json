@@ -1,0 +1,17 @@
+﻿{
+  "cleanUrls": true,
+  "rewrites": [
+    {
+      "source": "/annotate",
+      "destination": "/annotate.html"
+    },
+    {
+      "source": "/annotate_junctions",
+      "destination": "/annotate_junctions.html"
+    },
+    {
+      "source": "/((?!assets/|.*\\..*).*)",
+      "destination": "/index.html"
+    }
+  ]
+}
