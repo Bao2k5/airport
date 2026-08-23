@@ -43,17 +43,7 @@ export function setupScenario5Traditional(g: AirportGraph = airportGraphV3) {
     'v3_line_17_p09'
   ];
 
-  const pInb2 = [
-    'v3_line_01_p01',
-    'v3_line_04_p00', 'v3_line_03_p00',
-    'v3_line_03_p01', 'v3_line_16_p00',
-    'v3_line_17_p00', 'v3_line_05_p01',
-    'v3_line_04_p04', 'v3_line_04_p05',
-    'v3_line_10_p00', 'v3_line_05_p02',
-    'v3_line_19_p00', 'v3_line_19_p01',
-    'v3_line_19_p02', 'v3_line_19_p03',
-    'v3_line_17_p08', 'v3_line_17_p09'
-  ];
+  const pInb2 = [...pInb1];
 
   const pPush1 = findPath(g, 'v3_line_32_p00', 'v3_line_17_p09') || [];
   const pPush2 = findPath(g, 'v3_line_34_p02', 'v3_line_17_p09') || [];
@@ -93,14 +83,14 @@ export function setupScenario5Traditional(g: AirportGraph = airportGraphV3) {
     {
       id: 'S5', callsign: 'INB01', airlineCode: 'SQ', airlineName: sqDef.name, aircraftAsset: sqDef.asset, aircraftType: 'A350',
       currentNodeId: pInb1[0], targetNodeId: pInb1[pInb1.length - 1], currentEdgeId: routeToEdges(pInb1, g.edges)?.[0] ?? null,
-      progressOnEdge: 0.50, speedKts: 22, speedLimitKts: 22, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
+      progressOnEdge: 0.65, speedKts: 18, speedLimitKts: 18, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
       role: 'arriving', priority: 1, scenarioLabel: 'XẢ PHANH W4 ➔ HS NS', routeVisible: false, guidanceVisible: false,
     },
     {
       id: 'S6', callsign: 'INB02', airlineCode: 'TG', airlineName: tgDef.name, aircraftAsset: tgDef.asset, aircraftType: 'A350',
       currentNodeId: pInb2[0], targetNodeId: pInb2[pInb2.length - 1], currentEdgeId: routeToEdges(pInb2, g.edges)?.[0] ?? null,
-      progressOnEdge: 0.00, speedKts: 16, speedLimitKts: 16, status: 'taxiing', assignedRoute: pInb2, routeEdgeIndex: 0,
-      role: 'arriving', priority: 1, scenarioLabel: 'XẢ PHANH W5 ➔ HS NS', routeVisible: false, guidanceVisible: false,
+      progressOnEdge: 0.00, speedKts: 14, speedLimitKts: 14, status: 'taxiing', assignedRoute: pInb2, routeEdgeIndex: 0,
+      role: 'arriving', priority: 1, scenarioLabel: 'XẢ PHANH W4 ➔ HS NS (NỐI ĐUÔI INB01)', routeVisible: false, guidanceVisible: false,
     },
     {
       id: 'S7', callsign: 'PUSH01', airlineCode: 'QH', airlineName: qhDef.name, aircraftAsset: qhDef.asset, aircraftType: 'A321',
