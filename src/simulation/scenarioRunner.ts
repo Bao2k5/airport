@@ -26,7 +26,7 @@ export const MAX_ACCEL_KTS_PER_S = 6.0;         // Smooth acceleration rate
 export const MAX_DECEL_KTS_PER_S = 10.0;        // Smooth deceleration rate
 
 const JUNCTION_FORCE_WAIT_S = 4.0;   // Force junction entry if waiting > 4s to resolve minor gridlocks
-const ARRIVAL_HOLD_S = 12.0;         // Arrival threshold hold before DEPARTED
+const ARRIVAL_HOLD_S = 1.0;          // Arrival threshold hold before DEPARTED (cất cánh biến mất)
 const LOOKAHEAD_NODES = 12;
 const LOOKAHEAD_COMMITMENTS = 14;
 
@@ -509,8 +509,8 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
 
   const calibratedFleet = aircraft.map(ac => ({
     ...ac,
-    speedKts: ac.speedKts > 0 ? ac.speedKts : SCENARIO_TAXI_SPEED_KTS,
-    speedLimitKts: SCENARIO_TAXI_SPEED_KTS,
+    speedKts: ac.speedKts !== undefined ? ac.speedKts : (ac.status === 'holding' || ac.status === 'queued' ? 0 : SCENARIO_TAXI_SPEED_KTS),
+    speedLimitKts: ac.speedLimitKts !== undefined ? ac.speedLimitKts : SCENARIO_TAXI_SPEED_KTS,
   }));
 
   const scenarioState: ScenarioState = {
@@ -682,7 +682,7 @@ export function scenarioTick(
   }
 
   for (const idx of sortedIndices) {
-    const ac = fleet[idx];
+    let ac = fleet[idx];
 
     if (ac.status === 'departed') {
       updatedFleet[idx] = ac;
@@ -693,10 +693,43 @@ export function scenarioTick(
     if (ac.releaseAtSeconds !== undefined && nextElapsed < ac.releaseAtSeconds - 1e-4) {
       updatedFleet[idx] = { ...ac, status: 'waiting' };
       continue;
+    } else if (ac.releaseAtSeconds !== undefined && (ac.hidden || ac.status === 'waiting' || ac.status === 'queued')) {
+      ac = { ...ac, hidden: false, status: 'taxiing' };
     }
 
     if (ac.status === 'arrived') {
-      if (isHoldingPointNode(ac.targetNodeId, graph)) {
+      // Xử lý xe cứu hỏa dập lửa sau 5s khi tiếp cận BAV315 tại W5 MID
+      if (ac.callsign === 'RESCUE01' && state.scenario?.id === 'emergency_priority_engine_fire') {
+        const arrivedAt = ac.arrivedAtSeconds ?? state.elapsedSeconds;
+        const timeAtScene = state.elapsedSeconds - arrivedAt;
+        if (timeAtScene >= 5.0) {
+          // Sau 5s dập lửa -> ngọn lửa biến mất hoàn toàn!
+          for (let j = 0; j < updatedFleet.length; j++) {
+            if (updatedFleet[j]?.callsign === 'BAV315') {
+              updatedFleet[j] = {
+                ...updatedFleet[j],
+                isFireExtinguished: true,
+                scenarioLabel: 'ĐÃ CÁCH LY / ĐÃ DẬP TẮT LỬA',
+              };
+            }
+          }
+          updatedFleet[idx] = {
+            ...ac,
+            arrivedAtSeconds: arrivedAt,
+            scenarioLabel: 'ĐÃ DẬP TẮT LỬA AN TOÀN',
+          };
+        } else {
+          updatedFleet[idx] = {
+            ...ac,
+            arrivedAtSeconds: arrivedAt,
+            scenarioLabel: `🚒 ĐANG PHUN BỌT DẬP LỬA (${(5.0 - timeAtScene).toFixed(0)}s)`,
+          };
+        }
+        continue;
+      }
+
+      // Tàu khởi hành cất cánh (BAV456, THA101) khi chạy lên tới STOP BAR 25L thì chuyển thành departed và biến mất luôn
+      if ((ac.role === 'departing' || ac.callsign === 'BAV456' || ac.callsign === 'THA101') && ac.callsign !== 'BAV315' && ac.callsign !== 'HVN123' && ac.callsign !== 'RESCUE01') {
         const arrivedAt = ac.arrivedAtSeconds ?? state.elapsedSeconds;
         if (state.elapsedSeconds - arrivedAt >= ARRIVAL_HOLD_S) {
           updatedFleet[idx] = { ...ac, status: 'departed', arrivedAtSeconds: arrivedAt };
@@ -725,7 +758,8 @@ export function scenarioTick(
     // ── KINEMATICS & JUNCTION STEP ──
     const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
     if (ac.routeEdgeIndex >= routeEdges.length) {
-      updatedFleet[idx] = { ...ac, status: 'arrived', speedKts: 0 };
+      const isDepartingAc = ac.callsign === 'BAV456' || ac.callsign === 'THA101' || (ac.role === 'departing' && ac.callsign !== 'BAV315' && ac.callsign !== 'HVN123' && ac.callsign !== 'RESCUE01');
+      updatedFleet[idx] = { ...ac, status: isDepartingAc ? 'departed' : 'arrived', speedKts: 0 };
       continue;
     }
 
@@ -738,19 +772,35 @@ export function scenarioTick(
       continue;
     }
 
+    // Tàu 3 (BAV456) và Tàu 4 (THA101) chạy tới vạch STOP BAR 25L là biến mất ngay lập tức
+    if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101') && (
+      ac.currentNodeId === 'v3_line_17_p16' ||
+      (toNode.id === 'v3_line_17_p16' && ac.progressOnEdge >= 0.6) ||
+      (ac.routeEdgeIndex >= routeEdges.length - 1 && ac.progressOnEdge >= 0.6)
+    )) {
+      updatedFleet[idx] = {
+        ...ac,
+        status: 'departed',
+        speedKts: 0,
+        speedLimitKts: 0,
+        holdReason: undefined,
+      };
+      continue;
+    }
+
     let steppedAc: ScenarioAircraft = ac;
 
     // Runway corridor protection for entry edge
+    const isEmergencyAc = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
     const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
     const isCorridorOccupiedByOther = currentCorridor && currentOccupancy[currentCorridor] && currentOccupancy[currentCorridor] !== ac.id;
-    if (isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
+    if (!isEmergencyAc && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
       steppedAc = {
         ...ac,
         status: 'holding',
         holdReason: 'stop-bar',
         heldSeconds: (ac.heldSeconds ?? 0) + dt,
         speedKts: 0,
-        speedLimitKts: 0,
         speedReason: 'Dừng: Stop Bar đường băng',
       };
       updatedFleet[idx] = steppedAc;
@@ -760,23 +810,113 @@ export function scenarioTick(
       currentOccupancy[currentCorridor] = ac.id;
     }
 
-    // Stand pushback/departure clearance hold (for cross-traffic yield / emergency priority corridor)
-    if (standsWithQueuedPushback.has(ac.id) && ac.progressOnEdge === 0) {
-      steppedAc = {
-        ...ac,
-        status: 'holding',
-        holdReason: 'stop-bar',
-        heldSeconds: (ac.heldSeconds ?? 0) + dt,
-        speedKts: 0,
-        speedLimitKts: 0,
-        speedReason: 'Dừng: Chờ giải tỏa hành lang',
-      };
-      updatedFleet[idx] = steppedAc;
-      continue;
+    // Đồng bộ Kịch bản 2: HVN123 và RESCUE01 CHỈ ĐƯỢC CHẠY khi BAV315 đã tới chính xác điểm dừng cách ly tại W5 MID
+    if (state.scenario?.id === 'emergency_priority_engine_fire') {
+      const bav315 = fleet.find(a => a.callsign === 'BAV315');
+      const bav315Isolated = bav315 && (
+        bav315.currentNodeId === 'v3_line_03_p_mid' ||
+        (bav315.routeEdgeIndex >= bav315.assignedRoute.length - 1 && bav315.progressOnEdge >= 0.95) ||
+        bav315.status === 'arrived' ||
+        (bav315.status === 'holding' && (bav315.currentNodeId.includes('03_p_mid') || bav315.currentNodeId.includes('03_p01')))
+      );
+
+      if (ac.callsign === 'HVN123') {
+        if (!bav315Isolated) {
+          updatedFleet[idx] = {
+            ...ac,
+            hidden: true,
+            status: 'waiting',
+            speedKts: 0,
+            speedLimitKts: 0,
+          };
+          continue;
+        } else if (ac.status === 'waiting' || ac.hidden) {
+          ac = {
+            ...ac,
+            hidden: false,
+            status: 'taxiing',
+            speedLimitKts: 22,
+            scenarioLabel: 'HẠ CÁNH 25L ➔ VỀ STAND 17',
+          };
+        }
+      }
+
+      if (ac.callsign === 'RESCUE01') {
+        if (!bav315Isolated) {
+          updatedFleet[idx] = {
+            ...ac,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+          };
+          continue;
+        } else if (ac.status === 'holding') {
+          ac = {
+            ...ac,
+            status: 'taxiing',
+            holdReason: undefined,
+            heldSeconds: 0,
+            speedKts: 35,
+            speedLimitKts: 35,
+            isMoving: true,
+            scenarioLabel: 'XE CỨU HỎA TIẾP CẬN BAV315',
+          };
+        } else if (ac.currentNodeId === 'v3_line_03_p_mid' || ac.status === 'arrived' || (ac.routeEdgeIndex >= ac.assignedRoute.length - 1 && ac.progressOnEdge >= 0.85)) {
+          // Xe cứu hỏa đã tiếp cận đuôi BAV315 tại W5 MID -> đếm 5s dập lửa
+          const rescueHeld = (ac.heldSeconds ?? 0) + dt;
+          ac.heldSeconds = rescueHeld;
+          if (rescueHeld >= 5.0) {
+            ac.scenarioLabel = 'ĐÃ DẬP TẮT LỬA AN TOÀN';
+            // Cập nhật BAV315 dập tắt lửa (hình lửa biến mất)
+            for (let j = 0; j < updatedFleet.length; j++) {
+              if (updatedFleet[j]?.callsign === 'BAV315') {
+                updatedFleet[j] = {
+                  ...updatedFleet[j],
+                  isFireExtinguished: true,
+                  scenarioLabel: 'ĐÃ CÁCH LY / ĐÃ DẬP TẮT LỬA',
+                };
+              }
+            }
+          } else {
+            ac.scenarioLabel = `🚒 ĐANG PHUN BỌT DẬP LỬA (${(5.0 - rescueHeld).toFixed(0)}s)`;
+          }
+        }
+      }
+    }
+
+    // Khóa dừng nhường đường cho Kịch bản 2: BAV456 và THA101 giữ nguyên Dấu X Stop Bar cho đến khi HVN123 về tới Stand 17
+    if (state.scenario?.id === 'emergency_priority_engine_fire' && (ac.callsign === 'BAV456' || ac.callsign === 'THA101')) {
+      const hvn = fleet.find(a => a.callsign === 'HVN123');
+      const hvnArrived = hvn && (hvn.status === 'arrived' || (hvn.routeEdgeIndex >= hvn.assignedRoute.length - 2 && hvn.progressOnEdge >= 0.8) || hvn.currentNodeId === 'v3_line_34_p00');
+      if (!hvnArrived) {
+        steppedAc = {
+          ...ac,
+          status: 'holding',
+          holdReason: 'stop-bar',
+          heldSeconds: (ac.heldSeconds ?? 0) + dt,
+          speedKts: 0,
+          speedLimitKts: 0,
+          speedReason: 'Dừng: Nhường đường cho HVN123 về Stand 17',
+          scenarioLabel: '⛔ HOLD POSITION (NHƯỜNG HVN123)',
+        };
+        updatedFleet[idx] = steppedAc;
+        continue;
+      } else if (ac.status === 'holding' && ac.holdReason === 'stop-bar') {
+        // HVN123 đã về tới bến Stand 17 -> gỡ bỏ dấu X, cấp đèn xanh cho 2 tàu chạy
+        ac = {
+          ...ac,
+          status: 'taxiing',
+          holdReason: undefined,
+          heldSeconds: 0,
+          speedLimitKts: ac.callsign === 'BAV456' ? 18 : 14,
+          scenarioLabel: ac.callsign === 'BAV456' ? 'ĐÃ GIẢI TỎA: QUA E6 ➔ STOP BAR 25L' : 'ĐÃ GIẢI TỎA: PUSHBACK ➔ QUA E6 ➔ 25L',
+        };
+      }
     }
 
     // Nếu tàu bay bị gán speedLimitKts === 0 thì giữ nguyên đứng yên
-    if (ac.speedLimitKts === 0) {
+    if (ac.speedLimitKts === 0 && ac.status !== 'taxiing') {
       updatedFleet[idx] = {
         ...ac,
         status: 'holding',
@@ -790,7 +930,7 @@ export function scenarioTick(
     // 1. Determine zone speed limit
     const isApronZone = (isStandNode(fromNode.id, graph) && ac.progressOnEdge < 0.25) || ac.role === 'pushback';
     const isApproachingJunction = ac.progressOnEdge >= 0.85 && ac.routeEdgeIndex + 1 < routeEdges.length;
-    const isLandingRollout = (ac.callsign === 'BAV456' || ac.callsign === 'HVN401' || ac.callsign.startsWith('INB')) && ac.routeEdgeIndex < 15;
+    const isLandingRollout = (ac.callsign === 'BAV315' || ac.callsign === 'BAV456' || ac.callsign === 'HVN401' || ac.callsign.startsWith('INB')) && ac.routeEdgeIndex < 15;
 
     let targetZoneSpeedKts = ac.speedLimitKts !== undefined && ac.speedLimitKts > 0 ? ac.speedLimitKts : SCENARIO_TAXI_SPEED_KTS;
     let speedReason = 'Tốc độ tiêu chuẩn';
@@ -801,7 +941,7 @@ export function scenarioTick(
     } else if (isLandingRollout) {
       targetZoneSpeedKts = 18;
       speedReason = 'Xả phanh & lăn';
-    } else if (isApproachingJunction && (!ac.speedLimitKts || ac.speedLimitKts > 15)) {
+    } else if (isApproachingJunction && (!ac.speedLimitKts || ac.speedLimitKts > 15) && ac.role !== 'emergency') {
       targetZoneSpeedKts = 15;
       speedReason = 'Giảm tốc: gần giao lộ';
     } else if (isApronZone && (!ac.speedLimitKts || ac.speedLimitKts > 7)) {
@@ -847,7 +987,8 @@ export function scenarioTick(
       const heldSec = (ac.heldSeconds ?? 0) + dt;
       const forceJunction = heldSec >= JUNCTION_FORCE_WAIT_S;
 
-      const canProceed = !isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph);
+      const isEmergency = ac.role === 'emergency' || ac.priority === 0;
+      const canProceed = isEmergency || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
       if (!canProceed) {
         steppedAc = {
@@ -898,6 +1039,7 @@ export function scenarioTick(
 
       if (ac.routeEdgeIndex + 1 >= routeEdges.length) {
         // Arrived at final destination
+        const isDepartingAc = ac.callsign === 'BAV456' || ac.callsign === 'THA101' || (ac.role === 'departing' && ac.callsign !== 'BAV315' && ac.callsign !== 'HVN123' && ac.callsign !== 'RESCUE01');
         steppedAc = {
           ...ac,
           routeEdgeIndex: routeEdges.length - 1,
@@ -905,10 +1047,10 @@ export function scenarioTick(
           currentNodeId: toNode.id,
           targetNodeId: toNode.id,
           currentEdgeId: routeEdges[routeEdges.length - 1] ?? null,
-          status: 'arrived',
+          status: isDepartingAc ? 'departed' : 'arrived',
           speedKts: 0,
           speedLimitKts: 0,
-          speedReason: 'Đã đến đích an toàn',
+          speedReason: isDepartingAc ? 'Đã cất cánh và rời không phận' : 'Đã đến đích an toàn',
           holdReason: undefined,
         };
       } else {
@@ -924,7 +1066,8 @@ export function scenarioTick(
         const isNodeReserved = activeCtx.reservedNodes.has(toNode.id);
         const isEdgeReserved = activeCtx.reserved.has(nextEdgeId);
 
-        const canProceed = !isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph);
+        const isEmergency = ac.role === 'emergency' || ac.priority === 0;
+        const canProceed = isEmergency || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
         if (canProceed) {
           activeCtx.claimed.set(nextEdgeId, toNode.id);
@@ -975,6 +1118,7 @@ export function scenarioTick(
         if (occ.id === steppedAc.id) continue;
         const otherRank = getAircraftPriority(fleet.find(f => f.id === occ.id) || ac, graph);
         if (rank < otherRank) continue; // Higher priority does not yield to lower priority
+        if (steppedAc.callsign === 'RESCUE01' || steppedAc.aircraftAsset?.includes('xecuuhoa')) continue; // Xe cứu hỏa tiếp cận hiện trường
         if (steppedAc.callsign?.startsWith('INB') && steppedAc.routeEdgeIndex <= 2) continue; // Initial runway exit divergence
 
         const dist = Math.hypot(mx - occ.x, my - occ.y);
@@ -988,7 +1132,6 @@ export function scenarioTick(
             holdReason: 'stop-bar',
             heldSeconds: (steppedAc.heldSeconds ?? 0) + dt,
             speedKts: 0,
-            speedLimitKts: 0,
             speedReason: 'Dừng: Giữ khoảng cách',
           };
           break;

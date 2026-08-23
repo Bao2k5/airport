@@ -3,7 +3,7 @@ import type { AirportGraph, SimulationState } from '../types';
 import type { ScenarioAircraft } from '../data/presetScenarios';
 import { setupScenario5Traditional, setupScenario5FTG } from '../data/presetScenarios';
 import AirportMap from './AirportMap';
-import { scenarioTick, startScenario, recalculateRoutePreservingProgress } from '../simulation/scenarioRunner';
+import { scenarioTick, startScenario } from '../simulation/scenarioRunner';
 
 interface Props {
   graph: AirportGraph;
@@ -310,57 +310,58 @@ export default function Scenario5ComparisonView({
     const currentSec = prev.elapsedSeconds;
     let stateToTick = { ...prev };
 
-    // Automated FtG Direction Change Triggers
-    if (currentSec >= 25 && currentSec - dt < 25) {
+    // 1. Kích hoạt lệnh đổi hướng 07R sau 1s lăn chậm ban đầu (t=1.5s)
+    if (currentSec >= 1.5 && currentSec - dt < 1.5) {
       setFtgEvents(e => [
         ...e,
-        { time: 25, text: '⚡ RUNWAY_CHANGE_07R: Auto-Freeze kích hoạt tức thời, dừng 8 tàu bằng Stop Bar đỏ' },
-        { time: 25, callsign: 'OUT01, OUT02', text: 'Pha 1: Cấp tuyến đổi hướng 07R qua Dijkstra + Route Preview xanh dương + FtG xanh 15 kts' },
+        { time: 1.5, text: '📢 KSKL BẤM LỆNH: "Runway Change 07R" -> Kích hoạt Auto-Freeze 0.5s toàn sân!' },
+        { time: 1.5, text: '🛑 Auto-Freeze 0.5s: Dập tắt đèn Green, dựng 8 vạch STOP BAR ĐỎ KHẨN CẤP trước mũi 8 tàu bay!' },
       ]);
-
-      stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
-        if (ac.callsign === 'OUT01') {
-          const rerouted = recalculateRoutePreservingProgress(ac, 'v3_line_16_p01', stateToTick.blockedEdgeIds, graph);
-          return { ...rerouted, status: 'taxiing', speedKts: 15, holdReason: undefined, routeVisible: true, guidanceVisible: true, scenarioLabel: 'FTG DẪN ĐƯỜNG 07R' };
-        }
-        if (ac.callsign === 'OUT02') {
-          const rerouted = recalculateRoutePreservingProgress(ac, 'v3_line_17_p01', stateToTick.blockedEdgeIds, graph);
-          return { ...rerouted, status: 'taxiing', speedKts: 15, holdReason: undefined, routeVisible: true, guidanceVisible: true, scenarioLabel: 'FTG DẪN ĐƯỜNG 07R' };
-        }
-        if (ac.callsign === 'INB01' || ac.callsign === 'INB02') {
-          return { ...ac, status: 'taxiing', speedKts: 15, holdReason: undefined, routeVisible: true, guidanceVisible: true, scenarioLabel: 'FTG DẪN ĐƯỜNG VỀ BẾN' };
-        }
-        // Others held by Auto-Freeze Stop Bar (route preview hidden until cleared)
-        return { ...ac, status: 'holding', speedKts: 0, holdReason: 'stop-bar', routeVisible: false, guidanceVisible: false, scenarioLabel: 'AUTO-FREEZE (STOP BAR ĐỎ)' };
-      });
     }
 
-    if (currentSec >= 45 && currentSec - dt < 45) {
-      setFtgEvents(e => [
-        ...e,
-        { time: 45, callsign: 'OUT03, OUT04, PUSH', text: 'Pha 2: Giải phóng hành lang + Cấp Route Preview xanh dương + FtG xanh 15 kts' },
-      ]);
-
-      stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
-        if (ac.callsign === 'OUT03') {
-          const rerouted = recalculateRoutePreservingProgress(ac, 'v3_line_01_p00', stateToTick.blockedEdgeIds, graph);
-          return { ...rerouted, status: 'taxiing', speedKts: 15, holdReason: undefined, routeVisible: true, guidanceVisible: true, scenarioLabel: 'FTG DẪN ĐƯỜNG 07L' };
-        }
-        if (ac.callsign === 'OUT04') {
-          const rerouted = recalculateRoutePreservingProgress(ac, 'v3_line_03_p01', stateToTick.blockedEdgeIds, graph);
-          return { ...rerouted, status: 'taxiing', speedKts: 15, holdReason: undefined, routeVisible: true, guidanceVisible: true, scenarioLabel: 'FTG DẪN ĐƯỜNG 07L' };
-        }
-        if (ac.callsign === 'PUSH01') {
-          const rerouted = recalculateRoutePreservingProgress(ac, 'v3_line_17_p04', stateToTick.blockedEdgeIds, graph);
-          return { ...rerouted, status: 'taxiing', speedKts: 15, holdReason: undefined, routeVisible: true, guidanceVisible: true, scenarioLabel: 'FTG DẪN ĐƯỜNG 07R' };
-        }
-        if (ac.callsign === 'PUSH02') {
-          const rerouted = recalculateRoutePreservingProgress(ac, 'v3_line_18_p03', stateToTick.blockedEdgeIds, graph);
-          return { ...rerouted, status: 'taxiing', speedKts: 15, holdReason: undefined, routeVisible: true, guidanceVisible: true, scenarioLabel: 'FTG DẪN ĐƯỜNG 07R' };
-        }
-        return ac;
-      });
+    // Comic Bubble hiển thị liên tục khi kích hoạt Auto-Freeze (t >= 1.5s)
+    if (currentSec >= 1.5) {
+      stateToTick.comicBubble = {
+        speaker: 'KSKL',
+        active: true,
+        text: 'RUNWAY CHANGE 07R',
+        subText: 'Đóng băng an toàn toàn sân! Dập đèn Green, dựng 8 Stop Bar Đỏ khẩn cấp.',
+      };
+    } else if (stateToTick.comicBubble?.active) {
+      stateToTick.comicBubble = {
+        speaker: 'KSKL',
+        active: false,
+        text: '',
+      };
     }
+
+    // 2. Điều phối luồng tàu bay trên màn FTG
+    stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
+      // Pha 0 (0 <= t < 1.5s): Lăn chậm ban đầu với đèn Green
+      if (currentSec < 1.5) {
+        return {
+          ...ac,
+          status: 'taxiing',
+          speedKts: ac.callsign.startsWith('INB') ? 14 : 8,
+          speedLimitKts: ac.callsign.startsWith('INB') ? 14 : 8,
+          routeVisible: true,
+          guidanceVisible: true,
+          scenarioLabel: 'LĂN CHẬM BAN ĐẦU (ĐÈN GREEN)',
+        };
+      }
+
+      // Auto-Freeze (t >= 1.5s): Dập tắt 100% đèn Green, dựng vạch STOP BAR ĐỎ KHẨN CẤP trước mũi cả 8 tàu bay, dừng cứng tại chỗ an toàn
+      return {
+        ...ac,
+        status: 'holding',
+        speedKts: 0,
+        speedLimitKts: 0,
+        holdReason: 'stop-bar',
+        routeVisible: false,
+        guidanceVisible: false,
+        scenarioLabel: '🛑 AUTO-FREEZE: DỪNG TẠI CHỖ AN TOÀN',
+      };
+    });
 
     const next = scenarioTick(stateToTick, dt, graph);
 
@@ -609,6 +610,7 @@ export default function Scenario5ComparisonView({
               bgImage={bgImage}
               renderMode="ftg"
             />
+
             {/* Live Telemetry HUD Overlay */}
             <div className="absolute top-2 left-2 z-10 bg-[#062419]/90 border border-[#059669] rounded-lg p-2.5 text-[11px] shadow-lg backdrop-blur flex flex-col gap-1.5 pointer-events-none max-w-xs">
               <div className="text-[11px] font-bold text-[#34D399] uppercase tracking-wider border-b border-[#059669] pb-1">
@@ -617,7 +619,7 @@ export default function Scenario5ComparisonView({
               <div className="flex items-center justify-between gap-3">
                 <span className="text-[#A7F3D0] font-bold">Pha điều phối:</span>
                 <span className="text-[#34D399] font-mono font-bold">
-                  {rightElapsed < 25 ? 'Pha 0: Kế hoạch 25' : (rightElapsed < 45 ? 'Pha 1: Auto-Freeze & 07R' : 'Pha 2: Dynamic FtG 8 tàu')}
+                  {rightElapsed < 1.5 ? 'Pha 0: Lăn ban đầu' : (rightElapsed < 2.0 ? '🛑 Auto-Freeze 0.5s' : (rightElapsed < 18 ? 'Pha 1: OUT01/02 & INB01/02' : (rightElapsed < 28 ? 'Pha 2: OUT03/04' : 'Pha 3: Pushback')))}
                 </span>
               </div>
               <div className="flex items-center justify-between gap-3">

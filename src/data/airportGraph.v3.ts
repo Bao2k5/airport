@@ -65,8 +65,15 @@ const baseNodes: AirportNode[] = [
         "y": 484
     },
     {
+        "id": "v3_line_03_p_mid",
+        "label": "W5 MID",
+        "type": "holding_point",
+        "x": 65,
+        "y": 593
+    },
+    {
         "id": "v3_line_03_p01",
-        "label": "W1",
+        "label": "W5/07R",
         "type": "taxiway",
         "x": 66,
         "y": 703
@@ -951,10 +958,21 @@ export const airportGraphV3: AirportGraph = {
         "trafficLevel": "low"
     },
     {
-        "id": "E_v3_line_03_p00_v3_line_03_p01",
+        "id": "E_v3_line_03_p00_v3_line_03_p_mid",
         "fromNodeId": "v3_line_03_p00",
+        "toNodeId": "v3_line_03_p_mid",
+        "lengthMeters": 328.5,
+        "maxSpeedKts": 15,
+        "type": "taxiway",
+        "bidirectional": true,
+        "status": "open",
+        "trafficLevel": "low"
+    },
+    {
+        "id": "E_v3_line_03_p_mid_v3_line_03_p01",
+        "fromNodeId": "v3_line_03_p_mid",
         "toNodeId": "v3_line_03_p01",
-        "lengthMeters": 657.1,
+        "lengthMeters": 328.6,
         "maxSpeedKts": 15,
         "type": "taxiway",
         "bidirectional": true,
@@ -1033,7 +1051,7 @@ export const airportGraphV3: AirportGraph = {
         "toNodeId": "v3_line_03_p01",
         "lengthMeters": 49.9,
         "maxSpeedKts": 30,
-        "type": "runway",
+        "type": "taxiway",
         "bidirectional": true,
         "status": "open",
         "trafficLevel": "low"

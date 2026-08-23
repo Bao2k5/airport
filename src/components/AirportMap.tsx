@@ -222,10 +222,17 @@ function AirportMap({
 
   const allActiveAircraft: Aircraft[] = isScenario
     ? (state.scenarioAircraft ?? []).filter((ac: any) => {
-        if (ac.status === 'queued' || ac.hidden) return false;
-        if (ac.releaseAtSeconds !== undefined && state.elapsedSeconds < ac.releaseAtSeconds) return false;
-        if (ac.status === 'departed') return false;
-        // Máy bay về bến đỗ (arrived) như BAV456 tại Stand 17 và BAV315 tại W5 luôn hiển thị đứng yên, không biến mất
+        if (ac.hidden) return false;
+        // BAV456 và THA101 cất cánh là biến mất hoàn toàn
+        if (ac.status === 'departed' && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && ac.callsign !== 'HVN123') return false;
+        // Nếu BAV456 hoặc THA101 đã đến vạch STOP BAR 25L thì biến mất ngay lập tức
+        if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101') && (
+          ac.status === 'departed' ||
+          ac.currentNodeId === 'v3_line_17_p16' ||
+          ac.currentNodeId === 'v3_line_05_p07' ||
+          (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1)
+        )) return false;
+        // Máy bay về bến đỗ (HVN123) hoặc khẩn nguy (BAV315, RESCUE01) luôn hiển thị đứng yên
         return true;
       })
     : (state.manualFleet && state.manualFleet.length
@@ -424,8 +431,8 @@ function AirportMap({
           </g>
         )}
 
-        {/* ── Layer 5: Holding Bars & Closed Edge Markers ── */}
-        {allActiveAircraft.map(ac => {
+        {/* ── Layer 5: Holding Bars & Closed Edge Markers (Chỉ render cho màn truyền thống) ── */}
+        {renderMode === 'traditional' && allActiveAircraft.map(ac => {
           if (ac.status !== 'holding' && ac.holdReason !== 'stop-bar') return null;
           const fromNode = activeGraph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex]);
           const toNode = activeGraph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex + 1]);
@@ -484,11 +491,20 @@ function AirportMap({
                 {ac.callsign}
               </text>
 
-              {/* Dấu X STOP đỏ phát sáng trước mũi tất cả các tàu khi dừng xếp hàng (OUT01-OUT04, INB01-INB02, PUSH01-PUSH02) */}
-              {(ac.status === 'holding' || ac.status === 'waiting' || (ac.speedKts === 0 && !ac.hidden && ac.status !== 'parked' && ac.status !== 'arrived')) && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa') && (
+              {/* Dấu X STOP & Đèn đỏ Stop Bar phát sáng trước mũi các tàu khi dừng chờ hoặc cách ly */}
+              {renderMode !== 'ftg' && (
+                ((ac as any).status === 'holding') ||
+                ((ac as any).status === 'waiting') ||
+                (ac.callsign === 'BAV315' && ((ac as any).status === 'arrived' || (ac as any).status === 'holding' || (ac.speedKts === 0 && !ac.hidden))) ||
+                (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived')
+              ) && ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa') && (
                 <g transform={`translate(${pos.x}, ${pos.y})`}>
                   {/* Position X marker in front of aircraft along its heading */}
                   <g transform={`rotate(${pos.heading}) translate(0, -22)`}>
+                    {/* Glowing Red Stop Light Bar across path */}
+                    <line x1={-16} y1={0} x2={16} y2={0} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" opacity={0.95} />
+                    <line x1={-16} y1={0} x2={16} y2={0} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
+
                     {/* Glowing Red X Barrier */}
                     <g className="animate-pulse">
                       {/* Glow backdrop circle */}
@@ -502,10 +518,28 @@ function AirportMap({
                     </g>
                     {/* Stop Bar Badge Text */}
                     <g transform={`rotate(${-pos.heading}) translate(0, 16)`}>
-                      <rect x={-28} y={-6} width={56} height={12} rx={3} fill="#180404" stroke="#ef4444" strokeWidth={1} />
+                      <rect x={-32} y={-6} width={64} height={12} rx={3} fill="#180404" stroke="#ef4444" strokeWidth={1} />
                       <text x={0} y={2.5} textAnchor="middle" fontSize={5.5} fontWeight={900} fill="#fca5a5" fontFamily="monospace">
-                        {ac.callsign === 'OUT01' || ac.callsign === 'INB01' ? '⛔ STOP BAR' : '⛔ STOP'}
+                        {ac.callsign === 'BAV315' ? '⛔ ISOLATED STOP' : ac.callsign === 'BAV456' || ac.callsign === 'THA101' ? '⛔ HOLD POSITION' : ac.callsign === 'OUT01' || ac.callsign === 'INB01' ? '⛔ STOP BAR' : '⛔ STOP'}
                       </text>
+                    </g>
+                  </g>
+                </g>
+              )}
+
+              {/* Dấu X ĐỎ KHẨN CẤP trước mũi cả 8 tàu khi Auto-Freeze trên màn FTG */}
+              {renderMode === 'ftg' && state.comicBubble?.active && ac.status === 'holding' && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa') && (
+                <g transform={`translate(${pos.x}, ${pos.y})`}>
+                  <g transform={`rotate(${pos.heading}) translate(0, -22)`}>
+                    <g className="animate-pulse">
+                      {/* Vòng phát sáng đỏ */}
+                      <circle cx={0} cy={0} r={12} fill="rgba(239, 68, 68, 0.40)" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3,2" />
+                      {/* Dấu X đỏ tươi */}
+                      <line x1={-8} y1={-8} x2={8} y2={8} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" />
+                      <line x1={-8} y1={8} x2={8} y2={-8} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" />
+                      {/* Lõi trắng tương phản */}
+                      <line x1={-8} y1={-8} x2={8} y2={8} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
+                      <line x1={-8} y1={8} x2={8} y2={-8} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
                     </g>
                   </g>
                 </g>
@@ -529,8 +563,8 @@ function AirportMap({
           </g>
         )}
 
-        {/* ── Stop indicator / Arrow at HS_NS in Scenario 5 Traditional mode (Chỉ hiện khi INB01 đã chạy đến HS_NS, chỉ hiện hình tròn KHÔNG ghi chữ) ── */}
-        {(renderMode === 'traditional' || state.scenario?.id === 'lvc_peak_runway_direction_change') && state.scenarioAircraft?.some(a => a.callsign === 'INB01' && (a.routeEdgeIndex >= 15 || a.currentNodeId === 'v3_line_17_p09' || (a.status === 'holding' && a.routeEdgeIndex >= 14))) && (
+        {/* ── Stop indicator / Arrow at HS_NS in Scenario 5 Traditional mode (Chỉ hiển thị cho màn TRUYỀN THỐNG khi INB01 đến nơi, màn FTG tuyệt đối KHÔNG có) ── */}
+        {renderMode === 'traditional' && state.scenarioAircraft?.some(a => a.callsign === 'INB01' && (a.routeEdgeIndex >= 15 || a.currentNodeId === 'v3_line_17_p09' || (a.status === 'holding' && a.routeEdgeIndex >= 14))) && (
           <g transform="translate(809, 476)">
             {/* Pulsing red warning aura */}
             <circle cx={0} cy={0} r={16} fill="rgba(239, 68, 68, 0.25)" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3,2" className="animate-ping" />
@@ -582,6 +616,37 @@ function AirportMap({
                 )}
               </div>
             </div>
+          </div>
+        </div>
+      )}
+
+      {/* ── Comic Speech Bubble cho lệnh KSKL "Runway Change 07R" trên màn FTG ── */}
+      {renderMode === 'ftg' && state.comicBubble?.active && (
+        <div className="absolute top-10 left-1/2 -translate-x-1/2 z-40 max-w-md w-full px-4 animate-in zoom-in-95 duration-200 select-none pointer-events-none">
+          {/* Comic speech bubble with comic tail */}
+          <div className="relative bg-amber-300 text-slate-950 border-4 border-black rounded-2xl p-3 shadow-[0_10px_25px_rgba(0,0,0,0.5),6px_6px_0px_#000000] rotate-[-1deg]">
+            {/* Comic Header */}
+            <div className="flex items-center justify-between border-b-2 border-black/80 pb-1.5 mb-2">
+              <div className="flex items-center gap-1.5 font-black text-xs uppercase tracking-wider text-red-950">
+                {/* Nút bấm kiểu truyện tranh thay cho icon loa */}
+                <span className="inline-flex items-center justify-center bg-red-700 text-white text-[9px] font-black px-2 py-0.5 rounded border-2 border-black shadow-[2px_2px_0px_#000] uppercase tracking-wider">BTN</span>
+                KSKL BẤM LỆNH DUY NHẤT:
+              </div>
+              <span className="text-[10px] font-black bg-red-600 text-white px-2 py-0.5 rounded-full border border-black uppercase animate-pulse">
+                AUTO-FREEZE 0.5s
+              </span>
+            </div>
+
+            {/* Comic Bubble Text - chỉ giữ lại lệnh chính, xóa dòng mô tả phụ */}
+            <div className="flex items-center gap-3">
+              <div className="text-3xl filter drop-shadow">⚡</div>
+              <div className="text-sm md:text-base font-black tracking-wide text-red-700 uppercase drop-shadow-sm font-mono">
+                &quot;RUNWAY CHANGE 07R&quot;
+              </div>
+            </div>
+
+            {/* Comic Bubble Tail */}
+            <div className="absolute -bottom-3.5 left-12 w-0 h-0 border-l-[12px] border-l-transparent border-r-[12px] border-r-transparent border-t-[12px] border-t-amber-300 filter drop-shadow-[0_3px_0_#000000]"></div>
           </div>
         </div>
       )}
@@ -1415,33 +1480,34 @@ function CoordinateGrid() {
 }
 
 function getStandParkingHeading(nodeId: string, node?: AirportNode | null): number {
-  if (!node && !nodeId) return 265;
+  if (!node && !nodeId) return 270;
   const label = (node?.label || '').toUpperCase();
-  const id = nodeId.toLowerCase();
+  const id = (nodeId || '').toLowerCase();
 
-  // Stands 1, 2, 3, 4, 5 (Phía Nam bến đỗ - Stand 3: v3_line_34_p02):
-  // Mũi quay đầu vào trong về phía Nam (180°), đuôi quay ra ngoài phía Bắc (0°) để de đít
-  if (label.includes('STAND_3') || label.includes('STAND_1') || label.includes('STAND_2') || label.includes('STAND_4') || label.includes('STAND_5') ||
-      id.includes('line_34_p02') || id === 'p1' || id === 'p2' || id === 'p3' || id === 'p4' || id === 'p5') {
+  // Stands 10, 11, 12, 13 (Phía Tây của Line 12): Mũi quay thẳng qua trái vào bến (270° / West)
+  if (label === 'STAND_10' || label === 'STAND_11' || label === 'STAND_12' || label === 'STAND_13' ||
+      id.includes('line_33_p00') || id.includes('line_32_p00') || id.includes('line_31_p00') || id.includes('line_30_p00')) {
+    return 270;
+  }
+
+  // Stands 7, 8, 9 (Phía Đông của Line 12): Mũi quay thẳng qua phải vào bến (90° / East)
+  if (label === 'STAND_7' || label === 'STAND_8' || label === 'STAND_9' ||
+      id.includes('line_27_p01') || id.includes('line_28_p01') || id.includes('line_29_p01') || id === 't49') {
+    return 90;
+  }
+
+  // Stands 1, 2, 3, 4, 5 (Phía Nam bến đỗ - Stand 3: v3_line_34_p02): Mũi quay thẳng xuống phía Nam (180°)
+  if (label === 'STAND_1' || label === 'STAND_2' || label === 'STAND_3' || label === 'STAND_4' || label === 'STAND_5' ||
+      id.includes('line_34_p02') || ['p1', 'p2', 'p3', 'p4', 'p5'].includes(id)) {
     return 180;
   }
 
-  // Stands 10, 11, 12, 13 (Phía Tây của Line 12): Mũi quay đầu vào trong về hướng Tây (265°)
-  if (id.includes('line_33') || id.includes('line_32') || id.includes('line_31') || id.includes('line_30') ||
-      label.includes('STAND_10') || label.includes('STAND_11') || label.includes('STAND_12') || label.includes('STAND_13')) {
-    return 265;
-  }
-  // Stands 7, 8, 9 (Phía Đông của Line 12): Mũi quay đầu vào trong về hướng Đông (95°)
-  if (id.includes('line_27') || id.includes('line_28') || id.includes('line_29') ||
-      label.includes('STAND_7') || label.includes('STAND_8') || label.includes('STAND_9') || id === 't49') {
-    return 95;
-  }
-  // Stands 16, 17, 18, 20, 21, 22 (Apron Đông/Quốc tế): Mũi quay đầu vào trong về hướng Đông Nam (145°)
-  if (id.includes('line_21') || id.includes('line_22') || id.includes('line_23') || id.includes('line_24') || id.includes('line_25') || id.includes('line_26')) {
-    return 145;
+  // Stands 16, 17, 18, 20, 21, 22 (Apron Đông/Quốc tế): Mũi quay hướng Đông Nam (135°)
+  if (label.includes('STAND_17') || id.includes('line_21') || id.includes('line_22') || id.includes('line_23') || id.includes('line_24') || id.includes('line_25') || id.includes('line_26')) {
+    return 135;
   }
 
-  return 265;
+  return 270;
 }
 
 // ── Interpolate aircraft position along its route ──────────────────────────────
@@ -1467,6 +1533,11 @@ function getPositionForAircraft(aircraft: Aircraft | null, graph: AirportGraph =
       // Xử lý đẩy lùi (Pushback) rời bến đỗ:
       let heading = forwardHeading;
 
+      const isActualStand = fromNode.label?.toUpperCase().includes('STAND') ||
+                            fromNode.id.includes('line_33_p00') || fromNode.id.includes('line_32_p00') ||
+                            fromNode.id.includes('line_31_p00') || fromNode.id.includes('line_30_p00') ||
+                            fromNode.id.includes('line_34_p02');
+
       if (aircraft.callsign === 'PUSH02' || fromNode.label?.includes('STAND_3') || fromNode.id.includes('line_34_p02')) {
         if (curIdx === 0) {
           // Giai đoạn 1: Đẩy lùi rời Stand 3, đuôi quẹo trái hướng Tây (270°), mũi xoay từ 180° sang 90° (hướng Đông)
@@ -1481,16 +1552,9 @@ function getPositionForAircraft(aircraft: Aircraft | null, graph: AirportGraph =
           // Giai đoạn 4: Đã căn thẳng hàng 0° trên Line 12 -> chỉ việc nổ máy lăn thẳng tiến về phía Bắc (0°)
           heading = 0;
         }
-      } else if (curIdx === 0 && (
-        fromNode.id.includes('p00') ||
-        fromNode.id.includes('p02') ||
-        fromNode.label?.includes('STAND') ||
-        (fromNode.type as any) === 'stand' ||
-        fromNode.type === 'gate' ||
-        aircraft.role === 'pushback'
-      )) {
-        const parkHeading = getStandParkingHeading(fromNode.id, fromNode); // 265°
-        let targetHeading = 0; // Hướng trục chính Line 12
+      } else if (curIdx === 0 && (aircraft.role === 'pushback' || isActualStand)) {
+        const parkHeading = getStandParkingHeading(fromNode.id, fromNode); // 270° cho Stand 10
+        let targetHeading = 0; // Hướng trục chính Line 12 (thẳng đứng 0°)
         if (aircraft.assignedRoute.length > 2) {
           const nextNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[2]);
           if (nextNode) {
