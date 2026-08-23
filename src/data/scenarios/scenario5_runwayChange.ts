@@ -175,12 +175,12 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     'v3_line_24_p00', 'v3_line_24_p01' // STAND_20
   ];
 
-  // OUT01: Stand 13 -> HS_NS -> rẽ phải E6 -> STOPBAR 25L -> T63 -> NS2/25L -> HS_NS -> rẽ trái -> 07R
+  // OUT01: Stand 13 -> HS_NS -> NS2/25L -> T63 -> STOPBAR 25L -> quay lại T63 -> NS2/25L -> HS_NS -> rẽ trái -> 07R
   const pOut1 = [
     'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', 'v3_line_17_p09', // HS_NS
-    'v3_line_17_p10', 'v3_line_21_p00', 'v3_line_13_p03', 'v3_line_22_p00', 'v3_line_15_p01',
-    'v3_line_23_p00', 'v3_line_24_p00', 'v3_line_25_p00', 'v3_line_17_p11', 'v3_line_17_p12',
-    'v3_line_17_p13', 'v3_line_17_p14', 'v3_line_17_p15', 'v3_line_05_p07',
+    'v3_line_12_p02', 'v3_line_12_p01', 'v3_line_05_p04', 'v3_line_06_p03', 'v3_line_07_p01',
+    'v3_line_05_p05', // T63
+    'v3_line_13_p00', 'v3_line_09_p01', 'v3_line_05_p06', 'v3_line_26_p00', 'v3_line_05_p07',
     'v3_line_17_p16', // STOP BAR 25L
     'v3_line_05_p07', 'v3_line_26_p00', 'v3_line_05_p06', 'v3_line_09_p01', 'v3_line_13_p00',
     'v3_line_05_p05', // T63
@@ -191,12 +191,12 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     'v3_line_17_p00', 'v3_line_16_p00', 'v3_line_03_p01', 'v3_line_05_p00' // 07R
   ];
 
-  // OUT02: Stand 12 -> HS_NS -> rẽ phải E6 -> STOPBAR 25L -> T63 -> NS2/25L -> HS_NS -> rẽ trái -> 07R
+  // OUT02: Stand 12 -> HS_NS -> NS2/25L -> T63 -> STOPBAR 25L -> quay lại T63 -> NS2/25L -> HS_NS -> rẽ trái -> 07R
   const pOut2 = [
     'v3_line_31_p01', 'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', 'v3_line_17_p09', // HS_NS
-    'v3_line_17_p10', 'v3_line_21_p00', 'v3_line_13_p03', 'v3_line_22_p00', 'v3_line_15_p01',
-    'v3_line_23_p00', 'v3_line_24_p00', 'v3_line_25_p00', 'v3_line_17_p11', 'v3_line_17_p12',
-    'v3_line_17_p13', 'v3_line_17_p14', 'v3_line_17_p15', 'v3_line_05_p07',
+    'v3_line_12_p02', 'v3_line_12_p01', 'v3_line_05_p04', 'v3_line_06_p03', 'v3_line_07_p01',
+    'v3_line_05_p05', // T63
+    'v3_line_13_p00', 'v3_line_09_p01', 'v3_line_05_p06', 'v3_line_26_p00', 'v3_line_05_p07',
     'v3_line_17_p16', // STOP BAR 25L
     'v3_line_05_p07', 'v3_line_26_p00', 'v3_line_05_p06', 'v3_line_09_p01', 'v3_line_13_p00',
     'v3_line_05_p05', // T63
