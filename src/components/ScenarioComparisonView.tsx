@@ -524,22 +524,30 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // 5. OUT03 & OUT04: Giữ Stop Bar đỏ đệm khoảng cách đến khi OUT01/02 cất cánh -> sau đó bật Green lên 07R
+      // 5. OUT03 & OUT04: Giữ Stop Bar đỏ đệm khoảng cách đến khi OUT01 & OUT02 ĐÃ CẤT CÁNH KHỎI 07R
       if (ac.callsign === 'OUT03' || ac.callsign === 'OUT04') {
-        if (currentSec < 26) {
+        const out1Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT01')?.status === 'departed';
+        const out2Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT02')?.status === 'departed';
+        const bothOut12Departed = out1Departed && out2Departed;
+
+        // Nếu OUT01 hoặc OUT02 chưa cất cánh xong -> KHÓA CỨNG ĐỨNG YÊN TẠI VỊ TRÍ BAN ĐẦU
+        if (!bothOut12Departed) {
           return {
             ...ac,
             status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
+            routeEdgeIndex: 0,
+            progressOnEdge: 0,
             routeVisible: true,
             guidanceVisible: false,
             scenarioLabel: '🛑 STOP BAR ĐỎ (ĐỆM KHOẢNG CÁCH)',
           };
         }
+
         const at07R = ac.currentNodeId === 'v3_line_05_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 2;
-        if (at07R && (ac.callsign === 'OUT03' ? currentSec >= 36 : currentSec >= 40)) {
+        if (at07R && (ac.callsign === 'OUT03' ? true : stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT03')?.status === 'departed')) {
           return {
             ...ac,
             status: 'departed',
@@ -561,22 +569,29 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // 6. PUSH01 & PUSH02: Giữ cứng Stop Bar đỏ tại bến đỗ đến khi luồng lăn giải tỏa xong (t >= 36s)
+      // 6. PUSH01 & PUSH02: Giữ cứng Stop Bar đỏ tại bến đỗ đến khi OUT03 & OUT04 ĐÃ CẤT CÁNH
       if (ac.callsign === 'PUSH01' || ac.callsign === 'PUSH02') {
-        if (currentSec < 36) {
+        const out3Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT03')?.status === 'departed';
+        const out4Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT04')?.status === 'departed';
+        const allOutDeparted = out3Departed && out4Departed;
+
+        // Nếu các tàu lăn chưa giải tỏa xong -> KHÓA CỨNG ĐỨNG YÊN TRONG BẾN
+        if (!allOutDeparted) {
           return {
             ...ac,
             status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
+            routeEdgeIndex: 0,
+            progressOnEdge: 0,
             routeVisible: false,
             guidanceVisible: false,
             scenarioLabel: '🛑 GIỮ STOP BAR ĐỎ TẠI BẾN ĐỖ',
           };
         }
         const pushCompleted = ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
-        if (pushCompleted || currentSec >= 44) {
+        if (pushCompleted) {
           return {
             ...ac,
             status: 'arrived',

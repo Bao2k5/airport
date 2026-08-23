@@ -994,8 +994,8 @@ export function scenarioTick(
       }
     }
 
-    // Nếu tàu bay bị gán speedLimitKts === 0 thì giữ nguyên đứng yên
-    if (ac.speedLimitKts === 0 && ac.status !== 'taxiing') {
+    // Nếu tàu bay đang holding hoặc bị gán speedLimitKts === 0 thì giữ nguyên đứng yên tuyệt đối
+    if ((ac.speedLimitKts === 0 && ac.status !== 'taxiing') || ac.status === 'holding') {
       updatedFleet[idx] = {
         ...ac,
         status: 'holding',
