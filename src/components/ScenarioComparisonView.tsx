@@ -522,8 +522,8 @@ export default function Scenario5ComparisonView({
           };
         }
 
-        const atW5W7B = ac.currentNodeId === 'v3_line_11_p01' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
-        if (atW5W7B) {
+        const atW5_07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (atW5_07R) {
           return {
             ...ac,
             status: 'departed',
@@ -531,7 +531,7 @@ export default function Scenario5ComparisonView({
             speedLimitKts: 0,
             routeVisible: false,
             guidanceVisible: false,
-            scenarioLabel: `🛫 ${ac.callsign} CẤT CÁNH BIẾN MẤT TẠI W5/W7B`,
+            scenarioLabel: `🛫 ${ac.callsign} ĐÃ CẤT CÁNH TẠI W5/07R`,
           };
         }
         return {
@@ -541,7 +541,7 @@ export default function Scenario5ComparisonView({
           speedLimitKts: ac.callsign === 'OUT03' ? 24 : 20,
           routeVisible: true,
           guidanceVisible: true,
-          scenarioLabel: 'PHA 2: LĂN ➔ HS_NS ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B',
+          scenarioLabel: 'PHA 2: LĂN ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B ➔ W11 ➔ W5/07R',
         };
       }
 
@@ -566,8 +566,8 @@ export default function Scenario5ComparisonView({
             scenarioLabel: '🛑 GIỮ STOP BAR ĐỎ TẠI BẾN ĐỖ',
           };
         }
-        const atW5W7B = ac.currentNodeId === 'v3_line_11_p01' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
-        if (atW5W7B) {
+        const atW5_07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (atW5_07R) {
           return {
             ...ac,
             status: 'departed',
@@ -575,7 +575,7 @@ export default function Scenario5ComparisonView({
             speedLimitKts: 0,
             routeVisible: false,
             guidanceVisible: false,
-            scenarioLabel: `🛫 ${ac.callsign} PUSHBACK & CẤT CÁNH TẠI W5/W7B`,
+            scenarioLabel: `🛫 ${ac.callsign} ĐÃ CẤT CÁNH TẠI W5/07R`,
           };
         }
         return {
@@ -585,7 +585,7 @@ export default function Scenario5ComparisonView({
           speedLimitKts: ac.callsign === 'PUSH01' ? 18 : 15,
           routeVisible: true,
           guidanceVisible: true,
-          scenarioLabel: 'PHA 3: PUSHBACK ➔ HS_NS ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B',
+          scenarioLabel: 'PHA 3: PUSHBACK ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B ➔ W11 ➔ W5/07R',
         };
       }
 

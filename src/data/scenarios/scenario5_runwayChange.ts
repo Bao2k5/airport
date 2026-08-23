@@ -233,32 +233,49 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     'v3_line_16_p00'  // W5/07R (CẤT CÁNH BIẾN MẤT)
   ];
 
-  // Common departure corridor to W5/W7B
-  const pCommonW5W7B = ['v3_line_17_p09', 'v3_line_17_p08', 'v3_line_19_p03', 'v3_line_17_p07', 'v3_line_11_p01'];
+  // Common departure corridor to W5/07R
+  const pCommonW5_07R = [
+    'v3_line_17_p09', // HS_NS
+    'v3_line_17_p08',
+    'v3_line_19_p03', // HS_W7
+    'v3_line_17_p07', // L21_P3
+    'v3_line_11_p01', // W5/W7B
+    'v3_line_17_p06',
+    'v3_line_10_p04', // W9B/M5
+    'v3_line_17_p05',
+    'v3_line_18_p03', // W9B/W7A
+    'v3_line_17_p04', // W9B
+    'v3_line_16_p04',
+    'v3_line_17_p03',
+    'v3_line_16_p03',
+    'v3_line_16_p02',
+    'v3_line_16_p01', // W11/07R
+    'v3_line_16_p00'  // W5/07R (CẤT CÁNH BIẾN MẤT)
+  ];
 
-  // OUT03: Stand 11 -> Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B (cất cánh biến mất)
+  // OUT03: Stand 11 -> Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B -> W11/07R -> W5/07R (cất cánh biến mất)
   const pOut3 = [
     'v3_line_32_p01', 'v3_line_12_p03', 'v3_line_31_p01', 'v3_line_30_p01',
-    'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5W7B
+    'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5_07R
   ];
 
-  // OUT04: Stand 10 -> Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B (cất cánh biến mất)
+  // OUT04: Stand 10 -> Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B -> W11/07R -> W5/07R (cất cánh biến mất)
   const pOut4 = [
     'v3_line_33_p01', 'v3_line_32_p01', 'v3_line_12_p03', 'v3_line_31_p01', 'v3_line_30_p01',
-    'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5W7B
+    'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5_07R
   ];
 
-  // PUSH01: Bến 11 -> pushback ra Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B (cất cánh biến mất)
+  // PUSH01: Bến 11 -> pushback ra Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B -> W11/07R -> W5/07R (cất cánh biến mất)
   const pPush1 = [
     'v3_line_32_p00', 'v3_line_32_p01', 'v3_line_12_p03', 'v3_line_31_p01', 'v3_line_30_p01',
-    'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5W7B
+    'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5_07R
   ];
 
-  // PUSH02: Bến 3 -> pushback ra Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B (cất cánh biến mất)
+  // PUSH02: Bến 3 -> pushback ra Line 12 -> HS_NS -> HS_W7 -> L21_P3 -> W5/W7B -> W11/07R -> W5/07R (cất cánh biến mất)
   const pPush2 = [
     'v3_line_34_p02', 'v3_line_34_p01', 'v3_line_36_p01', 'v3_line_38_p01', 'v3_line_37_p01',
     'v3_line_35_p01', 'v3_line_34_p00', 'v3_line_33_p01', 'v3_line_32_p01', 'v3_line_12_p03',
-    'v3_line_31_p01', 'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5W7B
+    'v3_line_31_p01', 'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', ...pCommonW5_07R
   ];
 
   const vnDef = getAirlineDef('VN');
