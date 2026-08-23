@@ -226,13 +226,13 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     {
       id: 'S1', callsign: 'OUT01', airlineCode: 'VN', airlineName: vnDef.name, aircraftAsset: vnDef.asset, aircraftType: 'A321',
       currentNodeId: pOut1[0], targetNodeId: pOut1[pOut1.length - 1], currentEdgeId: routeToEdges(pOut1, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 18, speedLimitKts: 18, status: 'taxiing', assignedRoute: pOut1, routeEdgeIndex: 0,
+      progressOnEdge: 0, speedKts: 30, speedLimitKts: 30, status: 'taxiing', assignedRoute: pOut1, routeEdgeIndex: 0,
       role: 'departing', priority: 2, scenarioLabel: 'CẤT CÁNH 07R (HS_NS ➔ E6 ➔ 25L ➔ T63 ➔ 07R)', routeVisible: true, guidanceVisible: true,
     },
     {
       id: 'S2', callsign: 'OUT02', airlineCode: 'VJ', airlineName: vjDef.name, aircraftAsset: vjDef.asset, aircraftType: 'A321',
       currentNodeId: pOut2[0], targetNodeId: pOut2[pOut2.length - 1], currentEdgeId: routeToEdges(pOut2, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 16, speedLimitKts: 16, status: 'taxiing', assignedRoute: pOut2, routeEdgeIndex: 0,
+      progressOnEdge: 0, speedKts: 26, speedLimitKts: 26, status: 'taxiing', assignedRoute: pOut2, routeEdgeIndex: 0,
       role: 'departing', priority: 2, scenarioLabel: 'CẤT CÁNH 07R (XẾP HÀNG SAU OUT01)', routeVisible: true, guidanceVisible: true,
     },
     {

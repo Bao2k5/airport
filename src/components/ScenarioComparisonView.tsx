@@ -481,8 +481,8 @@ export default function Scenario5ComparisonView({
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 18,
-          speedLimitKts: 18,
+          speedKts: 30,
+          speedLimitKts: 30,
           routeVisible: true,
           guidanceVisible: true,
           scenarioLabel: 'TIẾN VỀ 07R (PHA 1: OUT01/02)',
@@ -516,8 +516,8 @@ export default function Scenario5ComparisonView({
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 16,
-          speedLimitKts: 16,
+          speedKts: 26,
+          speedLimitKts: 26,
           routeVisible: true,
           guidanceVisible: true,
           scenarioLabel: 'XẾP HÀNG 07R (SAU OUT01)',
