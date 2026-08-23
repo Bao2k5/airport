@@ -945,6 +945,55 @@ export function scenarioTick(
       }
     }
 
+    // Kịch bản 4: Phát hiện FOD tại W7A khi HVN401 vừa lăn vào W4 -> Thu hồi đèn W7A, chuyển hướng qua W9A
+    if (state.scenario?.id === 'lvc_w7a_sudden_closure' && ac.callsign === 'HVN401') {
+      const isAtW4 = ac.currentNodeId.includes('04_p') || ac.currentNodeId === 'v3_line_05_p01' || ac.routeEdgeIndex >= 4;
+      const isAlreadyRerouted = ac.assignedRoute?.includes('v3_line_19_p00') || ac.assignedRoute?.includes('v3_line_05_p02');
+      
+      if (isAtW4 && !isAlreadyRerouted) {
+        // 1. Khóa và đóng đường lăn W7A (FOD xuất hiện tại W7A MID)
+        blockedEdgeIds.add('E_v3_line_18_p01_v3_line_18_p02');
+        blockedEdgeIds.add('E_v3_line_18_p00_v3_line_18_p01');
+        blockedEdgeIds.add('E_v3_line_18_p02_v3_line_18_p03');
+        state.blockedEdgeIds.add('E_v3_line_18_p01_v3_line_18_p02');
+        state.blockedEdgeIds.add('E_v3_line_18_p00_v3_line_18_p01');
+        state.blockedEdgeIds.add('E_v3_line_18_p02_v3_line_18_p03');
+
+        // 2. Kích hoạt ATC Radio Transmission Comic Bubble (chỉ báo sự cố FOD)
+        state.comicBubble = {
+          speaker: 'TWR 118.1 MHz',
+          active: true,
+          text: '⚠️ CẢNH BÁO: Phát hiện vật thể lạ FOD tại W7A MID! Đóng đường lăn W7A lập tức.',
+        };
+
+        // 3. Tính toán lại tuyến đường mới từ vị trí hiện tại về Stand 16 theo thuật toán tìm đường
+        const newPath = findPath(graph, ac.currentNodeId, 'v3_line_21_p01', state.blockedEdgeIds);
+        if (newPath && newPath.length > 0) {
+          const newEdges = routeToEdges(newPath, graph.edges) ?? [];
+          ac = {
+            ...ac,
+            assignedRoute: newPath,
+            routeEdgeIndex: 0,
+            currentEdgeId: newEdges[0] ?? null,
+            progressOnEdge: 0,
+            speedKts: 15,
+            speedLimitKts: 15,
+            clearedRoute: newPath,
+            scenarioLabel: 'TỰ ĐỘNG TÁI ĐỊNH TUYẾN ➔ STAND 16',
+          };
+          updatedFleet[idx] = ac;
+          if (state.scenario && !state.scenario.events.some((e: any) => e.message.includes('[FOD_ALERT]'))) {
+            state.scenario.events.push({
+              atSeconds: state.elapsedSeconds,
+              message: '[FOD_ALERT] Phát hiện vật thể lạ FOD tại W7A MID — Đóng đường lăn W7A, thu hồi đèn FtG và tự động tái định tuyến',
+              severity: 'critical',
+            });
+          }
+          continue;
+        }
+      }
+    }
+
     // Nếu tàu bay bị gán speedLimitKts === 0 thì giữ nguyên đứng yên
     if (ac.speedLimitKts === 0 && ac.status !== 'taxiing') {
       updatedFleet[idx] = {
