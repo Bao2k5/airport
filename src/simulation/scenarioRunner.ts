@@ -1136,11 +1136,17 @@ export function scenarioTick(
         const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
         const isRunwayBlocked = targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
 
-        const isNodeReserved = activeCtx.reservedNodes.has(toNode.id);
-        const isEdgeReserved = activeCtx.reserved.has(nextEdgeId);
+        const isLeaderInSameDirection = activeCtx.occupants.some(
+          occ => occ.id !== ac.id && (
+            (occ.edgeId === nextEdgeId && occ.from === toNode.id) ||
+            ac.assignedRoute.slice(ac.routeEdgeIndex + 1, ac.routeEdgeIndex + 8).includes(occ.from)
+          )
+        );
+        const isNodeReserved = !isLeaderInSameDirection && activeCtx.reservedNodes.has(toNode.id);
+        const isEdgeReserved = !isLeaderInSameDirection && activeCtx.reserved.has(nextEdgeId);
 
         const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-        const canProceed = isEmergency || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
+        const canProceed = isEmergency || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
         if (canProceed) {
           activeCtx.claimed.set(nextEdgeId, toNode.id);
