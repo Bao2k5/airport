@@ -43,7 +43,25 @@ export function setupScenario5Traditional(g: AirportGraph = airportGraphV3) {
     'v3_line_17_p09'
   ];
 
-  const pInb2 = [...pInb1];
+  const pInb2 = [
+    'v3_line_04_p00',
+    'v3_line_03_p00',
+    'v3_line_03_p_mid',
+    'v3_line_03_p01',
+    'v3_line_16_p00',
+    'v3_line_17_p00',
+    'v3_line_05_p01',
+    'v3_line_04_p04',
+    'v3_line_04_p05',
+    'v3_line_10_p00',
+    'v3_line_05_p02',
+    'v3_line_19_p00',
+    'v3_line_19_p01',
+    'v3_line_19_p02',
+    'v3_line_19_p03',
+    'v3_line_17_p08',
+    'v3_line_17_p09'
+  ];
 
   const pPush1 = findPath(g, 'v3_line_32_p00', 'v3_line_17_p09') || [];
   const pPush2 = findPath(g, 'v3_line_34_p02', 'v3_line_17_p09') || [];
@@ -90,7 +108,7 @@ export function setupScenario5Traditional(g: AirportGraph = airportGraphV3) {
       id: 'S6', callsign: 'INB02', airlineCode: 'TG', airlineName: tgDef.name, aircraftAsset: tgDef.asset, aircraftType: 'A350',
       currentNodeId: pInb2[0], targetNodeId: pInb2[pInb2.length - 1], currentEdgeId: routeToEdges(pInb2, g.edges)?.[0] ?? null,
       progressOnEdge: 0.00, speedKts: 14, speedLimitKts: 14, status: 'taxiing', assignedRoute: pInb2, routeEdgeIndex: 0,
-      role: 'arriving', priority: 1, scenarioLabel: 'XẢ PHANH W4 ➔ HS NS (NỐI ĐUÔI INB01)', routeVisible: false, guidanceVisible: false,
+      role: 'arriving', priority: 1, scenarioLabel: 'XẢ PHANH W5/07L ➔ HS NS', routeVisible: false, guidanceVisible: false,
     },
     {
       id: 'S7', callsign: 'PUSH01', airlineCode: 'QH', airlineName: qhDef.name, aircraftAsset: qhDef.asset, aircraftType: 'A321',
