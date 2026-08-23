@@ -450,15 +450,10 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // Kiểm tra 2 TB hạ cánh đã thoát khỏi RWY 25L (vượt qua E4/25L)
-      const inb1Cleared25L = stateToTick.scenarioAircraft?.find(a => a.callsign === 'INB01')?.routeEdgeIndex >= 23;
-      const inb2Cleared25L = stateToTick.scenarioAircraft?.find(a => a.callsign === 'INB02')?.routeEdgeIndex >= 20;
-      const inboundsCleared25L = inb1Cleared25L && inb2Cleared25L;
-
-      // 3. OUT01: Lên 07R qua NS2 -> HS NS -> W7B -> W11 -> 07R và cất cánh khi 2 TB hạ cánh thoát 25L
+      // 3. OUT01: Lên W5/07R qua HS_W7 -> L21_P3 -> W5/W7B -> W11/07R -> W5/07R và cất cánh biến mất
       if (ac.callsign === 'OUT01') {
-        const at07R = ac.currentNodeId === 'v3_line_05_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 2;
-        if (at07R && (inboundsCleared25L || currentSec >= 20)) {
+        const atW5_07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (atW5_07R) {
           return {
             ...ac,
             status: 'departed',
@@ -466,16 +461,7 @@ export default function Scenario5ComparisonView({
             speedLimitKts: 0,
             routeVisible: false,
             guidanceVisible: false,
-            scenarioLabel: '🛫 ĐÃ CẤT CÁNH 07R',
-          };
-        } else if (at07R) {
-          return {
-            ...ac,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
-            holdReason: 'stop-bar',
-            scenarioLabel: 'XẾP HÀNG 07R (CHỜ 2 TB HẠ CÁNH)',
+            scenarioLabel: '🛫 OUT01 ĐÃ CẤT CÁNH TẠI W5/07R',
           };
         }
         return {
@@ -485,15 +471,14 @@ export default function Scenario5ComparisonView({
           speedLimitKts: 30,
           routeVisible: true,
           guidanceVisible: true,
-          scenarioLabel: 'TIẾN VỀ 07R (PHA 1: OUT01/02)',
+          scenarioLabel: 'LĂN ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B ➔ W11 ➔ W5/07R',
         };
       }
 
-      // 4. OUT02: Xếp hàng sau OUT01 tại 07R và cất cánh sau OUT01 2 phút mô phỏng (t >= 26s)
+      // 4. OUT02: Nối đuôi OUT01 tới W5/07R và cất cánh biến mất
       if (ac.callsign === 'OUT02') {
-        const out1Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT01')?.status === 'departed';
-        const at07R = ac.currentNodeId === 'v3_line_05_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 2;
-        if (at07R && (out1Departed || currentSec >= 26)) {
+        const atW5_07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (atW5_07R) {
           return {
             ...ac,
             status: 'departed',
@@ -501,16 +486,7 @@ export default function Scenario5ComparisonView({
             speedLimitKts: 0,
             routeVisible: false,
             guidanceVisible: false,
-            scenarioLabel: '🛫 ĐÃ CẤT CÁNH 07R (SAU OUT01 2 PHÚT)',
-          };
-        } else if (at07R) {
-          return {
-            ...ac,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
-            holdReason: 'stop-bar',
-            scenarioLabel: 'XẾP HÀNG 07R (SAU OUT01)',
+            scenarioLabel: '🛫 OUT02 ĐÃ CẤT CÁNH TẠI W5/07R',
           };
         }
         return {
@@ -520,7 +496,7 @@ export default function Scenario5ComparisonView({
           speedLimitKts: 26,
           routeVisible: true,
           guidanceVisible: true,
-          scenarioLabel: 'XẾP HÀNG 07R (SAU OUT01)',
+          scenarioLabel: 'XẾP HÀNG ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B ➔ W11 ➔ W5/07R',
         };
       }
 

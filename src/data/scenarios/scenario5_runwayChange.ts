@@ -175,7 +175,7 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     'v3_line_24_p00', 'v3_line_24_p01' // STAND_20
   ];
 
-  // OUT01: Stand 13 -> HS_NS -> quẹo phải E6 -> STOPBAR 25L -> chạy thẳng tới NS2 -> quẹo trái xuống HS_NS -> quẹo phải ra 07R
+  // OUT01: Stand 13 -> HS_NS -> quẹo phải E6 -> STOPBAR 25L -> chạy thẳng tới NS2 -> quẹo trái xuống HS_NS -> quẹo phải -> HS_W7 -> L21_P3 -> W5/W7B -> W11/07R -> W5/07R (cất cánh)
   const pOut1 = [
     'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', 'v3_line_17_p09', // HS_NS (quẹo phải)
     'v3_line_17_p10', 'v3_line_21_p00', 'v3_line_13_p03', 'v3_line_22_p00', 'v3_line_15_p01',
@@ -186,13 +186,25 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     'v3_line_05_p05', // T63
     'v3_line_07_p01', 'v3_line_06_p03', 'v3_line_05_p04',
     'v3_line_12_p01', // NS2/25L (quẹo trái)
-    'v3_line_12_p02', 'v3_line_17_p09', // HS_NS (quẹo phải ra 07R)
-    'v3_line_17_p08', 'v3_line_19_p03', 'v3_line_19_p02', 'v3_line_19_p01', 'v3_line_19_p00',
-    'v3_line_05_p02', 'v3_line_10_p00', 'v3_line_04_p05', 'v3_line_04_p04', 'v3_line_05_p01',
-    'v3_line_17_p00', 'v3_line_16_p00', 'v3_line_03_p01', 'v3_line_05_p00' // 07R
+    'v3_line_12_p02', 'v3_line_17_p09', // HS_NS (quẹo phải ra HS_W7)
+    'v3_line_17_p08',
+    'v3_line_19_p03', // HS_W7
+    'v3_line_17_p07', // L21_P3
+    'v3_line_11_p01', // W5/W7B
+    'v3_line_17_p06',
+    'v3_line_10_p04', // W9B/M5
+    'v3_line_17_p05',
+    'v3_line_18_p03', // W9B/W7A
+    'v3_line_17_p04', // W9B
+    'v3_line_16_p04',
+    'v3_line_17_p03',
+    'v3_line_16_p03',
+    'v3_line_16_p02',
+    'v3_line_16_p01', // W11/07R
+    'v3_line_16_p00'  // W5/07R (CẤT CÁNH BIẾN MẤT)
   ];
 
-  // OUT02: Stand 12 -> HS_NS -> quẹo phải E6 -> STOPBAR 25L -> chạy thẳng tới NS2 -> quẹo trái xuống HS_NS -> quẹo phải ra 07R
+  // OUT02: Stand 12 -> HS_NS -> quẹo phải E6 -> STOPBAR 25L -> chạy thẳng tới NS2 -> quẹo trái xuống HS_NS -> quẹo phải -> HS_W7 -> L21_P3 -> W5/W7B -> W11/07R -> W5/07R (cất cánh)
   const pOut2 = [
     'v3_line_31_p01', 'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00', 'v3_line_17_p09', // HS_NS (quẹo phải)
     'v3_line_17_p10', 'v3_line_21_p00', 'v3_line_13_p03', 'v3_line_22_p00', 'v3_line_15_p01',
@@ -203,10 +215,22 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     'v3_line_05_p05', // T63
     'v3_line_07_p01', 'v3_line_06_p03', 'v3_line_05_p04',
     'v3_line_12_p01', // NS2/25L (quẹo trái)
-    'v3_line_12_p02', 'v3_line_17_p09', // HS_NS (quẹo phải ra 07R)
-    'v3_line_17_p08', 'v3_line_19_p03', 'v3_line_19_p02', 'v3_line_19_p01', 'v3_line_19_p00',
-    'v3_line_05_p02', 'v3_line_10_p00', 'v3_line_04_p05', 'v3_line_04_p04', 'v3_line_05_p01',
-    'v3_line_17_p00', 'v3_line_16_p00', 'v3_line_03_p01', 'v3_line_05_p00' // 07R
+    'v3_line_12_p02', 'v3_line_17_p09', // HS_NS (quẹo phải ra HS_W7)
+    'v3_line_17_p08',
+    'v3_line_19_p03', // HS_W7
+    'v3_line_17_p07', // L21_P3
+    'v3_line_11_p01', // W5/W7B
+    'v3_line_17_p06',
+    'v3_line_10_p04', // W9B/M5
+    'v3_line_17_p05',
+    'v3_line_18_p03', // W9B/W7A
+    'v3_line_17_p04', // W9B
+    'v3_line_16_p04',
+    'v3_line_17_p03',
+    'v3_line_16_p03',
+    'v3_line_16_p02',
+    'v3_line_16_p01', // W11/07R
+    'v3_line_16_p00'  // W5/07R (CẤT CÁNH BIẾN MẤT)
   ];
 
   const pOut3 = findPath(g, 'v3_line_32_p01', 'v3_line_05_p00') || [];
