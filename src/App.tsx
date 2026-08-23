@@ -30,6 +30,7 @@ import type { SimulationConfig, SimulationState } from './types';
 
 import PresetScenariosPanel from './components/PresetScenariosPanel';
 import Scenario5ComparisonView from './components/ScenarioComparisonView';
+import Scenario1ComparisonView from './components/Scenario1ComparisonView';
 import { startScenario, scenarioTick } from './simulation/scenarioRunner';
 import {
   GRAPH_REGISTRY,
@@ -112,6 +113,7 @@ export default function App() {
   const [showPaths, setShowPaths] = useState(false);
   const [inspectingPathAircraftId, setInspectingPathAircraftId] = useState<string | null>(null);
   const [showScenario5Comparison, setShowScenario5Comparison] = useState(false);
+  const [showScenario1Comparison, setShowScenario1Comparison] = useState(false);
   const [isCapturingAudit, setIsCapturingAudit] = useState<boolean>(false);
 
   // Watchdog state
@@ -400,6 +402,13 @@ export default function App() {
       setShowScenario5Comparison(true);
       return;
     }
+    if (scId === 'lvc_wrong_turn_radio_failure') {
+      if (selectedGraphId !== 'v3') {
+        setSelectedGraphId('v3');
+      }
+      setShowScenario1Comparison(true);
+      return;
+    }
     setSimState(startScenario(scId, currentGraph));
     setMobileTab('status');
     setSheetExpanded(true);
@@ -420,6 +429,18 @@ export default function App() {
             bgImage={GRAPH_REGISTRY.v3.bgImage}
             onExit={() => {
               setShowScenario5Comparison(false);
+              setSimState(prev => resetToManualMode(prev, getAirportGraph('v3')));
+            }}
+          />
+        )}
+
+        {/* ── Scenario 1 Dual Map Comparison Mode ── */}
+        {showScenario1Comparison && (
+          <Scenario1ComparisonView
+            graph={getAirportGraph('v3')}
+            bgImage={GRAPH_REGISTRY.v3.bgImage}
+            onExit={() => {
+              setShowScenario1Comparison(false);
               setSimState(prev => resetToManualMode(prev, getAirportGraph('v3')));
             }}
           />
