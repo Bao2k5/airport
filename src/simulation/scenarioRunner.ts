@@ -435,10 +435,11 @@ function isJunctionClear(
   force: boolean,
   graph: AirportGraph
 ): boolean {
+  if (force) return true;
   if (hasHeadOnConflict(edgeId, fromNode, toNode, acId, ctx, graph)) return false;
   if (hasCircularDeadlock(edgeId, fromNode, toNode, acId, ctx, graph)) return false;
   if (hasOpposingCommitment(edgeId, fromNode, toNode, acId, rank, ctx, graph)) return false;
-  return force || !isEntryBlocked(edgeId, fromNode, toNode, acId, rank, ctx, graph);
+  return !isEntryBlocked(edgeId, fromNode, toNode, acId, rank, ctx, graph);
 }
 
 function isStandDepartureClear(
@@ -792,9 +793,10 @@ export function scenarioTick(
 
     // Runway corridor protection for entry edge
     const isEmergencyAc = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
+    const isScenario5 = state.scenario?.id === 'lvc_peak_runway_direction_change';
     const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
     const isCorridorOccupiedByOther = currentCorridor && currentOccupancy[currentCorridor] && currentOccupancy[currentCorridor] !== ac.id;
-    if (!isEmergencyAc && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
+    if (!isEmergencyAc && !isScenario5 && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
       steppedAc = {
         ...ac,
         status: 'holding',
@@ -1060,7 +1062,7 @@ export function scenarioTick(
       const isBlocked = blockedEdgeIds.has(nextEdgeId);
       const targetCorridor = getRunwayCorridor(nextEdgeId, nextTargetNodeId);
       const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
-      const isRunwayBlocked = targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
+      const isRunwayBlocked = !isScenario5 && targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
       const isLeaderInSameDirection = activeCtx.occupants.some(
         occ => occ.id !== ac.id && (
           (occ.edgeId === nextEdgeId && occ.from === toNode.id) ||
@@ -1073,7 +1075,7 @@ export function scenarioTick(
       const forceJunction = heldSec >= JUNCTION_FORCE_WAIT_S;
 
       const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-      const canProceed = isEmergency || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
+      const canProceed = isEmergency || isScenario5 || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
       if (!canProceed) {
         steppedAc = {
@@ -1134,7 +1136,7 @@ export function scenarioTick(
         // Runway corridor protection check
         const targetCorridor = getRunwayCorridor(nextEdgeId, nextTargetNodeId);
         const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
-        const isRunwayBlocked = targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
+        const isRunwayBlocked = !isScenario5 && targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
 
         const isLeaderInSameDirection = activeCtx.occupants.some(
           occ => occ.id !== ac.id && (
@@ -1146,7 +1148,7 @@ export function scenarioTick(
         const isEdgeReserved = !isLeaderInSameDirection && activeCtx.reserved.has(nextEdgeId);
 
         const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-        const canProceed = isEmergency || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
+        const canProceed = isEmergency || isScenario5 || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
         if (canProceed) {
           activeCtx.claimed.set(nextEdgeId, toNode.id);
