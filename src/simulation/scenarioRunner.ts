@@ -915,6 +915,36 @@ export function scenarioTick(
       }
     }
 
+    // Khóa dừng nhường đường cho Kịch bản 3: VJ302 giữ nguyên Dấu X Stop Bar cho đến khi HVN301 về tới Stand 17
+    if (state.scenario?.id === 'lvc_hsns_intersection_conflict' && ac.callsign === 'VJ302') {
+      const hvn = fleet.find(a => a.callsign === 'HVN301');
+      const hvnArrived = hvn && (hvn.status === 'arrived' || (hvn.routeEdgeIndex >= hvn.assignedRoute.length - 2 && hvn.progressOnEdge >= 0.8) || hvn.currentNodeId === 'v3_line_22_p01' || hvn.currentNodeId === 'v3_line_34_p00');
+      if (!hvnArrived) {
+        steppedAc = {
+          ...ac,
+          status: 'holding',
+          holdReason: 'stop-bar',
+          heldSeconds: (ac.heldSeconds ?? 0) + dt,
+          speedKts: 0,
+          speedLimitKts: 0,
+          speedReason: 'Dừng: Nhường đường cho HVN301 về Stand 17',
+          scenarioLabel: '⛔ HOLD POSITION (NHƯỜNG HVN301)',
+        };
+        updatedFleet[idx] = steppedAc;
+        continue;
+      } else if (ac.status === 'holding' && ac.holdReason === 'stop-bar') {
+        // HVN301 đã về tới bến Stand 17 -> gỡ bỏ dấu X, cấp đèn xanh cho VJ302 chạy
+        ac = {
+          ...ac,
+          status: 'taxiing',
+          holdReason: undefined,
+          heldSeconds: 0,
+          speedLimitKts: 16,
+          scenarioLabel: 'ĐÃ GIẢI TỎA: PUSHBACK ➔ QUA E6 ➔ 25L',
+        };
+      }
+    }
+
     // Nếu tàu bay bị gán speedLimitKts === 0 thì giữ nguyên đứng yên
     if (ac.speedLimitKts === 0 && ac.status !== 'taxiing') {
       updatedFleet[idx] = {

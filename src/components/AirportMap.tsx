@@ -223,16 +223,16 @@ function AirportMap({
   const allActiveAircraft: Aircraft[] = isScenario
     ? (state.scenarioAircraft ?? []).filter((ac: any) => {
         if (ac.hidden) return false;
-        // BAV456 và THA101 cất cánh là biến mất hoàn toàn
-        if (ac.status === 'departed' && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && ac.callsign !== 'HVN123') return false;
-        // Nếu BAV456 hoặc THA101 đã đến vạch STOP BAR 25L thì biến mất ngay lập tức
-        if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101') && (
+        // BAV456, THA101, VJ302 cất cánh là biến mất hoàn toàn
+        if (ac.status === 'departed' && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && ac.callsign !== 'HVN123' && ac.callsign !== 'HVN301') return false;
+        // Nếu tàu khởi hành đã đến vạch STOP BAR 25L thì biến mất ngay lập tức
+        if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101' || ac.callsign === 'VJ302') && (
           ac.status === 'departed' ||
           ac.currentNodeId === 'v3_line_17_p16' ||
           ac.currentNodeId === 'v3_line_05_p07' ||
           (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1)
         )) return false;
-        // Máy bay về bến đỗ (HVN123) hoặc khẩn nguy (BAV315, RESCUE01) luôn hiển thị đứng yên
+        // Máy bay về bến đỗ (HVN123, HVN301) hoặc khẩn nguy (BAV315, RESCUE01) luôn hiển thị đứng yên
         return true;
       })
     : (state.manualFleet && state.manualFleet.length
