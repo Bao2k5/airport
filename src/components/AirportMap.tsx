@@ -1530,17 +1530,20 @@ function getPositionForAircraft(aircraft: Aircraft | null, graph: AirportGraph =
 
       if (aircraft.callsign === 'PUSH02' || fromNode.label?.includes('STAND_3') || fromNode.id.includes('line_34_p02')) {
         if (curIdx === 0) {
-          // Giai đoạn 1: Đẩy lùi rời Stand 3, đuôi quẹo trái hướng Tây (270°), mũi xoay từ 180° sang 90° (hướng Đông)
-          heading = 180 - 90 * t;
-        } else if (curIdx >= 1 && curIdx <= 4) {
-          // Giai đoạn 2: Lùi de đít dọc theo tuyến lăn nội bộ về hướng Tây -> mũi tàu luôn hướng Đông (90°)
+          // Giai đoạn 1: Đẩy lùi rời Stand 3 (mũi giữ hướng Nam 180°)
+          heading = 180;
+        } else if (curIdx >= 1 && curIdx <= 3) {
+          // Giai đoạn 2: Lùi đuôi sang Tây -> mũi tàu hướng Đông (90°)
           heading = 90;
+        } else if (curIdx === 4) {
+          // Giai đoạn 3: Lùi đuôi lên Bắc -> mũi tàu hướng Nam (180°)
+          heading = 180;
         } else if (curIdx === 5) {
-          // Giai đoạn 3: De đít vào tim Line 12 tại nút v3_line_34_p00 -> đuôi quẹo trái vào tim Line 12, mũi xoay từ 90° sang thẳng đứng 0°
-          heading = 90 - 90 * t;
+          // Giai đoạn 4: Cua vào tim Line 12 -> mũi xoay mượt từ 90° sang thẳng Bắc 0°
+          heading = (90 - 90 * t + 360) % 360;
         } else {
-          // Giai đoạn 4: Đã căn thẳng hàng 0° trên Line 12 -> chỉ việc nổ máy lăn thẳng tiến về phía Bắc (0°)
-          heading = 0;
+          // Giai đoạn 5: Đã vào tim đường lăn -> Mũi và đuôi tàu LUÔN LUÔN đi song song chuẩn theo tim đường
+          heading = forwardHeading;
         }
       } else if (curIdx === 0 && (aircraft.role === 'pushback' || isActualStand)) {
         const parkHeading = getStandParkingHeading(fromNode.id, fromNode); // 270° cho Stand 10

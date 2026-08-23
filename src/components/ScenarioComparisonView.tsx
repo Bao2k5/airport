@@ -242,16 +242,16 @@ export default function Scenario5ComparisonView({
           scenarioLabel: '⛔ STOP (SAU OUT04)',
         };
       }
-      if (ac.callsign === 'PUSH02' && ((ac.routeEdgeIndex > 10 || (ac.routeEdgeIndex === 10 && ac.progressOnEdge >= 0.38)) || ac.status === 'arrived')) {
+      if (ac.callsign === 'PUSH02' && ((ac.routeEdgeIndex > 4 || (ac.routeEdgeIndex === 4 && ac.progressOnEdge >= 0.50)) || ac.status === 'arrived')) {
         return {
           ...ac,
-          routeEdgeIndex: 10,
-          progressOnEdge: 0.38,
+          routeEdgeIndex: 4,
+          progressOnEdge: 0.50,
           status: 'holding',
           speedKts: 0,
           speedLimitKts: 0,
           holdReason: 'stop-bar',
-          scenarioLabel: '⛔ STOP (SAU PUSH01)',
+          scenarioLabel: '⛔ STOP (TRONG BẾN 3)',
         };
       }
       if (ac.callsign === 'INB01' && ((ac.routeEdgeIndex >= 16 && ac.progressOnEdge >= 0.90) || ac.status === 'arrived' || ac.currentNodeId === 'v3_line_17_p09')) {
