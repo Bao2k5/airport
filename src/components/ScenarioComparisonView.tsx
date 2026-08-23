@@ -500,14 +500,14 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // 5. OUT03 & OUT04: Giữ Stop Bar đỏ đệm khoảng cách đến khi OUT01 & OUT02 ĐÃ CẤT CÁNH KHỎI 07R
+      // 5. GIAI ĐOẠN 2: OUT03 & OUT04: Chờ 2 tàu hạ cánh (INB01 & INB02) TỚI BẾN ĐỖ AN TOÀN rồi mới lăn
       if (ac.callsign === 'OUT03' || ac.callsign === 'OUT04') {
-        const out1Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT01')?.status === 'departed';
-        const out2Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT02')?.status === 'departed';
-        const bothOut12Departed = out1Departed && out2Departed;
+        const inb1Arrived = stateToTick.scenarioAircraft?.find(a => a.callsign === 'INB01')?.status === 'arrived';
+        const inb2Arrived = stateToTick.scenarioAircraft?.find(a => a.callsign === 'INB02')?.status === 'arrived';
+        const bothInboundsArrived = inb1Arrived && inb2Arrived;
 
-        // Nếu OUT01 hoặc OUT02 chưa cất cánh xong -> KHÓA CỨNG ĐỨNG YÊN TẠI VỊ TRÍ BAN ĐẦU
-        if (!bothOut12Departed) {
+        // Nếu 2 tàu hạ cánh chưa tới bến đỗ an toàn -> KHÓA CỨNG ĐỨNG YÊN TẠI VỊ TRÍ BAN ĐẦU
+        if (!bothInboundsArrived) {
           return {
             ...ac,
             status: 'holding',
@@ -518,12 +518,12 @@ export default function Scenario5ComparisonView({
             progressOnEdge: 0,
             routeVisible: true,
             guidanceVisible: false,
-            scenarioLabel: '🛑 STOP BAR ĐỎ (ĐỆM KHOẢNG CÁCH)',
+            scenarioLabel: '🛑 CHỜ 2 TB HẠ CÁNH VỀ BẾN ĐỖ',
           };
         }
 
-        const at07R = ac.currentNodeId === 'v3_line_05_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 2;
-        if (at07R && (ac.callsign === 'OUT03' ? true : stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT03')?.status === 'departed')) {
+        const atW5W7B = ac.currentNodeId === 'v3_line_11_p01' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (atW5W7B) {
           return {
             ...ac,
             status: 'departed',
@@ -531,27 +531,27 @@ export default function Scenario5ComparisonView({
             speedLimitKts: 0,
             routeVisible: false,
             guidanceVisible: false,
-            scenarioLabel: `🛫 ${ac.callsign} CẤT CÁNH 07R`,
+            scenarioLabel: `🛫 ${ac.callsign} CẤT CÁNH BIẾN MẤT TẠI W5/W7B`,
           };
         }
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 20,
-          speedLimitKts: 20,
+          speedKts: ac.callsign === 'OUT03' ? 24 : 20,
+          speedLimitKts: ac.callsign === 'OUT03' ? 24 : 20,
           routeVisible: true,
           guidanceVisible: true,
-          scenarioLabel: 'TIẾN LÊN 07R (PHA 2)',
+          scenarioLabel: 'PHA 2: LĂN ➔ HS_NS ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B',
         };
       }
 
-      // 6. PUSH01 & PUSH02: Giữ cứng Stop Bar đỏ tại bến đỗ đến khi OUT03 & OUT04 ĐÃ CẤT CÁNH
+      // 6. GIAI ĐOẠN 3: PUSH01 & PUSH02: Giữ cứng Stop Bar đỏ tại bến đỗ đến khi OUT03 & OUT04 ĐÃ CẤT CÁNH
       if (ac.callsign === 'PUSH01' || ac.callsign === 'PUSH02') {
         const out3Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT03')?.status === 'departed';
         const out4Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT04')?.status === 'departed';
         const allOutDeparted = out3Departed && out4Departed;
 
-        // Nếu các tàu lăn chưa giải tỏa xong -> KHÓA CỨNG ĐỨNG YÊN TRONG BẾN
+        // Nếu OUT03 & OUT04 chưa cất cánh xong -> KHÓA CỨNG ĐỨNG YÊN TRONG BẾN
         if (!allOutDeparted) {
           return {
             ...ac,
@@ -566,26 +566,26 @@ export default function Scenario5ComparisonView({
             scenarioLabel: '🛑 GIỮ STOP BAR ĐỎ TẠI BẾN ĐỖ',
           };
         }
-        const pushCompleted = ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
-        if (pushCompleted) {
+        const atW5W7B = ac.currentNodeId === 'v3_line_11_p01' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (atW5W7B) {
           return {
             ...ac,
-            status: 'arrived',
+            status: 'departed',
             speedKts: 0,
             speedLimitKts: 0,
             routeVisible: false,
             guidanceVisible: false,
-            scenarioLabel: '✓ PUSHBACK HOÀN TẤT',
+            scenarioLabel: `🛫 ${ac.callsign} PUSHBACK & CẤT CÁNH TẠI W5/W7B`,
           };
         }
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 8,
-          speedLimitKts: 8,
+          speedKts: ac.callsign === 'PUSH01' ? 18 : 15,
+          speedLimitKts: ac.callsign === 'PUSH01' ? 18 : 15,
           routeVisible: true,
           guidanceVisible: true,
-          scenarioLabel: 'BẬT GREEN: PUSHBACK RA LINE 12',
+          scenarioLabel: 'PHA 3: PUSHBACK ➔ HS_NS ➔ HS_W7 ➔ L21_P3 ➔ W5/W7B',
         };
       }
 
