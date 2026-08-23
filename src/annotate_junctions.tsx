@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { SVG_WIDTH, SVG_HEIGHT } from './data/airportGraph';
+import { SVG_WIDTH, SVG_HEIGHT } from './data/airportGraph.v3';
 import { USER_RAW_TRACES } from './data/rawTracesData';
 import proposedData from './data/v3_junctions.proposed.json';
 

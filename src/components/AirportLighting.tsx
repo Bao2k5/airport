@@ -1,9 +1,8 @@
-// Lớp đèn sân bay ban đêm — RENDER TĨNH THEO GRAPH HIỆN TẠI (activeGraph).
-// Hỗ trợ dynamic graph selection (Graph V1 & Graph V2), cập nhật tức thì khi chuyển đổi graph.
+// Lớp đèn sân bay ban đêm — TSN V3 (activeGraph /anhchinh.png).
 
 import { memo, useMemo, type JSX } from 'react';
 import type { AirportGraph, AirportEdge, AirportNode } from '../types';
-import { airportGraph } from '../data/airportGraph';
+import { airportGraphV3 } from '../data/airportGraph.v3';
 
 interface Props {
   graph?: AirportGraph;
@@ -27,26 +26,6 @@ const TWY_OFFSET       = 3.5;   // offset vuông góc từ tim ra mỗi mép
 const TWY_RADIUS       = 1.1;   // bán kính lõi đèn xanh
 const TWY_MIN_EDGE_LEN = 16;    // edge ngắn hơn ngưỡng này thì bỏ, tránh chồng chập
 
-// Màu mặt đường cho Graph V1 (Graph V2 dùng nền vệ tinh anhtren.png nên chỉ vẽ glow nhẹ)
-const RUNWAY_PAVE      = '#2a3140';
-const TAXIWAY_PAVE     = '#232a38';
-const APRON_PAVE       = '#141824';
-const PAVE_EDGE_STROKE = '#0c1017';
-const PAVE_OUTLINE     = 1.4;
-const RWY_PAVE_WIDTH   = 2 * RWY_HALF_WIDTH + 2;
-const TWY_PAVE_WIDTH   = 2 * TWY_OFFSET + 1;
-const APRON_PAVE_WIDTH = 2 * TWY_OFFSET + 1;
-
-const ROAD_GLOW_COLOR    = '#2b3a52';
-const ROAD_GLOW_OPACITY  = 0.35;
-const APRON_GLOW_OPACITY = 0.2;
-const ROAD_GLOW_BLUR     = 4.5;
-const ROAD_GLOW_EXTRA    = 4;
-
-const TWY_CENTERLINE_COLOR   = '#3d5a80';
-const TWY_CENTERLINE_OPACITY = 0.45;
-const TWY_CENTERLINE_WIDTH   = 0.8;
-
 const HALO_SCALE       = 3.8;
 const HALO_OPACITY     = 0.75;
 const HALO_BLUR        = 2;
@@ -68,89 +47,33 @@ interface LightPoint {
   color: LightColor;
 }
 
-type StripKind = 'runway' | 'taxiway' | 'apron';
-
-interface Strip {
-  x1: number; y1: number; x2: number; y2: number;
-  width: number;
-  fill: string;
-  kind: StripKind;
-}
-
 function getNode(graph: AirportGraph, id: string): AirportNode | undefined {
   return graph.nodes.find(n => n.id === id);
 }
 
 function isApronEdge(edge: AirportEdge): boolean {
   const touchesStand = (id: string) =>
-    id.startsWith('DOM_S') || id.startsWith('INTL_S') || /^P\d/.test(id) || id === 'T49';
+    id.startsWith('DOM_S') || id.startsWith('INTL_S') || /^P\d/.test(id) || id === 'T49' || id.includes('STAND') || id.startsWith('v3_line_29') || id.startsWith('v3_line_30');
   return edge.type === 'apron' || touchesStand(edge.fromNodeId) || touchesStand(edge.toNodeId);
 }
 
-// Tìm các cặp đầu đường băng trong graph hiện tại
+// Tìm các cặp đầu đường băng trong graph V3
 function getRunwayThresholds(graph: AirportGraph): Array<[string, string]> {
   const pairs: Array<[string, string]> = [];
-  const has07L = graph.nodes.some(n => n.id === 'RWY07L_THR');
-  const has25R = graph.nodes.some(n => n.id === 'RWY25R_THR');
-  if (has07L && has25R) pairs.push(['RWY07L_THR', 'RWY25R_THR']);
+  const v3_07l = graph.nodes.find(n => n.id === 'v3_line_01_p00' || n.label === '07L' || n.id === 'RWY07L_THR');
+  const v3_25r = graph.nodes.find(n => n.id === 'v3_line_01_p03' || n.label === 'STOP BAR 25R' || n.id === 'RWY25R_THR');
+  if (v3_07l && v3_25r) pairs.push([v3_07l.id, v3_25r.id]);
 
-  const has07R = graph.nodes.some(n => n.id === 'RWY07R_THR');
-  const has25L = graph.nodes.some(n => n.id === 'RWY25L_THR');
-  if (has07R && has25L) pairs.push(['RWY07R_THR', 'RWY25L_THR']);
-
-  // Graph V3 support (07L -> STOP BAR 25R and 07R -> STOP BAR 25L)
-  if (pairs.length === 0) {
-    const v3_07l = graph.nodes.find(n => n.id === 'v3_line_01_p00' || n.label === '07L');
-    const v3_25r = graph.nodes.find(n => n.id === 'v3_line_01_p03' || n.label === 'STOP BAR 25R');
-    if (v3_07l && v3_25r) pairs.push([v3_07l.id, v3_25r.id]);
-
-    const v3_07r = graph.nodes.find(n => n.id === 'v3_line_05_p00' || n.label === '07R');
-    const v3_25l = graph.nodes.find(n => n.id === 'v3_line_05_p07' || n.id === 'v3_line_17_p16' || n.label === 'STOP BAR 25L');
-    if (v3_07r && v3_25l) pairs.push([v3_07r.id, v3_25l.id]);
-  }
+  const v3_07r = graph.nodes.find(n => n.id === 'v3_line_05_p00' || n.label === '07R' || n.id === 'RWY07R_THR');
+  const v3_25l = graph.nodes.find(n => n.id === 'v3_line_05_p07' || n.id === 'v3_line_17_p16' || n.label === 'STOP BAR 25L' || n.id === 'RWY25L_THR');
+  if (v3_07r && v3_25l) pairs.push([v3_07r.id, v3_25l.id]);
 
   return pairs;
-}
-
-// ── Sinh dải mặt đường từ graph hiện tại ─────────────────────────────────────
-function buildPavement(graph: AirportGraph): Strip[] {
-  const isV2 = graph.nodes.length > 50; // Graph V2 dùng nền ảnh vệ tinh anhtren.png
-  if (isV2) {
-    // Trên Graph V2, ảnh anhtren.png đã có sẵn toàn bộ đường băng và đường lăn thực tế
-    // Không vẽ dải mặt đường nhân tạo làm che lấp ảnh nền
-    return [];
-  }
-
-  const apron: Strip[] = [];
-  const taxi: Strip[]  = [];
-
-  for (const edge of graph.edges) {
-    if (edge.type === 'runway') continue;
-    const from = getNode(graph, edge.fromNodeId);
-    const to   = getNode(graph, edge.toNodeId);
-    if (!from || !to) continue;
-    const strip: Strip = isApronEdge(edge)
-      ? { x1: from.x, y1: from.y, x2: to.x, y2: to.y, width: APRON_PAVE_WIDTH, fill: APRON_PAVE, kind: 'apron' }
-      : { x1: from.x, y1: from.y, x2: to.x, y2: to.y, width: TWY_PAVE_WIDTH,  fill: TAXIWAY_PAVE, kind: 'taxiway' };
-    (isApronEdge(edge) ? apron : taxi).push(strip);
-  }
-
-  const runway: Strip[] = [];
-  const thresholds = getRunwayThresholds(graph);
-  for (const [fromId, toId] of thresholds) {
-    const a = getNode(graph, fromId);
-    const b = getNode(graph, toId);
-    if (!a || !b) continue;
-    runway.push({ x1: a.x, y1: a.y, x2: b.x, y2: b.y, width: RWY_PAVE_WIDTH, fill: RUNWAY_PAVE, kind: 'runway' });
-  }
-
-  return [...apron, ...taxi, ...runway];
 }
 
 // ── Sinh toàn bộ vị trí đèn tĩnh từ graph hiện tại ───────────────────────────
 function buildLights(graph: AirportGraph, isRunwayEmergencyRed: boolean = false): LightPoint[] {
   const lights: LightPoint[] = [];
-  const isV2 = graph.nodes.length > 50;
 
   // 1. RUNWAY — viền, tâm, và hàng đèn cuối
   const thresholds = getRunwayThresholds(graph);
@@ -212,8 +135,7 @@ function buildLights(graph: AirportGraph, isRunwayEmergencyRed: boolean = false)
   }
 
   // 2. TAXIWAY — đèn xanh dương 2 mép theo từng edge
-  // Đối với Graph V2 (anhtren.png), chỉ rải đèn xanh thưa trên các taxiway chính để tăng tính lung linh
-  const step = isV2 ? TWY_STEP * 1.5 : TWY_STEP;
+  const step = TWY_STEP;
   for (const edge of graph.edges) {
     if (edge.type === 'runway') continue;
     if (isApronEdge(edge)) continue; // apron để tối
@@ -243,49 +165,9 @@ function buildLights(graph: AirportGraph, isRunwayEmergencyRed: boolean = false)
   return lights;
 }
 
-function AirportLighting({ graph = airportGraph, isRunwayEmergencyRed = false }: Props) {
-  // Hình học tính toán ĐỘNG THEO GRAPH HIỆN TẠI (useMemo phụ thuộc [graph, isRunwayEmergencyRed])
-  const currentGraph = graph || airportGraph;
-  const pavement = useMemo(() => buildPavement(currentGraph), [currentGraph]);
-  const lights   = useMemo(() => buildLights(currentGraph, isRunwayEmergencyRed), [currentGraph, isRunwayEmergencyRed]);
-
-  const roadGlow: JSX.Element[] = pavement.map((s, i) => (
-    <line
-      key={`glow-${i}`}
-      x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
-      stroke={ROAD_GLOW_COLOR} strokeWidth={s.width + ROAD_GLOW_EXTRA}
-      strokeLinecap="round" strokeLinejoin="round"
-      opacity={s.kind === 'apron' ? APRON_GLOW_OPACITY : ROAD_GLOW_OPACITY}
-    />
-  ));
-
-  const centerlines: JSX.Element[] = pavement
-    .filter(s => s.kind === 'taxiway')
-    .map((s, i) => (
-      <line
-        key={`center-${i}`}
-        x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
-        stroke={TWY_CENTERLINE_COLOR} strokeWidth={TWY_CENTERLINE_WIDTH}
-        strokeLinecap="round" opacity={TWY_CENTERLINE_OPACITY}
-      />
-    ));
-
-  const paveOutline: JSX.Element[] = pavement.map((s, i) => (
-    <line
-      key={`pave-out-${i}`}
-      x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
-      stroke={PAVE_EDGE_STROKE} strokeWidth={s.width + PAVE_OUTLINE * 2}
-      strokeLinecap="round" strokeLinejoin="round"
-    />
-  ));
-  const paveFill: JSX.Element[] = pavement.map((s, i) => (
-    <line
-      key={`pave-fill-${i}`}
-      x1={s.x1} y1={s.y1} x2={s.x2} y2={s.y2}
-      stroke={s.fill} strokeWidth={s.width}
-      strokeLinecap="round" strokeLinejoin="round"
-    />
-  ));
+function AirportLighting({ graph = airportGraphV3, isRunwayEmergencyRed = false }: Props) {
+  const currentGraph = graph || airportGraphV3;
+  const lights = useMemo(() => buildLights(currentGraph, isRunwayEmergencyRed), [currentGraph, isRunwayEmergencyRed]);
 
   const halos: JSX.Element[] = lights.map((l, i) => (
     <circle
@@ -314,20 +196,7 @@ function AirportLighting({ graph = airportGraph, isRunwayEmergencyRed = false }:
         <filter id="nl-core-blur" x="-50%" y="-50%" width="200%" height="200%">
           <feGaussianBlur stdDeviation={CORE_BLUR} />
         </filter>
-        <filter id="nl-road-glow" x="-50%" y="-50%" width="200%" height="200%">
-          <feGaussianBlur stdDeviation={ROAD_GLOW_BLUR} />
-        </filter>
       </defs>
-
-      {/* Dải mặt đường và glow (chỉ vẽ trên Graph V1 khi không có ảnh nền vệ tinh) */}
-      {pavement.length > 0 && (
-        <>
-          <g filter="url(#nl-road-glow)">{roadGlow}</g>
-          <g>{paveOutline}</g>
-          <g>{paveFill}</g>
-          <g>{centerlines}</g>
-        </>
-      )}
 
       {/* Lớp đèn lung linh ban đêm */}
       <g filter="url(#nl-halo-blur)" opacity={HALO_OPACITY}>{halos}</g>

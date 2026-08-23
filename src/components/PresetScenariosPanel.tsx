@@ -3,7 +3,7 @@
 import { useState, useMemo } from 'react';
 import type { ScenarioState, ScenarioObservation } from '../data/presetScenarios';
 import { getPresetScenarioDefs } from '../data/presetScenarios';
-import { airportGraph } from '../data/airportGraph';
+import { airportGraphV3 } from '../data/airportGraph.v3';
 import { useActionLock } from '../utils/useActionLock';
 import type { AirportGraph, SimulationState } from '../types';
 
@@ -21,7 +21,7 @@ export default function PresetScenariosPanel({
   scenarioState,
   onStartScenario,
   onExitScenario,
-  graph = airportGraph,
+  graph = airportGraphV3,
   simSpeed = 1,
 }: Props) {
   const { executeAction, getActionState } = useActionLock(2000);

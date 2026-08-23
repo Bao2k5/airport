@@ -65,9 +65,7 @@ export default function App() {
 
   const [selectedGraphId, setSelectedGraphId] = useState<GraphId>(() => {
     const saved = loadStateFromStorage();
-    return (saved?.selectedGraphId === 'v3' || saved?.selectedGraphId === 'v2' || saved?.selectedGraphId === 'v1')
-      ? saved.selectedGraphId
-      : DEFAULT_GRAPH_ID;
+    return saved?.selectedGraphId === 'v3' ? saved.selectedGraphId : DEFAULT_GRAPH_ID;
   });
 
   const [config, setConfig] = useState<SimulationConfig>(() => {
@@ -77,10 +75,7 @@ export default function App() {
 
   const [simState, setSimState] = useState<SimulationState>(() => {
     const saved = loadStateFromStorage();
-    const graphId = (saved?.selectedGraphId === 'v3' || saved?.selectedGraphId === 'v2' || saved?.selectedGraphId === 'v1')
-      ? saved.selectedGraphId
-      : DEFAULT_GRAPH_ID;
-    const baseGraph = getAirportGraph(graphId);
+    const baseGraph = getAirportGraph(DEFAULT_GRAPH_ID);
     const initialConfig = saved?.config ? { ...DEFAULT_CONFIG, ...saved.config } : DEFAULT_CONFIG;
     const base = initSimulation(initialConfig, baseGraph);
     if (saved) {
@@ -107,7 +102,6 @@ export default function App() {
   const [sheetExpanded, setSheetExpanded] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [autoIncidents, setAutoIncidents] = useState(false);
-  const [showGraphV2Overlay, setShowGraphV2Overlay] = useState(false);
   const [showGraphV3Overlay, setShowGraphV3Overlay] = useState(false);
   const [showGrid, setShowGrid] = useState(false);
   const [showPaths, setShowPaths] = useState(false);
@@ -123,7 +117,7 @@ export default function App() {
   const lastTimeRef = useRef<number | null>(null);
   const lastTickTimeRef = useRef<number>(Date.now());
 
-  const currentGraphEntry = GRAPH_REGISTRY[selectedGraphId] ?? GRAPH_REGISTRY.v1;
+  const currentGraphEntry = GRAPH_REGISTRY.v3;
   const currentGraph = getAirportGraph(selectedGraphId);
 
   // Mandatory logging per specification
@@ -497,7 +491,7 @@ export default function App() {
 
           {/* Bộ chọn Đồ thị & Nút Hành Động */}
           <div className="flex items-center gap-1.5 sm:gap-2 flex-shrink-0">
-            {/* Bộ chọn Model/Graph */}
+            {/* Model Badge */}
             <div
               data-testid="graph-meta"
               data-graph-id={selectedGraphId}
@@ -505,50 +499,16 @@ export default function App() {
               data-nodes={currentGraph.nodes.length}
               data-edges={currentGraph.edges.length}
               data-bg={currentGraphEntry.bgImage}
-              className="flex items-center gap-1 bg-[#0A1B36] px-2 py-1 rounded-lg border border-[#1E3A8A]"
+              className="flex items-center gap-1 bg-[#0A1B36] px-2.5 py-1 rounded-lg border border-[#1E3A8A]"
             >
               <span className="text-[11px] text-[#93C5FD] font-medium hidden md:inline">Mô hình:</span>
-              <select
-                data-testid="graph-select"
-                value={selectedGraphId}
-                onChange={(e) => {
-                  const newId = e.target.value as GraphId;
-                  setSelectedGraphId(newId);
-                  const newGraph = getAirportGraph(newId);
-                  if (simState.scenario) {
-                    setSimState(startScenario(simState.scenario.id, newGraph));
-                  } else {
-                    const hasStart = newGraph.nodes.some(n => n.id === config.startNodeId);
-                    const hasDest = newGraph.nodes.some(n => n.id === config.destinationNodeId);
-                    const nextConfig: SimulationConfig = {
-                      ...config,
-                      startNodeId: hasStart ? config.startNodeId : (newId === 'v2' ? 'HS3' : 'DOM_S1'),
-                      destinationNodeId: hasDest ? config.destinationNodeId : (newId === 'v2' ? 'RWY07L_THR' : 'RWY07L_THR'),
-                    };
-                    setConfig(nextConfig);
-                    setSimState(initSimulation(nextConfig, newGraph));
-                  }
-                }}
-                className="bg-[#173A73] text-xs font-bold text-white rounded px-2 py-0.5 border border-[#3B82F6]/50 focus:outline-none focus:border-[#60A5FA] cursor-pointer"
-              >
-                <option value="v3">Sân bay TSN (v3 - Nền mới)</option>
-                <option value="v1">Sân bay TSN (v1)</option>
-                <option value="v2">Sân bay TSN (v2)</option>
-              </select>
+              <span className="text-xs font-bold text-white bg-[#173A73] px-2 py-0.5 rounded border border-[#3B82F6]/50">
+                Sân bay TSN (v3)
+              </span>
             </div>
 
-            {/* ── Nút Debug Khôi Phục: Overlay V2, Overlay V3, Grid, Paths ── */}
+            {/* ── Nút Debug: Overlay V3, Grid, Paths ── */}
             <div className="flex items-center gap-1 bg-[#132F5C] px-1.5 py-1 rounded-lg border border-[#3B82F6]/30">
-              <button
-                data-testid="toggle-overlay-v2"
-                onClick={() => setShowGraphV2Overlay(v => !v)}
-                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
-                  showGraphV2Overlay ? 'bg-[#EC4899] text-white shadow-xs' : 'text-[#94A3B8] hover:text-white'
-                }`}
-                title="Bật/tắt lớp overlay Graph V2 để đối chiếu"
-              >
-                Overlay V2
-              </button>
               <button
                 data-testid="toggle-overlay-v3"
                 onClick={() => setShowGraphV3Overlay(v => !v)}
@@ -623,7 +583,6 @@ export default function App() {
                 graph={currentGraph}
                 bgImage={currentGraphEntry.bgImage}
                 onSelectAircraft={handleSelectAircraft}
-                showGraphV2Overlay={showGraphV2Overlay}
                 showGraphV3Overlay={showGraphV3Overlay}
                 showGrid={showGrid}
                 showPaths={showPaths}
@@ -767,15 +726,6 @@ export default function App() {
 
               {/* Mobile Debug Toggles */}
               <div className="flex items-center gap-0.5 ml-1 mr-1">
-                <button
-                  onClick={() => setShowGraphV2Overlay(v => !v)}
-                  className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${
-                    showGraphV2Overlay ? 'bg-[#EC4899] text-white' : 'bg-slate-200 text-slate-700'
-                  }`}
-                  title="Overlay V2"
-                >
-                  V2
-                </button>
                 <button
                   onClick={() => setShowGrid(v => !v)}
                   className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${

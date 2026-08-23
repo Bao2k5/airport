@@ -2,7 +2,6 @@ import { StrictMode } from 'react'
 import { createRoot } from 'react-dom/client'
 import './index.css'
 import App from './App.tsx'
-import { airportGraphV2 } from './data/airportGraph.v2'
 import { getAirportGraph, GRAPH_REGISTRY } from './data/graphRegistry'
 import {
   startScenario,
@@ -29,7 +28,6 @@ import { simulationTick, createDefaultManualFleet, acceptRoute, startManualAircr
 // Expose simulation engine for runtime verification
 if (typeof window !== 'undefined') {
   (window as any).__SIMULATION_ENGINE__ = {
-    airportGraphV2,
     getAirportGraph,
     GRAPH_REGISTRY,
     startScenario,

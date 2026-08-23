@@ -5,7 +5,7 @@ import {
   type ScenarioState,
   type ScenarioObservation,
 } from '../data/presetScenarios';
-import { airportGraph } from '../data/airportGraph';
+import { airportGraphV3 as airportGraph } from '../data/airportGraph.v3';
 import { findPath, routeToEdges } from './pathfinding';
 import { getRunwayCorridor } from './simulator';
 

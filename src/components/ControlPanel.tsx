@@ -1,7 +1,7 @@
 // Bảng điều khiển mô phỏng — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
 
 import React from 'react';
-import { airportGraph } from '../data/airportGraph';
+import { airportGraphV3 } from '../data/airportGraph.v3';
 import { AIRLINES, type AirlineCode } from '../data/airlineTypes';
 import { useActionLock } from '../utils/useActionLock';
 import { V3_EXACT_OPERATIONAL_NODES, toSafeNodeId } from '../data/v3OperationalNodes';
@@ -34,7 +34,7 @@ interface Props {
 
 export default function ControlPanel({
   config,
-  graph = airportGraph,
+  graph = airportGraphV3,
   manualFleet = [],
   selectedAircraftId = 'VN001',
   onSelectAircraft,

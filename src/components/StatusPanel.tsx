@@ -1,6 +1,6 @@
 import { Fragment } from 'react';
 import type { SimulationState, AirportGraph } from '../types';
-import { airportGraph } from '../data/airportGraph';
+import { airportGraphV3 } from '../data/airportGraph.v3';
 import { routeToEdges } from '../simulation/pathfinding';
 import { getAirlineDef } from '../data/airlineTypes';
 
@@ -40,9 +40,9 @@ const INCIDENT_VI: Record<string, string> = {
   aircraft_stopped_ahead: 'Máy bay dừng phía trước',
 };
 
-export default function StatusPanel({ state, graph = airportGraph }: Props) {
+export default function StatusPanel({ state, graph = airportGraphV3 }: Props) {
   const { config, elapsedSeconds, etaSeconds, warningMessage } = state;
-  const currentGraph = graph || airportGraph;
+  const currentGraph = graph || airportGraphV3;
 
   const isScenarioMode = Boolean(state.scenario || (state.scenarioAircraft && state.scenarioAircraft.length > 0));
   const scenarioFleet = state.scenarioAircraft || [];

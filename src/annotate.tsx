@@ -5,7 +5,7 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import './index.css';
-import { SVG_WIDTH, SVG_HEIGHT } from './data/airportGraph';
+import { SVG_WIDTH, SVG_HEIGHT } from './data/airportGraph.v3';
 import rawTracesManualData from './data/v3_raw_traces_manual.json';
 
 export interface RawPoint {

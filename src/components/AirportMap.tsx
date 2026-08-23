@@ -9,9 +9,7 @@
 //      - Independent aircraft movement and markers for all fleet instances.
 
 import { useEffect, useRef, useState, useCallback, memo } from 'react';
-import { airportGraph, SVG_WIDTH, SVG_HEIGHT } from '../data/airportGraph';
-import { airportGraphV2 } from '../data/airportGraph.v2';
-import { airportGraphV3 } from '../data/airportGraph.v3';
+import { airportGraphV3, SVG_WIDTH, SVG_HEIGHT } from '../data/airportGraph.v3';
 import AirportLighting from './AirportLighting';
 import { getAirlineDef } from '../data/airlineTypes';
 import { loadImageWithRetry, type AssetLoadState } from '../utils/assetLoader';
@@ -24,7 +22,6 @@ interface Props {
   /** traditional = no route preview / no Follow-the-Green visual guidance */
   renderMode?: 'normal' | 'traditional' | 'ftg';
   onSelectAircraft?: (aircraftId: string) => void;
-  showGraphV2Overlay?: boolean;
   showGraphV3Overlay?: boolean;
   showGrid?: boolean;
   showPaths?: boolean;
@@ -35,11 +32,10 @@ const BG_OUTER = '#0c0f12';
 
 function AirportMap({
   state,
-  graph = airportGraph,
-  bgImage = '/anhtren.png',
+  graph = airportGraphV3,
+  bgImage = '/anhchinh.png',
   renderMode = 'normal',
   onSelectAircraft,
-  showGraphV2Overlay = false,
   showGraphV3Overlay = false,
   showGrid = false,
   showPaths = false,
@@ -385,9 +381,6 @@ function AirportMap({
           <V3RunwayCenterlineEmergencyLights />
         )}
 
-        {/* ── Layer 2.7: Graph V2 Overlay (Reference & Comparison Only) ── */}
-        {showGraphV2Overlay && <GraphV2OverlayRenderer />}
-
         {/* ── Layer 2.75: Graph V3 Overlay (Reference & Comparison Only - Only khi người dùng bật) ── */}
         {showGraphV3Overlay && <GraphV3OverlayRenderer />}
 
@@ -671,44 +664,6 @@ function AirportMap({
         )}
       </div>
     </div>
-  );
-}
-
-// ── GRAPH V2 OVERLAY RENDERER (Layer 2.7: Reference and Comparison Only) ────────────────
-function GraphV2OverlayRenderer() {
-  return (
-    <g className="graph-v2-overlay-layer" opacity={0.65} pointerEvents="none">
-      {/* V2 Edges */}
-      {airportGraphV2.edges.map(edge => {
-        const from = airportGraphV2.nodes.find(n => n.id === edge.fromNodeId);
-        const to = airportGraphV2.nodes.find(n => n.id === edge.toNodeId);
-        if (!from || !to) return null;
-        return (
-          <line
-            key={`v2-edge-${edge.id}`}
-            x1={from.x}
-            y1={from.y}
-            x2={to.x}
-            y2={to.y}
-            stroke="#ec4899"
-            strokeWidth={1.5}
-            strokeDasharray="4,4"
-          />
-        );
-      })}
-
-      {/* V2 Nodes */}
-      {airportGraphV2.nodes.map(node => (
-        <g key={`v2-node-${node.id}`} transform={`translate(${node.x}, ${node.y})`}>
-          <circle cx={0} cy={0} r={2.5} fill="#ec4899" stroke="#ffffff" strokeWidth={0.5} />
-          {node.label && (
-            <text x={0} y={-4} textAnchor="middle" fontSize={3.8} fill="#f472b6" fontWeight={700}>
-              {node.label}
-            </text>
-          )}
-        </g>
-      ))}
-    </g>
   );
 }
 
@@ -1501,7 +1456,7 @@ function getStandParkingHeading(nodeId: string, node?: AirportNode | null): numb
 }
 
 // ── Interpolate aircraft position along its route ──────────────────────────────
-function getPositionForAircraft(aircraft: Aircraft | null, graph: AirportGraph = airportGraph) {
+function getPositionForAircraft(aircraft: Aircraft | null, graph: AirportGraph = airportGraphV3) {
   if (!aircraft) return null;
 
   if (aircraft.assignedRoute && aircraft.assignedRoute.length >= 2) {

@@ -1,7 +1,5 @@
-// Bảng thông tin tình huống khai thác — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
-
 import type { SimulationState, AirportGraph } from '../types';
-import { airportGraph } from '../data/airportGraph';
+import { airportGraphV3 } from '../data/airportGraph.v3';
 
 interface Props {
   state: SimulationState;
@@ -47,8 +45,8 @@ const INCIDENT_INFO: Record<string, { title: string; desc: string; color: string
   },
 };
 
-export default function ScenarioPanel({ state, graph = airportGraph }: Props) {
-  const currentGraph = graph || airportGraph;
+export default function ScenarioPanel({ state, graph = airportGraphV3 }: Props) {
+  const currentGraph = graph || airportGraphV3;
 
   // Tính số đoạn đóng tĩnh của đồ thị để tách biệt với số đoạn bị chặn động
   const staticClosedCount = currentGraph.edges.filter(
