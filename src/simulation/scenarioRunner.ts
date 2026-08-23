@@ -1059,7 +1059,10 @@ export function scenarioTick(
       const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
       const isRunwayBlocked = targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
       const isLeaderInSameDirection = activeCtx.occupants.some(
-        occ => occ.id !== ac.id && occ.edgeId === nextEdgeId && occ.from === toNode.id
+        occ => occ.id !== ac.id && (
+          (occ.edgeId === nextEdgeId && occ.from === toNode.id) ||
+          ac.assignedRoute.slice(ac.routeEdgeIndex + 1, ac.routeEdgeIndex + 8).includes(occ.from)
+        )
       );
       const isNodeReserved = !isLeaderInSameDirection && activeCtx.reservedNodes.has(toNode.id);
       const isEdgeReserved = !isLeaderInSameDirection && activeCtx.reserved.has(nextEdgeId);
