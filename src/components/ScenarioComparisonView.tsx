@@ -302,30 +302,64 @@ export default function Scenario5ComparisonView({
     return next;
   }, [graph, leftDone]);
 
-  // Custom Tick for Right Screen: A-SMGCS + Follow-the-Green
-  // Instant Auto-Freeze, dynamic parallel Dijkstra reroute, 2-phase release, active blue route preview + green rolling window
+  // Custom Tick for Right Screen: A-SMGCS + Follow-the-Green (Thuật toán ma trận phân luồng động 8 điểm)
   const rightTick = useCallback((prev: SimulationState, dt: number): SimulationState => {
     if (rightDone) return prev;
 
     const currentSec = prev.elapsedSeconds;
     let stateToTick = { ...prev };
 
-    // 1. Kích hoạt lệnh đổi hướng 07R sau 1s lăn chậm ban đầu (t=1.5s)
+    // 1. Kích hoạt lệnh đổi hướng 07R sau 1.5s lăn ban đầu
     if (currentSec >= 1.5 && currentSec - dt < 1.5) {
       setFtgEvents(e => [
         ...e,
-        { time: 1.5, text: '📢 KSKL BẤM LỆNH: "Runway Change 07R" -> Kích hoạt Auto-Freeze 0.5s toàn sân!' },
-        { time: 1.5, text: '🛑 Auto-Freeze 0.5s: Dập tắt đèn Green, dựng 8 vạch STOP BAR ĐỎ KHẨN CẤP trước mũi 8 tàu bay!' },
+        { time: 1.5, text: '📢 KSKL BẤM LỆNH: "Runway Change 07R" -> Auto-Freeze 0.5s & Kích hoạt ma trận FtG!' },
+        { time: 1.5, text: '⚡ MA TRẬN PHÂN LUỒNG: Bật đèn Green cho OUT01/02 lên 07R; INB01/02 rẽ 25L qua E4; Khóa Stop Bar đỏ OUT03/04 & Pushback!' },
       ]);
     }
 
-    // Comic Bubble hiển thị liên tục khi kích hoạt Auto-Freeze (t >= 1.5s)
-    if (currentSec >= 1.5) {
+    if (currentSec >= 16 && currentSec - dt < 16) {
+      setFtgEvents(e => [
+        ...e,
+        { time: 16, text: '🛬 INB01 (B747) & INB02 (A320) lăn trên 25L cùng lúc, chuẩn bị rẽ phải E4 vào bến 17, 20!' },
+      ]);
+    }
+
+    if (currentSec >= 22 && currentSec - dt < 22) {
+      setFtgEvents(e => [
+        ...e,
+        { time: 22, text: '🛫 2 TB hạ cánh đã giải tỏa RWY 25L -> Cấp huấn lệnh OUT01 cất cánh từ RWY 07R!' },
+      ]);
+    }
+
+    if (currentSec >= 28 && currentSec - dt < 28) {
+      setFtgEvents(e => [
+        ...e,
+        { time: 28, text: '🛫 OUT02 cất cánh từ RWY 07R (đúng 2 phút giãn cách an toàn sau OUT01) -> Bật đèn Green cho OUT03/04!' },
+      ]);
+    }
+
+    if (currentSec >= 36 && currentSec - dt < 36) {
+      setFtgEvents(e => [
+        ...e,
+        { time: 36, text: '🟢 Luồng lăn chính giải tỏa xong -> Chuyển Stop Bar đỏ sang đèn Green cho PUSH01/02 đẩy lùi ra Line 12!' },
+      ]);
+    }
+
+    // Comic Bubble hiển thị trạng thái điều phối của KSKL
+    if (currentSec >= 1.5 && currentSec < 22) {
       stateToTick.comicBubble = {
         speaker: 'KSKL',
         active: true,
         text: 'RUNWAY CHANGE 07R',
-        subText: 'Đóng băng an toàn toàn sân! Dập đèn Green, dựng 8 Stop Bar Đỏ khẩn cấp.',
+        subText: 'Ma trận FtG phân luồng động: INB rẽ 25L qua E4; OUT01/02 lên 07R; Khóa đỏ OUT03/04 & Pushback.',
+      };
+    } else if (currentSec >= 22 && currentSec < 34) {
+      stateToTick.comicBubble = {
+        speaker: 'KSKL',
+        active: true,
+        text: 'CLEARED FOR TAKEOFF 07R',
+        subText: '2 TB hạ cánh đã giải tỏa 25L -> OUT01 & OUT02 cất cánh 07R giãn cách 2 phút.',
       };
     } else if (stateToTick.comicBubble?.active) {
       stateToTick.comicBubble = {
@@ -335,9 +369,9 @@ export default function Scenario5ComparisonView({
       };
     }
 
-    // 2. Điều phối luồng tàu bay trên màn FTG
+    // 2. Thuật toán ma trận điều phối luồng 8 tàu bay trên màn FTG
     stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
-      // Pha 0 (0 <= t < 1.5s): Lăn chậm ban đầu với đèn Green
+      // Pha 0: 0 <= t < 1.5s (Lăn ban đầu)
       if (currentSec < 1.5) {
         return {
           ...ac,
@@ -350,17 +384,207 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // Auto-Freeze (t >= 1.5s): Dập tắt 100% đèn Green, dựng vạch STOP BAR ĐỎ KHẨN CẤP trước mũi cả 8 tàu bay, dừng cứng tại chỗ an toàn
-      return {
-        ...ac,
-        status: 'holding',
-        speedKts: 0,
-        speedLimitKts: 0,
-        holdReason: 'stop-bar',
-        routeVisible: false,
-        guidanceVisible: false,
-        scenarioLabel: '🛑 AUTO-FREEZE: DỪNG TẠI CHỖ AN TOÀN',
-      };
+      // Pha 1 & 2 & 3: t >= 1.5s
+
+      // 1. INB01: B747 Heavy - Rẽ sớm qua W5 -> chạy 25L -> rẽ phải E4 -> Stand 17
+      if (ac.callsign === 'INB01') {
+        const isAtStand17 = ac.currentNodeId === 'v3_line_22_p01' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (isAtStand17) {
+          return {
+            ...ac,
+            status: 'arrived',
+            speedKts: 0,
+            speedLimitKts: 0,
+            routeVisible: false,
+            guidanceVisible: false,
+            scenarioLabel: '✓ B747 CẬP BẾN STAND 17',
+          };
+        }
+        return {
+          ...ac,
+          status: 'taxiing',
+          speedKts: 26,
+          speedLimitKts: 26,
+          routeVisible: true,
+          guidanceVisible: true,
+          scenarioLabel: 'B747 HEAVY ➔ W5 ➔ 25L ➔ E4 ➔ STAND 17',
+        };
+      }
+
+      // 2. INB02: A320 Light - Rẽ qua W4 -> chạy 25L sau B747 -> rẽ phải E4 -> Stand 20
+      if (ac.callsign === 'INB02') {
+        const isAtStand20 = ac.currentNodeId === 'v3_line_24_p01' || ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (isAtStand20) {
+          return {
+            ...ac,
+            status: 'arrived',
+            speedKts: 0,
+            speedLimitKts: 0,
+            routeVisible: false,
+            guidanceVisible: false,
+            scenarioLabel: '✓ A320 CẬP BẾN STAND 20',
+          };
+        }
+        return {
+          ...ac,
+          status: 'taxiing',
+          speedKts: 22,
+          speedLimitKts: 22,
+          routeVisible: true,
+          guidanceVisible: true,
+          scenarioLabel: 'A320 LIGHT ➔ W4 ➔ 25L ➔ E4 ➔ STAND 20',
+        };
+      }
+
+      // Kiểm tra 2 TB hạ cánh đã thoát khỏi RWY 25L (vượt qua E4/25L)
+      const inb1Cleared25L = stateToTick.scenarioAircraft?.find(a => a.callsign === 'INB01')?.routeEdgeIndex >= 23;
+      const inb2Cleared25L = stateToTick.scenarioAircraft?.find(a => a.callsign === 'INB02')?.routeEdgeIndex >= 20;
+      const inboundsCleared25L = inb1Cleared25L && inb2Cleared25L;
+
+      // 3. OUT01: Lên 07R qua NS2 -> HS NS -> W7B -> W11 -> 07R và cất cánh khi 2 TB hạ cánh thoát 25L
+      if (ac.callsign === 'OUT01') {
+        const at07R = ac.currentNodeId === 'v3_line_05_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 2;
+        if (at07R && (inboundsCleared25L || currentSec >= 20)) {
+          return {
+            ...ac,
+            status: 'departed',
+            speedKts: 0,
+            speedLimitKts: 0,
+            routeVisible: false,
+            guidanceVisible: false,
+            scenarioLabel: '🛫 ĐÃ CẤT CÁNH 07R',
+          };
+        } else if (at07R) {
+          return {
+            ...ac,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            scenarioLabel: 'XẾP HÀNG 07R (CHỜ 2 TB HẠ CÁNH)',
+          };
+        }
+        return {
+          ...ac,
+          status: 'taxiing',
+          speedKts: 18,
+          speedLimitKts: 18,
+          routeVisible: true,
+          guidanceVisible: true,
+          scenarioLabel: 'TIẾN VỀ 07R (PHA 1: OUT01/02)',
+        };
+      }
+
+      // 4. OUT02: Xếp hàng sau OUT01 tại 07R và cất cánh sau OUT01 2 phút mô phỏng (t >= 26s)
+      if (ac.callsign === 'OUT02') {
+        const out1Departed = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT01')?.status === 'departed';
+        const at07R = ac.currentNodeId === 'v3_line_05_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 2;
+        if (at07R && (out1Departed || currentSec >= 26)) {
+          return {
+            ...ac,
+            status: 'departed',
+            speedKts: 0,
+            speedLimitKts: 0,
+            routeVisible: false,
+            guidanceVisible: false,
+            scenarioLabel: '🛫 ĐÃ CẤT CÁNH 07R (SAU OUT01 2 PHÚT)',
+          };
+        } else if (at07R) {
+          return {
+            ...ac,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            scenarioLabel: 'XẾP HÀNG 07R (SAU OUT01)',
+          };
+        }
+        return {
+          ...ac,
+          status: 'taxiing',
+          speedKts: 16,
+          speedLimitKts: 16,
+          routeVisible: true,
+          guidanceVisible: true,
+          scenarioLabel: 'XẾP HÀNG 07R (SAU OUT01)',
+        };
+      }
+
+      // 5. OUT03 & OUT04: Giữ Stop Bar đỏ đệm khoảng cách đến khi OUT01/02 cất cánh -> sau đó bật Green lên 07R
+      if (ac.callsign === 'OUT03' || ac.callsign === 'OUT04') {
+        if (currentSec < 26) {
+          return {
+            ...ac,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            routeVisible: true,
+            guidanceVisible: false,
+            scenarioLabel: '🛑 STOP BAR ĐỎ (ĐỆM KHOẢNG CÁCH)',
+          };
+        }
+        const at07R = ac.currentNodeId === 'v3_line_05_p00' || ac.routeEdgeIndex >= ac.assignedRoute.length - 2;
+        if (at07R && (ac.callsign === 'OUT03' ? currentSec >= 36 : currentSec >= 40)) {
+          return {
+            ...ac,
+            status: 'departed',
+            speedKts: 0,
+            speedLimitKts: 0,
+            routeVisible: false,
+            guidanceVisible: false,
+            scenarioLabel: `🛫 ${ac.callsign} CẤT CÁNH 07R`,
+          };
+        }
+        return {
+          ...ac,
+          status: 'taxiing',
+          speedKts: 20,
+          speedLimitKts: 20,
+          routeVisible: true,
+          guidanceVisible: true,
+          scenarioLabel: 'TIẾN LÊN 07R (PHA 2)',
+        };
+      }
+
+      // 6. PUSH01 & PUSH02: Giữ cứng Stop Bar đỏ tại bến đỗ đến khi luồng lăn giải tỏa xong (t >= 36s)
+      if (ac.callsign === 'PUSH01' || ac.callsign === 'PUSH02') {
+        if (currentSec < 36) {
+          return {
+            ...ac,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            routeVisible: false,
+            guidanceVisible: false,
+            scenarioLabel: '🛑 GIỮ STOP BAR ĐỎ TẠI BẾN ĐỖ',
+          };
+        }
+        const pushCompleted = ac.routeEdgeIndex >= ac.assignedRoute.length - 1;
+        if (pushCompleted || currentSec >= 44) {
+          return {
+            ...ac,
+            status: 'arrived',
+            speedKts: 0,
+            speedLimitKts: 0,
+            routeVisible: false,
+            guidanceVisible: false,
+            scenarioLabel: '✓ PUSHBACK HOÀN TẤT',
+          };
+        }
+        return {
+          ...ac,
+          status: 'taxiing',
+          speedKts: 8,
+          speedLimitKts: 8,
+          routeVisible: true,
+          guidanceVisible: true,
+          scenarioLabel: 'BẬT GREEN: PUSHBACK RA LINE 12',
+        };
+      }
+
+      return ac;
     });
 
     const next = scenarioTick(stateToTick, dt, graph);

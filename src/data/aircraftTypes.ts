@@ -20,6 +20,10 @@ export const AIRCRAFT_SPECS: Record<AircraftType, AircraftSpec> = {
   B737:  { speedFactor: 1.05, maxTaxiKts: 30, sizeScale: 0.92, category: 'Thân hẹp' },
   // Thân rộng — lăn chậm hơn, biểu tượng lớn hơn nhiều.
   A350:  { speedFactor: 0.82, maxTaxiKts: 25, sizeScale: 1.45, category: 'Thân rộng' },
+  // Siêu thân rộng (Hạng nặng) — biểu tượng lớn, tạo vùng nhiễu động mạnh
+  B747:  { speedFactor: 0.78, maxTaxiKts: 25, sizeScale: 1.60, category: 'Hạng nặng (Heavy)' },
+  // Thân hẹp nhẹ — kích thước tiêu chuẩn
+  A320:  { speedFactor: 1.02, maxTaxiKts: 30, sizeScale: 0.95, category: 'Thân hẹp (Light)' },
   // Turboprop — nhẹ, kích thước nhỏ, tốc độ lăn thấp.
   ATR72: { speedFactor: 0.9,  maxTaxiKts: 22, sizeScale: 0.65, category: 'Turboprop' },
 };

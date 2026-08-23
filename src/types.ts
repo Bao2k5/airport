@@ -33,7 +33,7 @@ export type WeatherCondition = 'clear' | 'rain' | 'fog' | 'thunderstorm';
 
 export type TimeOfDay = 'morning' | 'afternoon' | 'night';
 
-export type AircraftType = 'A321' | 'B737' | 'A350' | 'ATR72';
+export type AircraftType = 'A321' | 'B737' | 'A350' | 'ATR72' | 'B747' | 'A320';
 
 export type AirlineCode = 'VJ' | 'VN' | 'QH' | 'VU' | 'SQ' | 'TG';
 
