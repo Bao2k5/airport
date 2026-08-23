@@ -373,6 +373,20 @@ export default function Scenario5ComparisonView({
     stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
       // Pha 0: 0 <= t < 1.5s (Lăn ban đầu)
       if (currentSec < 1.5) {
+        if (ac.callsign === 'OUT03' || ac.callsign === 'OUT04' || ac.callsign === 'PUSH01' || ac.callsign === 'PUSH02') {
+          return {
+            ...ac,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            routeEdgeIndex: 0,
+            progressOnEdge: 0,
+            routeVisible: ac.callsign.startsWith('OUT'),
+            guidanceVisible: false,
+            scenarioLabel: ac.callsign.startsWith('OUT') ? '🛑 STOP BAR ĐỎ (ĐỆM KHOẢNG CÁCH)' : '🛑 GIỮ STOP BAR ĐỎ TẠI BẾN ĐỖ',
+          };
+        }
         return {
           ...ac,
           status: 'taxiing',

@@ -492,11 +492,12 @@ function AirportMap({
               </text>
 
               {/* Dấu X STOP & Đèn đỏ Stop Bar phát sáng trước mũi các tàu khi dừng chờ hoặc cách ly */}
-              {renderMode !== 'ftg' && (
+              {(
                 ((ac as any).status === 'holding') ||
                 ((ac as any).status === 'waiting') ||
+                (ac.holdReason === 'stop-bar') ||
                 (ac.callsign === 'BAV315' && ((ac as any).status === 'arrived' || (ac as any).status === 'holding' || (ac.speedKts === 0 && !ac.hidden))) ||
-                (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived')
+                (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived' && (ac as any).status !== 'departed')
               ) && ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa') && (
                 <g transform={`translate(${pos.x}, ${pos.y})`}>
                   {/* Position X marker in front of aircraft along its heading */}
