@@ -1,0 +1,1977 @@
+{
+  "metadata": {
+    "generatedAt": "2026-08-21T12:55:08.937Z",
+    "rawSource": "d:/Thao/airport-simulator/v3_raw_traces_manual.json",
+    "totalProposed": 68,
+    "types": {
+      "exact_coincident": 13,
+      "point_on_segment": 24,
+      "crossing": 15,
+      "manual_review": 16
+    }
+  },
+  "proposedJunctions": [
+    {
+      "id": "prop_junc_1",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_01_p01",
+      "lineA": "line_01",
+      "lineAName": "line_01",
+      "coordA": {
+        "x": 225,
+        "y": 400
+      },
+      "nodeB": "v3_line_04_p00",
+      "lineB": "line_04",
+      "lineBName": "line_04",
+      "coordB": {
+        "x": 224,
+        "y": 400
+      },
+      "distancePx": 1,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_2",
+      "type": "exact_coincident",
+      "nodeA": "W1",
+      "lineA": "line_03",
+      "lineAName": "line_03",
+      "coordA": {
+        "x": 66,
+        "y": 703
+      },
+      "labelA": "W1",
+      "nodeB": "v3_line_16_p00",
+      "lineB": "line_16",
+      "lineBName": "line_16",
+      "coordB": {
+        "x": 67,
+        "y": 704
+      },
+      "distancePx": 1.4,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_3",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_05_p03",
+      "lineA": "line_05",
+      "lineAName": "line_05",
+      "coordA": {
+        "x": 633,
+        "y": 421
+      },
+      "nodeB": "v3_line_19_p00",
+      "lineB": "line_19",
+      "lineBName": "line_19",
+      "coordB": {
+        "x": 633,
+        "y": 422
+      },
+      "distancePx": 1,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_4",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_05_p04",
+      "lineA": "line_05",
+      "lineAName": "line_05",
+      "coordA": {
+        "x": 819,
+        "y": 331
+      },
+      "nodeB": "v3_line_06_p03",
+      "lineB": "line_06",
+      "lineBName": "line_06",
+      "coordB": {
+        "x": 821,
+        "y": 331
+      },
+      "distancePx": 2,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_5",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_05_p04",
+      "lineA": "line_05",
+      "lineAName": "line_05",
+      "coordA": {
+        "x": 819,
+        "y": 331
+      },
+      "nodeB": "v3_line_12_p00",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 820,
+        "y": 330
+      },
+      "distancePx": 1.4,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_6",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_05_p07",
+      "lineA": "line_05",
+      "lineAName": "line_05",
+      "coordA": {
+        "x": 1136,
+        "y": 177
+      },
+      "nodeB": "v3_line_17_p16",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 1136,
+        "y": 176
+      },
+      "distancePx": 1,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_7",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_06_p02",
+      "lineA": "line_06",
+      "lineAName": "line_06",
+      "coordA": {
+        "x": 826,
+        "y": 280
+      },
+      "nodeB": "NS1_MID_JUNCTION_V2",
+      "lineB": "line_07",
+      "lineBName": "line_07",
+      "coordB": {
+        "x": 825,
+        "y": 281
+      },
+      "labelB": "NS1_MID_JUNCTION_V2",
+      "distancePx": 1.4,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_8",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_06_p03",
+      "lineA": "line_06",
+      "lineAName": "line_06",
+      "coordA": {
+        "x": 821,
+        "y": 331
+      },
+      "nodeB": "v3_line_12_p00",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 820,
+        "y": 330
+      },
+      "distancePx": 1.4,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_9",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_08_p03",
+      "lineA": "line_08",
+      "lineAName": "line_08",
+      "coordA": {
+        "x": 920,
+        "y": 280
+      },
+      "nodeB": "v3_line_13_p00",
+      "lineB": "line_13",
+      "lineBName": "line_13",
+      "coordB": {
+        "x": 920,
+        "y": 280
+      },
+      "distancePx": 0,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_10",
+      "type": "exact_coincident",
+      "nodeA": "T69",
+      "lineA": "line_12",
+      "lineAName": "line_12",
+      "coordA": {
+        "x": 796,
+        "y": 620
+      },
+      "labelA": "T69",
+      "nodeB": "v3_line_29_p00",
+      "lineB": "line_29",
+      "lineBName": "line_29",
+      "coordB": {
+        "x": 797,
+        "y": 620
+      },
+      "distancePx": 1,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_11",
+      "type": "exact_coincident",
+      "nodeA": "T69",
+      "lineA": "line_12",
+      "lineAName": "line_12",
+      "coordA": {
+        "x": 796,
+        "y": 620
+      },
+      "labelA": "T69",
+      "nodeB": "v3_line_31_p01",
+      "lineB": "line_31",
+      "lineBName": "line_31",
+      "coordB": {
+        "x": 796,
+        "y": 618
+      },
+      "distancePx": 2,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_12",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_35_p01",
+      "lineA": "line_35",
+      "lineAName": "line_35",
+      "coordA": {
+        "x": 815,
+        "y": 770
+      },
+      "nodeB": "v3_line_37_p01",
+      "lineB": "line_37",
+      "lineBName": "line_37",
+      "coordB": {
+        "x": 815,
+        "y": 771
+      },
+      "distancePx": 1,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_13",
+      "type": "exact_coincident",
+      "nodeA": "v3_line_36_p01",
+      "lineA": "line_36",
+      "lineAName": "line_36",
+      "coordA": {
+        "x": 836,
+        "y": 772
+      },
+      "nodeB": "v3_line_38_p01",
+      "lineB": "line_38",
+      "lineBName": "line_38",
+      "coordB": {
+        "x": 835,
+        "y": 772
+      },
+      "distancePx": 1,
+      "status": "pending_review"
+    },
+    {
+      "id": "prop_junc_14",
+      "type": "point_on_segment",
+      "nodeA": "W1",
+      "lineA": "line_03",
+      "lineAName": "line_03",
+      "coordA": {
+        "x": 66,
+        "y": 703
+      },
+      "labelA": "W1",
+      "nodeB": "07R",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 52,
+        "y": 712
+      },
+      "labelB": "07R",
+      "distancePx": 1.6,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "07R",
+        "segP2": "v3_line_05_p01",
+        "splitParamT": 0.082,
+        "projection": {
+          "x": 66.74745497259201,
+          "y": 704.4624119028974
+        }
+      }
+    },
+    {
+      "id": "prop_junc_15",
+      "type": "point_on_segment",
+      "nodeA": "T63",
+      "lineA": "line_05",
+      "lineAName": "line_05",
+      "coordA": {
+        "x": 919,
+        "y": 282
+      },
+      "labelA": "T63",
+      "nodeB": "v3_line_13_p00",
+      "lineB": "line_13",
+      "lineBName": "line_13",
+      "coordB": {
+        "x": 920,
+        "y": 280
+      },
+      "distancePx": 0.7,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_13",
+        "segP1": "v3_line_13_p00",
+        "segP2": "v3_line_13_p01",
+        "splitParamT": 0.081,
+        "projection": {
+          "x": 919.6763005780347,
+          "y": 282.1040462427746
+        }
+      }
+    },
+    {
+      "id": "prop_junc_16",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_07_p01",
+      "lineA": "line_07",
+      "lineAName": "line_07",
+      "coordA": {
+        "x": 852,
+        "y": 316
+      },
+      "nodeB": "v3_line_05_p04",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 819,
+        "y": 331
+      },
+      "distancePx": 1.1,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "v3_line_05_p04",
+        "segP2": "T63",
+        "splitParamT": 0.325,
+        "projection": {
+          "x": 851.5376985726957,
+          "y": 315.0565276993791
+        }
+      }
+    },
+    {
+      "id": "prop_junc_17",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_09_p00",
+      "lineA": "line_09",
+      "lineAName": "line_09",
+      "coordA": {
+        "x": 924,
+        "y": 234
+      },
+      "nodeB": "HS12",
+      "lineB": "line_08",
+      "lineBName": "line_08",
+      "coordB": {
+        "x": 926,
+        "y": 226
+      },
+      "labelB": "HS12",
+      "distancePx": 1.1,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_08",
+        "segP1": "HS12",
+        "segP2": "v3_line_08_p03",
+        "splitParamT": 0.15,
+        "projection": {
+          "x": 925.0975609756098,
+          "y": 234.1219512195122
+        }
+      }
+    },
+    {
+      "id": "prop_junc_18",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_09_p01",
+      "lineA": "line_09",
+      "lineAName": "line_09",
+      "coordA": {
+        "x": 950,
+        "y": 266
+      },
+      "nodeB": "v3_line_05_p06",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 965,
+        "y": 260
+      },
+      "distancePx": 1.1,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "T63",
+        "segP2": "v3_line_05_p06",
+        "splitParamT": 0.684,
+        "projection": {
+          "x": 950.4569230769231,
+          "y": 266.9553846153846
+        }
+      }
+    },
+    {
+      "id": "prop_junc_19",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_10_p04",
+      "lineA": "line_10",
+      "lineAName": "line_10",
+      "coordA": {
+        "x": 432,
+        "y": 651
+      },
+      "nodeB": "T27",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 446,
+        "y": 645
+      },
+      "labelB": "T27",
+      "distancePx": 0.8,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p05",
+        "segP2": "T27",
+        "splitParamT": 0.884,
+        "projection": {
+          "x": 432.3489125404905,
+          "y": 651.7098565478944
+        }
+      }
+    },
+    {
+      "id": "prop_junc_20",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_11_p00",
+      "lineA": "line_11",
+      "lineAName": "line_11",
+      "coordA": {
+        "x": 439,
+        "y": 619
+      },
+      "nodeB": "v3_line_10_p03",
+      "lineB": "line_10",
+      "lineBName": "line_10",
+      "coordB": {
+        "x": 441,
+        "y": 624
+      },
+      "distancePx": 1.1,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_10",
+        "segP1": "T26",
+        "segP2": "v3_line_10_p03",
+        "splitParamT": 0.89,
+        "projection": {
+          "x": 440.1165860096788,
+          "y": 618.8099428068632
+        }
+      }
+    },
+    {
+      "id": "prop_junc_21",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_13_p03",
+      "lineA": "line_13",
+      "lineAName": "line_13",
+      "coordA": {
+        "x": 911,
+        "y": 430
+      },
+      "nodeB": "v3_line_17_p10",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 839,
+        "y": 461
+      },
+      "distancePx": 1,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.336,
+        "projection": {
+          "x": 910.5860756701106,
+          "y": 429.071938081406
+        }
+      }
+    },
+    {
+      "id": "prop_junc_22",
+      "type": "point_on_segment",
+      "nodeA": "INTL_S2",
+      "lineA": "line_15",
+      "lineAName": "line_15",
+      "coordA": {
+        "x": 910,
+        "y": 408
+      },
+      "labelA": "INTL_S2",
+      "nodeB": "v3_line_13_p02",
+      "lineB": "line_13",
+      "lineBName": "line_13",
+      "coordB": {
+        "x": 910,
+        "y": 399
+      },
+      "distancePx": 0.3,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_13",
+        "segP1": "v3_line_13_p02",
+        "segP2": "v3_line_13_p03",
+        "splitParamT": 0.29,
+        "projection": {
+          "x": 910.2900207900208,
+          "y": 407.9906444906445
+        }
+      }
+    },
+    {
+      "id": "prop_junc_23",
+      "type": "point_on_segment",
+      "nodeA": "INTL_S2",
+      "lineA": "line_15",
+      "lineAName": "line_15",
+      "coordA": {
+        "x": 926,
+        "y": 423
+      },
+      "labelA": "INTL_S2",
+      "nodeB": "v3_line_17_p10",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 839,
+        "y": 461
+      },
+      "distancePx": 0.7,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.407,
+        "projection": {
+          "x": 925.7013457366621,
+          "y": 422.3303857043056
+        }
+      }
+    },
+    {
+      "id": "prop_junc_24",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_16_p00",
+      "lineA": "line_16",
+      "lineAName": "line_16",
+      "coordA": {
+        "x": 67,
+        "y": 704
+      },
+      "nodeB": "07R",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 52,
+        "y": 712
+      },
+      "labelB": "07R",
+      "distancePx": 0.3,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_05",
+        "segP1": "07R",
+        "segP2": "v3_line_05_p01",
+        "splitParamT": 0.084,
+        "projection": {
+          "x": 67.13508222396241,
+          "y": 704.2642913077525
+        }
+      }
+    },
+    {
+      "id": "prop_junc_25",
+      "type": "point_on_segment",
+      "nodeA": "L14_P6",
+      "lineA": "line_17",
+      "lineAName": "line_17",
+      "coordA": {
+        "x": 809,
+        "y": 476
+      },
+      "labelA": "L14_P6",
+      "nodeB": "v3_line_12_p02",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 811,
+        "y": 436
+      },
+      "distancePx": 1.3,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.217,
+        "projection": {
+          "x": 807.7474545934685,
+          "y": 475.8978903201197
+        }
+      }
+    },
+    {
+      "id": "prop_junc_26",
+      "type": "point_on_segment",
+      "nodeA": "L21_P3",
+      "lineA": "line_19",
+      "lineAName": "line_19",
+      "coordA": {
+        "x": 735,
+        "y": 509
+      },
+      "labelA": "L21_P3",
+      "nodeB": "L21_P3",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 716,
+        "y": 517
+      },
+      "labelB": "L21_P3",
+      "distancePx": 0.5,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "L21_P3",
+        "segP2": "v3_line_17_p08",
+        "splitParamT": 0.495,
+        "projection": {
+          "x": 734.8136180034622,
+          "y": 508.5833814195037
+        }
+      }
+    },
+    {
+      "id": "prop_junc_27",
+      "type": "point_on_segment",
+      "nodeA": "INTL_S3",
+      "lineA": "line_23",
+      "lineAName": "line_23",
+      "coordA": {
+        "x": 946,
+        "y": 412
+      },
+      "labelA": "INTL_S3",
+      "nodeB": "v3_line_17_p11",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 1052,
+        "y": 366
+      },
+      "distancePx": 1.2,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.505,
+        "projection": {
+          "x": 946.4750523954848,
+          "y": 413.0651174761922
+        }
+      }
+    },
+    {
+      "id": "prop_junc_28",
+      "type": "point_on_segment",
+      "nodeA": "INTL_S4",
+      "lineA": "line_24",
+      "lineAName": "line_24",
+      "coordA": {
+        "x": 981,
+        "y": 398
+      },
+      "labelA": "INTL_S4",
+      "nodeB": "v3_line_17_p11",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 1052,
+        "y": 366
+      },
+      "distancePx": 0.3,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.666,
+        "projection": {
+          "x": 980.8759973526492,
+          "y": 397.72197301172923
+        }
+      }
+    },
+    {
+      "id": "prop_junc_29",
+      "type": "point_on_segment",
+      "nodeA": "T38",
+      "lineA": "line_25",
+      "lineAName": "line_25",
+      "coordA": {
+        "x": 1018,
+        "y": 383
+      },
+      "labelA": "T38",
+      "nodeB": "v3_line_17_p11",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 1052,
+        "y": 366
+      },
+      "distancePx": 1.7,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_17",
+        "segP1": "v3_line_17_p10",
+        "segP2": "v3_line_17_p11",
+        "splitParamT": 0.837,
+        "projection": {
+          "x": 1017.3171121814906,
+          "y": 381.46889362797367
+        }
+      }
+    },
+    {
+      "id": "prop_junc_30",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_27_p00",
+      "lineA": "line_27",
+      "lineAName": "line_27",
+      "coordA": {
+        "x": 803,
+        "y": 532
+      },
+      "nodeB": "T69",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 796,
+        "y": 620
+      },
+      "labelB": "T69",
+      "distancePx": 0.2,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.522,
+        "projection": {
+          "x": 803.1727648836595,
+          "y": 532.0140840937765
+        }
+      }
+    },
+    {
+      "id": "prop_junc_31",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_28_p00",
+      "lineA": "line_28",
+      "lineAName": "line_28",
+      "coordA": {
+        "x": 800,
+        "y": 575
+      },
+      "nodeB": "T69",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 796,
+        "y": 620
+      },
+      "labelB": "T69",
+      "distancePx": 0.3,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.755,
+        "projection": {
+          "x": 799.670666940524,
+          "y": 574.9731521962384
+        }
+      }
+    },
+    {
+      "id": "prop_junc_32",
+      "type": "point_on_segment",
+      "nodeA": "L28_ENT",
+      "lineA": "line_30",
+      "lineAName": "line_30",
+      "coordA": {
+        "x": 798,
+        "y": 583
+      },
+      "labelA": "L28_ENT",
+      "nodeB": "T69",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 796,
+        "y": 620
+      },
+      "labelB": "T69",
+      "distancePx": 1,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "v3_line_12_p02",
+        "segP2": "T69",
+        "splitParamT": 0.799,
+        "projection": {
+          "x": 799.0095947888854,
+          "y": 583.082303923007
+        }
+      }
+    },
+    {
+      "id": "prop_junc_33",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_32_p01",
+      "lineA": "line_32",
+      "lineAName": "line_32",
+      "coordA": {
+        "x": 791,
+        "y": 661
+      },
+      "nodeB": "T69",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 796,
+        "y": 620
+      },
+      "labelB": "T69",
+      "distancePx": 1.8,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "T69",
+        "segP2": "v3_line_12_p04",
+        "splitParamT": 0.245,
+        "projection": {
+          "x": 792.816504067904,
+          "y": 661.1405628147783
+        }
+      }
+    },
+    {
+      "id": "prop_junc_34",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_33_p01",
+      "lineA": "line_33",
+      "lineAName": "line_33",
+      "coordA": {
+        "x": 789,
+        "y": 700
+      },
+      "nodeB": "T69",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 796,
+        "y": 620
+      },
+      "labelB": "T69",
+      "distancePx": 0.8,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "T69",
+        "segP2": "v3_line_12_p04",
+        "splitParamT": 0.477,
+        "projection": {
+          "x": 789.8047053851301,
+          "y": 700.0622688690875
+        }
+      }
+    },
+    {
+      "id": "prop_junc_35",
+      "type": "point_on_segment",
+      "nodeA": "NS1_SOUTH_END_V2",
+      "lineA": "line_34",
+      "lineAName": "line_34",
+      "coordA": {
+        "x": 786,
+        "y": 768
+      },
+      "labelA": "NS1_SOUTH_END_V2",
+      "nodeB": "v3_line_12_p04",
+      "lineB": "line_12",
+      "lineBName": "line_12",
+      "coordB": {
+        "x": 783,
+        "y": 788
+      },
+      "distancePx": 1.4,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_12",
+        "segP1": "T69",
+        "segP2": "v3_line_12_p04",
+        "splitParamT": 0.88,
+        "projection": {
+          "x": 784.5562638678548,
+          "y": 767.8882823231078
+        }
+      }
+    },
+    {
+      "id": "prop_junc_36",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_35_p01",
+      "lineA": "line_35",
+      "lineAName": "line_35",
+      "coordA": {
+        "x": 815,
+        "y": 770
+      },
+      "nodeB": "NS1_SOUTH_END_V2",
+      "lineB": "line_34",
+      "lineBName": "line_34",
+      "coordB": {
+        "x": 786,
+        "y": 768
+      },
+      "labelB": "NS1_SOUTH_END_V2",
+      "distancePx": 1.9,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_34",
+        "segP1": "NS1_SOUTH_END_V2",
+        "segP2": "v3_line_34_p01",
+        "splitParamT": 0.429,
+        "projection": {
+          "x": 814.7498905908096,
+          "y": 771.8619256017505
+        }
+      }
+    },
+    {
+      "id": "prop_junc_37",
+      "type": "point_on_segment",
+      "nodeA": "v3_line_37_p01",
+      "lineA": "line_37",
+      "lineAName": "line_37",
+      "coordA": {
+        "x": 815,
+        "y": 771
+      },
+      "nodeB": "NS1_SOUTH_END_V2",
+      "lineB": "line_34",
+      "lineBName": "line_34",
+      "coordB": {
+        "x": 786,
+        "y": 768
+      },
+      "labelB": "NS1_SOUTH_END_V2",
+      "distancePx": 0.9,
+      "status": "pending_review",
+      "extra": {
+        "segmentLine": "line_34",
+        "segP1": "NS1_SOUTH_END_V2",
+        "segP2": "v3_line_34_p01",
+        "splitParamT": 0.431,
+        "projection": {
+          "x": 814.8818380743983,
+          "y": 771.8796498905908
+        }
+      }
+    },
+    {
+      "id": "prop_junc_38",
+      "type": "crossing",
+      "nodeA": "07L",
+      "lineA": "line_01",
+      "lineAName": "line_01",
+      "coordA": {
+        "x": 56,
+        "y": 486
+      },
+      "labelA": "07L",
+      "nodeB": "v3_line_04_p00",
+      "lineB": "line_04",
+      "lineBName": "line_04",
+      "coordB": {
+        "x": 224,
+        "y": 400
+      },
+      "distancePx": 188.7,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 224,
+          "y": 401,
+          "ua": 0.9939929328621908,
+          "ub": 0.01519434628975265
+        },
+        "segmentA": {
+          "line": "line_01",
+          "p1": "07L",
+          "p2": "v3_line_01_p01"
+        },
+        "segmentB": {
+          "line": "line_04",
+          "p1": "v3_line_04_p00",
+          "p2": "v3_line_04_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_39",
+      "type": "crossing",
+      "nodeA": "v3_line_04_p03",
+      "lineA": "line_04",
+      "lineAName": "line_04",
+      "coordA": {
+        "x": 227,
+        "y": 603
+      },
+      "nodeB": "v3_line_05_p01",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 232,
+        "y": 620
+      },
+      "distancePx": 17.7,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 235,
+          "y": 619,
+          "ua": 0.975328947368421,
+          "ub": 0.013157894736842105
+        },
+        "segmentA": {
+          "line": "line_04",
+          "p1": "v3_line_04_p03",
+          "p2": "v3_line_04_p04"
+        },
+        "segmentB": {
+          "line": "line_05",
+          "p1": "v3_line_05_p01",
+          "p2": "v3_line_05_p02"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_40",
+      "type": "crossing",
+      "nodeA": "v3_line_05_p04",
+      "lineA": "line_05",
+      "lineAName": "line_05",
+      "coordA": {
+        "x": 819,
+        "y": 331
+      },
+      "nodeB": "v3_line_06_p02",
+      "lineB": "line_06",
+      "lineBName": "line_06",
+      "coordB": {
+        "x": 826,
+        "y": 280
+      },
+      "distancePx": 51.5,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 821,
+          "y": 330,
+          "ua": 0.021009268795056643,
+          "ub": 0.9798146240988671
+        },
+        "segmentA": {
+          "line": "line_05",
+          "p1": "v3_line_05_p04",
+          "p2": "T63"
+        },
+        "segmentB": {
+          "line": "line_06",
+          "p1": "v3_line_06_p02",
+          "p2": "v3_line_06_p03"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_41",
+      "type": "crossing",
+      "nodeA": "v3_line_05_p04",
+      "lineA": "line_05",
+      "lineAName": "line_05",
+      "coordA": {
+        "x": 819,
+        "y": 331
+      },
+      "nodeB": "NS1_MID_JUNCTION_V2",
+      "lineB": "line_07",
+      "lineBName": "line_07",
+      "coordB": {
+        "x": 825,
+        "y": 281
+      },
+      "labelB": "NS1_MID_JUNCTION_V2",
+      "distancePx": 50.4,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 851,
+          "y": 315,
+          "ua": 0.32345013477088946,
+          "ub": 0.9757412398921833
+        },
+        "segmentA": {
+          "line": "line_05",
+          "p1": "v3_line_05_p04",
+          "p2": "T63"
+        },
+        "segmentB": {
+          "line": "line_07",
+          "p1": "NS1_MID_JUNCTION_V2",
+          "p2": "v3_line_07_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_42",
+      "type": "crossing",
+      "nodeA": "HS12",
+      "lineA": "line_08",
+      "lineAName": "line_08",
+      "coordA": {
+        "x": 926,
+        "y": 226
+      },
+      "labelA": "HS12",
+      "nodeB": "v3_line_13_p00",
+      "lineB": "line_13",
+      "lineBName": "line_13",
+      "coordB": {
+        "x": 920,
+        "y": 280
+      },
+      "distancePx": 54.3,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 920,
+          "y": 280,
+          "ua": 1,
+          "ub": 0
+        },
+        "segmentA": {
+          "line": "line_08",
+          "p1": "HS12",
+          "p2": "v3_line_08_p03"
+        },
+        "segmentB": {
+          "line": "line_13",
+          "p1": "v3_line_13_p00",
+          "p2": "v3_line_13_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_43",
+      "type": "crossing",
+      "nodeA": "T26",
+      "lineA": "line_10",
+      "lineAName": "line_10",
+      "coordA": {
+        "x": 433,
+        "y": 577
+      },
+      "labelA": "T26",
+      "nodeB": "v3_line_11_p00",
+      "lineB": "line_11",
+      "lineBName": "line_11",
+      "coordB": {
+        "x": 439,
+        "y": 619
+      },
+      "distancePx": 42.4,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 440,
+          "y": 620,
+          "ua": 0.9230769230769231,
+          "ub": 0.06923076923076923
+        },
+        "segmentA": {
+          "line": "line_10",
+          "p1": "T26",
+          "p2": "v3_line_10_p03"
+        },
+        "segmentB": {
+          "line": "line_11",
+          "p1": "v3_line_11_p00",
+          "p2": "v3_line_11_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_44",
+      "type": "crossing",
+      "nodeA": "v3_line_11_p00",
+      "lineA": "line_11",
+      "lineAName": "line_11",
+      "coordA": {
+        "x": 439,
+        "y": 619
+      },
+      "nodeB": "T27",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 446,
+        "y": 645
+      },
+      "labelB": "T27",
+      "distancePx": 26.9,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 459,
+          "y": 639,
+          "ua": 0.9944723618090452,
+          "ub": 0.04773869346733668
+        },
+        "segmentA": {
+          "line": "line_11",
+          "p1": "v3_line_11_p00",
+          "p2": "v3_line_11_p01"
+        },
+        "segmentB": {
+          "line": "line_17",
+          "p1": "T27",
+          "p2": "L21_P3"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_45",
+      "type": "crossing",
+      "nodeA": "v3_line_12_p02",
+      "lineA": "line_12",
+      "lineAName": "line_12",
+      "coordA": {
+        "x": 811,
+        "y": 436
+      },
+      "nodeB": "v3_line_17_p08",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 754,
+        "y": 500
+      },
+      "distancePx": 85.7,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 808,
+          "y": 477,
+          "ua": 0.22049180327868853,
+          "ub": 0.9762295081967213
+        },
+        "segmentA": {
+          "line": "line_12",
+          "p1": "v3_line_12_p02",
+          "p2": "T69"
+        },
+        "segmentB": {
+          "line": "line_17",
+          "p1": "v3_line_17_p08",
+          "p2": "L14_P6"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_46",
+      "type": "crossing",
+      "nodeA": "v3_line_12_p02",
+      "lineA": "line_12",
+      "lineAName": "line_12",
+      "coordA": {
+        "x": 811,
+        "y": 436
+      },
+      "nodeB": "v3_line_27_p00",
+      "lineB": "line_27",
+      "lineBName": "line_27",
+      "coordB": {
+        "x": 803,
+        "y": 532
+      },
+      "distancePx": 96.3,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 803,
+          "y": 532,
+          "ua": 0.521807879826064,
+          "ub": 0.00421662933192779
+        },
+        "segmentA": {
+          "line": "line_12",
+          "p1": "v3_line_12_p02",
+          "p2": "T69"
+        },
+        "segmentB": {
+          "line": "line_27",
+          "p1": "v3_line_27_p00",
+          "p2": "v3_line_27_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_47",
+      "type": "crossing",
+      "nodeA": "v3_line_13_p02",
+      "lineA": "line_13",
+      "lineAName": "line_13",
+      "coordA": {
+        "x": 910,
+        "y": 399
+      },
+      "nodeB": "v3_line_17_p10",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 839,
+        "y": 461
+      },
+      "distancePx": 94.3,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 911,
+          "y": 429,
+          "ua": 0.9646163033741415,
+          "ub": 0.33786204837264855
+        },
+        "segmentA": {
+          "line": "line_13",
+          "p1": "v3_line_13_p02",
+          "p2": "v3_line_13_p03"
+        },
+        "segmentB": {
+          "line": "line_17",
+          "p1": "v3_line_17_p10",
+          "p2": "v3_line_17_p11"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_48",
+      "type": "crossing",
+      "nodeA": "L21_P3",
+      "lineA": "line_17",
+      "lineAName": "line_17",
+      "coordA": {
+        "x": 716,
+        "y": 517
+      },
+      "labelA": "L21_P3",
+      "nodeB": "v3_line_19_p02",
+      "lineB": "line_19",
+      "lineBName": "line_19",
+      "coordB": {
+        "x": 717,
+        "y": 490
+      },
+      "distancePx": 27,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 735,
+          "y": 509,
+          "ua": 0.4912451361867704,
+          "ub": 0.9815175097276264
+        },
+        "segmentA": {
+          "line": "line_17",
+          "p1": "L21_P3",
+          "p2": "v3_line_17_p08"
+        },
+        "segmentB": {
+          "line": "line_19",
+          "p1": "v3_line_19_p02",
+          "p2": "L21_P3"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_49",
+      "type": "crossing",
+      "nodeA": "v3_line_17_p10",
+      "lineA": "line_17",
+      "lineAName": "line_17",
+      "coordA": {
+        "x": 839,
+        "y": 461
+      },
+      "nodeB": "INTL_S3",
+      "lineB": "line_23",
+      "lineBName": "line_23",
+      "coordB": {
+        "x": 946,
+        "y": 412
+      },
+      "labelB": "INTL_S3",
+      "distancePx": 117.7,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 946,
+          "y": 413,
+          "ua": 0.5039596005968093,
+          "ub": 0.03121772064730862
+        },
+        "segmentA": {
+          "line": "line_17",
+          "p1": "v3_line_17_p10",
+          "p2": "v3_line_17_p11"
+        },
+        "segmentB": {
+          "line": "line_23",
+          "p1": "INTL_S3",
+          "p2": "v3_line_23_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_50",
+      "type": "crossing",
+      "nodeA": "v3_line_17_p11",
+      "lineA": "line_17",
+      "lineAName": "line_17",
+      "coordA": {
+        "x": 1052,
+        "y": 366
+      },
+      "nodeB": "T39",
+      "lineB": "line_26",
+      "lineBName": "line_26",
+      "coordB": {
+        "x": 1063,
+        "y": 356
+      },
+      "labelB": "T39",
+      "distancePx": 14.9,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 1064,
+          "y": 361,
+          "ua": 0.5453629032258065,
+          "ub": 0.11088709677419355
+        },
+        "segmentA": {
+          "line": "line_17",
+          "p1": "v3_line_17_p11",
+          "p2": "T39"
+        },
+        "segmentB": {
+          "line": "line_26",
+          "p1": "T39",
+          "p2": "v3_line_26_p04"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_51",
+      "type": "crossing",
+      "nodeA": "NS1_SOUTH_END_V2",
+      "lineA": "line_34",
+      "lineAName": "line_34",
+      "coordA": {
+        "x": 786,
+        "y": 768
+      },
+      "labelA": "NS1_SOUTH_END_V2",
+      "nodeB": "v3_line_37_p00",
+      "lineB": "line_37",
+      "lineBName": "line_37",
+      "coordB": {
+        "x": 811,
+        "y": 812
+      },
+      "distancePx": 50.6,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 815,
+          "y": 772,
+          "ua": 0.4315486884656845,
+          "ub": 0.9784405318002156
+        },
+        "segmentA": {
+          "line": "line_34",
+          "p1": "NS1_SOUTH_END_V2",
+          "p2": "v3_line_34_p01"
+        },
+        "segmentB": {
+          "line": "line_37",
+          "p1": "v3_line_37_p00",
+          "p2": "v3_line_37_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_52",
+      "type": "crossing",
+      "nodeA": "NS1_SOUTH_END_V2",
+      "lineA": "line_34",
+      "lineAName": "line_34",
+      "coordA": {
+        "x": 786,
+        "y": 768
+      },
+      "labelA": "NS1_SOUTH_END_V2",
+      "nodeB": "v3_line_38_p00",
+      "lineB": "line_38",
+      "lineBName": "line_38",
+      "coordB": {
+        "x": 831,
+        "y": 810
+      },
+      "distancePx": 61.6,
+      "status": "pending_review",
+      "extra": {
+        "intersectionCoord": {
+          "x": 835,
+          "y": 775,
+          "ua": 0.7273431448489543,
+          "ub": 0.9329976762199845
+        },
+        "segmentA": {
+          "line": "line_34",
+          "p1": "NS1_SOUTH_END_V2",
+          "p2": "v3_line_34_p01"
+        },
+        "segmentB": {
+          "line": "line_38",
+          "p1": "v3_line_38_p00",
+          "p2": "v3_line_38_p01"
+        }
+      }
+    },
+    {
+      "id": "prop_junc_53",
+      "type": "manual_review",
+      "nodeA": "07L",
+      "lineA": "line_01",
+      "lineAName": "line_01",
+      "coordA": {
+        "x": 56,
+        "y": 486
+      },
+      "labelA": "07L",
+      "nodeB": "W5/07L",
+      "lineB": "line_03",
+      "lineBName": "line_03",
+      "coordB": {
+        "x": 63,
+        "y": 484
+      },
+      "labelB": "W5/07L",
+      "distancePx": 7.3,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_01[#1] is 7px from line_03[#1]"
+      }
+    },
+    {
+      "id": "prop_junc_54",
+      "type": "manual_review",
+      "nodeA": "25R",
+      "lineA": "line_01",
+      "lineAName": "line_01",
+      "coordA": {
+        "x": 931,
+        "y": 57
+      },
+      "labelA": "25R",
+      "nodeB": "W7",
+      "lineB": "line_08",
+      "lineBName": "line_08",
+      "coordB": {
+        "x": 934,
+        "y": 58
+      },
+      "labelB": "W7",
+      "distancePx": 3.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_01[#4] is 3px from line_08[#1]"
+      }
+    },
+    {
+      "id": "prop_junc_55",
+      "type": "manual_review",
+      "nodeA": "v3_line_04_p05",
+      "lineA": "line_04",
+      "lineAName": "line_04",
+      "coordA": {
+        "x": 235,
+        "y": 619
+      },
+      "nodeB": "v3_line_05_p01",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 232,
+        "y": 620
+      },
+      "distancePx": 3.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_04[#6] is 3px from line_05[#2]"
+      }
+    },
+    {
+      "id": "prop_junc_56",
+      "type": "manual_review",
+      "nodeA": "v3_line_04_p05",
+      "lineA": "line_04",
+      "lineAName": "line_04",
+      "coordA": {
+        "x": 235,
+        "y": 619
+      },
+      "nodeB": "v3_line_18_p00",
+      "lineB": "line_18",
+      "lineBName": "line_18",
+      "coordB": {
+        "x": 236,
+        "y": 622
+      },
+      "distancePx": 3.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_04[#6] is 3px from line_18[#1]"
+      }
+    },
+    {
+      "id": "prop_junc_57",
+      "type": "manual_review",
+      "nodeA": "L12_P0",
+      "lineA": "line_06",
+      "lineAName": "line_06",
+      "coordA": {
+        "x": 837,
+        "y": 102
+      },
+      "labelA": "L12_P0",
+      "nodeB": "v3_line_01_p02",
+      "lineB": "line_01",
+      "lineBName": "line_01",
+      "coordB": {
+        "x": 843,
+        "y": 97
+      },
+      "distancePx": 7.8,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_06[#1] is 8px from line_01[#3]"
+      }
+    },
+    {
+      "id": "prop_junc_58",
+      "type": "manual_review",
+      "nodeA": "v3_line_08_p03",
+      "lineA": "line_08",
+      "lineAName": "line_08",
+      "coordA": {
+        "x": 920,
+        "y": 280
+      },
+      "nodeB": "T63",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 919,
+        "y": 282
+      },
+      "labelB": "T63",
+      "distancePx": 2.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_08[#4] is 2px from line_05[#6]"
+      }
+    },
+    {
+      "id": "prop_junc_59",
+      "type": "manual_review",
+      "nodeA": "v3_line_10_p00",
+      "lineA": "line_10",
+      "lineAName": "line_10",
+      "coordA": {
+        "x": 440,
+        "y": 520
+      },
+      "nodeB": "v3_line_05_p02",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 445,
+        "y": 514
+      },
+      "distancePx": 7.8,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_10[#1] is 8px from line_05[#3]"
+      }
+    },
+    {
+      "id": "prop_junc_60",
+      "type": "manual_review",
+      "nodeA": "v3_line_13_p03",
+      "lineA": "line_13",
+      "lineAName": "line_13",
+      "coordA": {
+        "x": 911,
+        "y": 430
+      },
+      "nodeB": "v3_line_22_p00",
+      "lineB": "line_22",
+      "lineBName": "line_22",
+      "coordB": {
+        "x": 915,
+        "y": 430
+      },
+      "distancePx": 4,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_13[#4] is 4px from line_22[#1]"
+      }
+    },
+    {
+      "id": "prop_junc_61",
+      "type": "manual_review",
+      "nodeA": "v3_line_16_p04",
+      "lineA": "line_16",
+      "lineAName": "line_16",
+      "coordA": {
+        "x": 127,
+        "y": 801
+      },
+      "nodeB": "v3_line_17_p03",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 126,
+        "y": 799
+      },
+      "distancePx": 2.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_16[#5] is 2px from line_17[#4]"
+      }
+    },
+    {
+      "id": "prop_junc_62",
+      "type": "manual_review",
+      "nodeA": "v3_line_18_p00",
+      "lineA": "line_18",
+      "lineAName": "line_18",
+      "coordA": {
+        "x": 236,
+        "y": 622
+      },
+      "nodeB": "v3_line_04_p04",
+      "lineB": "line_04",
+      "lineBName": "line_04",
+      "coordB": {
+        "x": 235,
+        "y": 619
+      },
+      "distancePx": 3.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_18[#1] is 3px from line_04[#5]"
+      }
+    },
+    {
+      "id": "prop_junc_63",
+      "type": "manual_review",
+      "nodeA": "v3_line_18_p00",
+      "lineA": "line_18",
+      "lineAName": "line_18",
+      "coordA": {
+        "x": 236,
+        "y": 622
+      },
+      "nodeB": "v3_line_05_p01",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 232,
+        "y": 620
+      },
+      "distancePx": 4.5,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_18[#1] is 4px from line_05[#2]"
+      }
+    },
+    {
+      "id": "prop_junc_64",
+      "type": "manual_review",
+      "nodeA": "v3_line_18_p03",
+      "lineA": "line_18",
+      "lineAName": "line_18",
+      "coordA": {
+        "x": 320,
+        "y": 707
+      },
+      "nodeB": "v3_line_17_p05",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 328,
+        "y": 703
+      },
+      "distancePx": 8.9,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_18[#4] is 9px from line_17[#6]"
+      }
+    },
+    {
+      "id": "prop_junc_65",
+      "type": "manual_review",
+      "nodeA": "v3_line_26_p00",
+      "lineA": "line_26",
+      "lineAName": "line_26",
+      "coordA": {
+        "x": 969,
+        "y": 259
+      },
+      "nodeB": "v3_line_05_p06",
+      "lineB": "line_05",
+      "lineBName": "line_05",
+      "coordB": {
+        "x": 965,
+        "y": 260
+      },
+      "distancePx": 4.1,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_26[#1] is 4px from line_05[#7]"
+      }
+    },
+    {
+      "id": "prop_junc_66",
+      "type": "manual_review",
+      "nodeA": "v3_line_28_p00",
+      "lineA": "line_28",
+      "lineAName": "line_28",
+      "coordA": {
+        "x": 800,
+        "y": 575
+      },
+      "nodeB": "L28_ENT",
+      "lineB": "line_30",
+      "lineBName": "line_30",
+      "coordB": {
+        "x": 798,
+        "y": 583
+      },
+      "labelB": "L28_ENT",
+      "distancePx": 8.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_28[#1] is 8px from line_30[#2]"
+      }
+    },
+    {
+      "id": "prop_junc_67",
+      "type": "manual_review",
+      "nodeA": "v3_line_29_p00",
+      "lineA": "line_29",
+      "lineAName": "line_29",
+      "coordA": {
+        "x": 797,
+        "y": 620
+      },
+      "nodeB": "v3_line_31_p01",
+      "lineB": "line_31",
+      "lineBName": "line_31",
+      "coordB": {
+        "x": 796,
+        "y": 618
+      },
+      "distancePx": 2.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_29[#1] is 2px from line_31[#2]"
+      }
+    },
+    {
+      "id": "prop_junc_68",
+      "type": "manual_review",
+      "nodeA": "v3_line_16_p00",
+      "lineA": "line_16",
+      "lineAName": "Tuyến line_39",
+      "coordA": {
+        "x": 127,
+        "y": 801
+      },
+      "nodeB": "v3_line_17_p03",
+      "lineB": "line_17",
+      "lineBName": "line_17",
+      "coordB": {
+        "x": 126,
+        "y": 799
+      },
+      "distancePx": 2.2,
+      "status": "pending_review",
+      "extra": {
+        "note": "Endpoint line_16[#1] is 2px from line_17[#4]"
+      }
+    }
+  ]
+}

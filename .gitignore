@@ -27,4 +27,4 @@ dist-ssr
 scratch/
 test_screenshots/
 *.backup*
-*.proposed.json
+
