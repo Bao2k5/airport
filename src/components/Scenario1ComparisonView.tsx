@@ -4,13 +4,14 @@ import AirportMap from './AirportMap';
 import { scenarioTick, startScenario } from '../simulation/scenarioRunner';
 import { scenario1WrongTurn } from '../data/scenarios/scenario1_wrongTurn';
 
+import { routeToEdges } from '../simulation/pathfinding';
+import { getAirlineDef } from '../data/airlineTypes';
+
 interface Props {
   graph: AirportGraph;
   bgImage: string;
   onExit: () => void;
 }
-
-import { routeToEdges } from '../simulation/pathfinding';
 
 export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Props) {
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(2);
@@ -53,9 +54,10 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
   const initLeftState = () => {
     const s = startScenario('lvc_wrong_turn_radio_failure', graph);
     const edges = routeToEdges(traditionalRoute, graph.edges) ?? [];
+    const vnDef = getAirlineDef('VN');
     s.scenarioAircraft = [{
       id: 'S1', callsign: 'HVN216', airlineCode: 'VN',
-      airlineName: 'Vietnam Airlines', aircraftAsset: '/assets/aircraft-vna.png', aircraftType: 'A321',
+      airlineName: vnDef.name, aircraftAsset: vnDef.asset, aircraftType: 'A321',
       currentNodeId: traditionalRoute[0], targetNodeId: traditionalRoute[traditionalRoute.length - 1],
       currentEdgeId: edges[0] ?? null, progressOnEdge: 0,
       speedKts: 12, speedLimitKts: 12, status: 'taxiing',
