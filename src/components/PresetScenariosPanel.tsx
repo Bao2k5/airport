@@ -14,7 +14,6 @@ interface Props {
   onExitScenario?: () => void;
   graph?: AirportGraph;
   simSpeed?: number;
-  onSpeedChange?: (speed: number) => void;
 }
 
 export default function PresetScenariosPanel({
@@ -24,7 +23,6 @@ export default function PresetScenariosPanel({
   onExitScenario,
   graph = airportGraph,
   simSpeed = 1,
-  onSpeedChange,
 }: Props) {
   const { executeAction, getActionState } = useActionLock(2000);
   const [showList, setShowList] = useState(false);
@@ -82,32 +80,7 @@ export default function PresetScenariosPanel({
         )}
       </div>
 
-      {/* ── BỘ ĐIỀU CHỈNH TỐC ĐỘ 1X, 2X, 4X (LUÔN HIỂN THỊ TRỰC TIẾP) ── */}
-      <div className="flex items-center justify-between p-2.5 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl shadow-xs">
-        <div className="flex items-center gap-2">
-          <span className="text-base leading-none">⚡</span>
-          <div className="flex flex-col">
-            <span className="text-xs font-bold text-[#0D254C]">Tốc độ mô phỏng</span>
-            <span className="text-[10px] text-[#64748B]">Tăng tốc độ di chuyển</span>
-          </div>
-        </div>
-        <div className="flex items-center gap-1 bg-[#E2E8F0] p-1 rounded-lg">
-          {[1, 2, 4].map(spd => (
-            <button
-              key={`sim-spd-${spd}`}
-              type="button"
-              onClick={() => onSpeedChange?.(spd)}
-              className={`px-3 py-1 text-xs font-black rounded-md transition cursor-pointer ${
-                simSpeed === spd
-                  ? 'bg-[#1C67DA] text-white shadow-xs scale-105 ring-2 ring-[#1C67DA]/30'
-                  : 'text-[#475569] hover:bg-[#CBD5E1] hover:text-[#0F172A]'
-              }`}
-            >
-              {spd}x
-            </button>
-          ))}
-        </div>
-      </div>
+
 
       {/* ── KHI SCENARIO ĐANG HOẠT ĐỘNG VÀ KHÔNG Ở CHẾ ĐỘ CHỌN LẠI ── */}
       {currentScenarioState && !showList && (

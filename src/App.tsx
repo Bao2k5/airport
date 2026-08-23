@@ -682,7 +682,6 @@ export default function App() {
                     onStartScenario={handleStartScenario}
                     onExitScenario={handleExitScenario}
                     simSpeed={simSpeed}
-                    onSpeedChange={setSimSpeed}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
                 </>
@@ -851,7 +850,6 @@ export default function App() {
                       onStartScenario={handleStartScenario}
                       onExitScenario={handleExitScenario}
                       simSpeed={simSpeed}
-                      onSpeedChange={setSimSpeed}
                     />
                   )}
                 </ErrorBoundary>
