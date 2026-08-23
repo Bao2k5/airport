@@ -493,12 +493,19 @@ function AirportMap({
 
               {/* Dấu X STOP & Đèn đỏ Stop Bar phát sáng trước mũi các tàu khi dừng chờ hoặc cách ly */}
               {(
-                ((ac as any).status === 'holding') ||
-                ((ac as any).status === 'waiting') ||
-                (ac.holdReason === 'stop-bar') ||
-                (ac.callsign === 'BAV315' && ((ac as any).status === 'arrived' || (ac as any).status === 'holding' || (ac.speedKts === 0 && !ac.hidden))) ||
-                (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived' && (ac as any).status !== 'departed')
-              ) && ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa') && (
+                renderMode !== 'ftg' ? (
+                  (((ac as any).status === 'holding') ||
+                  ((ac as any).status === 'waiting') ||
+                  (ac.holdReason === 'stop-bar') ||
+                  (ac.callsign === 'BAV315' && ((ac as any).status === 'arrived' || (ac as any).status === 'holding' || (ac.speedKts === 0 && !ac.hidden))) ||
+                  (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived' && (ac as any).status !== 'departed')) &&
+                  ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa')
+                ) : (
+                  // Màn FTG: Tuyệt đối chỉ 4 tàu bị khóa (OUT03, OUT04, PUSH01, PUSH02) mới hiện Stop Bar đỏ
+                  (ac.callsign === 'OUT03' || ac.callsign === 'OUT04' || ac.callsign === 'PUSH01' || ac.callsign === 'PUSH02') &&
+                  ac.status === 'holding'
+                )
+              ) && (
                 <g transform={`translate(${pos.x}, ${pos.y})`}>
                   {/* Position X marker in front of aircraft along its heading */}
                   <g transform={`rotate(${pos.heading}) translate(0, -22)`}>
