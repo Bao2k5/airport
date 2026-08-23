@@ -1,4 +1,4 @@
-﻿import { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import type { AirportGraph, SimulationState } from '../types';
 import AirportMap from './AirportMap';
 import { scenarioTick, startScenario } from '../simulation/scenarioRunner';
@@ -10,19 +10,73 @@ interface Props {
   onExit: () => void;
 }
 
+import { routeToEdges } from '../simulation/pathfinding';
+
 export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Props) {
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(2);
   const [isPaused, setIsPaused] = useState(false);
 
-  const initState = () => {
+
+
+  // Tuyến đường Truyền thống — vòng qua T35→E4/25L→T63→E2/25L→E6/E2→INTL_S2→E6→STOP BAR
+  const traditionalRoute = [
+    'v3_line_33_p00', 'v3_line_33_p01', 'v3_line_32_p01', 'v3_line_12_p03',
+    'v3_line_31_p01', 'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00',
+    'v3_line_17_p09', 'v3_line_17_p10', 'v3_line_21_p00', 'v3_line_13_p03',
+    'v3_line_22_p00', 'v3_line_15_p01', 'v3_line_23_p00', 'v3_line_24_p00',
+    'v3_line_25_p00', 'v3_line_17_p11', 'v3_line_17_p12',
+    'v3_line_26_p03', // E6/E4
+    'v3_line_26_p02', // T35
+    'v3_line_26_p01', // E4/25L
+    'v3_line_26_p00',
+    'v3_line_05_p06',
+    'v3_line_09_p01',
+    'v3_line_13_p00',
+    'v3_line_05_p05', // T63
+    'v3_line_13_p01', // E2/25L
+    'v3_line_13_p02', // E6/E2
+    'v3_line_15_p00',
+    'v3_line_15_p01', // INTL_S2
+    'v3_line_23_p00', // INTL_S3
+    'v3_line_24_p00', // INTL_S4
+    'v3_line_25_p00', // T38
+    'v3_line_17_p11',
+    'v3_line_17_p12', // T39
+    'v3_line_17_p13', // E6
+    'v3_line_17_p14',
+    'v3_line_17_p15', // L03_P18
+    'v3_line_05_p07',
+    'v3_line_17_p16', // STOP BAR 25L
+  ];
+
+  // Khởi tạo màn Truyền thống với tuyến vòng dài hơn
+  const initLeftState = () => {
+    const s = startScenario('lvc_wrong_turn_radio_failure', graph);
+    const edges = routeToEdges(traditionalRoute, graph.edges) ?? [];
+    s.scenarioAircraft = [{
+      id: 'S1', callsign: 'HVN216', airlineCode: 'VN',
+      airlineName: 'Vietnam Airlines', aircraftAsset: '/assets/aircraft-vna.png', aircraftType: 'A321',
+      currentNodeId: traditionalRoute[0], targetNodeId: traditionalRoute[traditionalRoute.length - 1],
+      currentEdgeId: edges[0] ?? null, progressOnEdge: 0,
+      speedKts: 12, speedLimitKts: 12, status: 'taxiing',
+      assignedRoute: traditionalRoute, routeEdgeIndex: 0,
+      role: 'departing', priority: 1,
+      scenarioLabel: 'KHỞI HÀNH 25L (THOẠI THỦ CÔNG)',
+      clearedRoute: traditionalRoute, routeVisible: false, guidanceVisible: false,
+    }];
+    return s;
+  };
+
+  // Khởi tạo màn FtG với tuyến ngắn thẳng
+  const initRightState = () => {
     const s = startScenario('lvc_wrong_turn_radio_failure', graph);
     const setup = scenario1WrongTurn.setup?.(graph);
     if (setup) s.scenarioAircraft = setup.aircraft;
     return s;
   };
 
-  const [leftState, setLeftState] = useState<SimulationState>(initState);
-  const [rightState, setRightState] = useState<SimulationState>(initState);
+  const [leftState, setLeftState] = useState<SimulationState>(initLeftState);
+  const [rightState, setRightState] = useState<SimulationState>(initRightState);
   const [leftDone, setLeftDone] = useState(false);
   const [rightDone, setRightDone] = useState(false);
   const [leftFinalTime, setLeftFinalTime] = useState<number | null>(null);
@@ -78,7 +132,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
 
   const handleRestart = () => {
     setLeftDone(false); setRightDone(false); setLeftFinalTime(null); setRightFinalTime(null);
-    setLeftState(initState()); setRightState(initState());
+    setLeftState(initLeftState()); setRightState(initRightState());
     lastTimeRef.current = performance.now();
   };
 
