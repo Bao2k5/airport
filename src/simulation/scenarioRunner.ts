@@ -1070,7 +1070,7 @@ export function scenarioTick(
       const forceJunction = heldSec >= JUNCTION_FORCE_WAIT_S;
 
       const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-      const canProceed = isEmergency || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
+      const canProceed = isEmergency || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
       if (!canProceed) {
         steppedAc = {

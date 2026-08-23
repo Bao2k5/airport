@@ -501,7 +501,7 @@ function AirportMap({
                   (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived' && (ac as any).status !== 'departed')) &&
                   ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa')
                 ) : (
-                  // Màn FTG: Tuyệt đối chỉ 4 tàu bị khóa (OUT03, OUT04, PUSH01, PUSH02) mới hiện Stop Bar đỏ
+                  // Màn FTG: Tuyệt đối chỉ 4 tàu bị khóa cố định (OUT03, OUT04, PUSH01, PUSH02) mới hiện Stop Bar đỏ
                   (ac.callsign === 'OUT03' || ac.callsign === 'OUT04' || ac.callsign === 'PUSH01' || ac.callsign === 'PUSH02') &&
                   ac.status === 'holding'
                 )
@@ -530,24 +530,6 @@ function AirportMap({
                       <text x={0} y={2.5} textAnchor="middle" fontSize={5.5} fontWeight={900} fill="#fca5a5" fontFamily="monospace">
                         {ac.callsign === 'BAV315' ? '⛔ ISOLATED STOP' : ac.callsign === 'BAV456' || ac.callsign === 'THA101' ? '⛔ HOLD POSITION' : ac.callsign === 'OUT01' || ac.callsign === 'INB01' ? '⛔ STOP BAR' : '⛔ STOP'}
                       </text>
-                    </g>
-                  </g>
-                </g>
-              )}
-
-              {/* Dấu X ĐỎ KHẨN CẤP trước mũi cả 8 tàu khi Auto-Freeze trên màn FTG */}
-              {renderMode === 'ftg' && state.comicBubble?.active && ac.status === 'holding' && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa') && (
-                <g transform={`translate(${pos.x}, ${pos.y})`}>
-                  <g transform={`rotate(${pos.heading}) translate(0, -22)`}>
-                    <g className="animate-pulse">
-                      {/* Vòng phát sáng đỏ */}
-                      <circle cx={0} cy={0} r={12} fill="rgba(239, 68, 68, 0.40)" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3,2" />
-                      {/* Dấu X đỏ tươi */}
-                      <line x1={-8} y1={-8} x2={8} y2={8} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" />
-                      <line x1={-8} y1={8} x2={8} y2={-8} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" />
-                      {/* Lõi trắng tương phản */}
-                      <line x1={-8} y1={-8} x2={8} y2={8} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
-                      <line x1={-8} y1={8} x2={8} y2={-8} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
                     </g>
                   </g>
                 </g>
