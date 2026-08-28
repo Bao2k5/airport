@@ -547,8 +547,8 @@ export default function App() {
               </span>
             </div>
 
-            {/* ── Nút Debug: Overlay V3, Grid, Paths ── */}
-            <div className="flex items-center gap-1 bg-[#132F5C] px-1.5 py-1 rounded-lg border border-[#3B82F6]/30">
+            {/* ── Nút Debug: Overlay V3, Grid, Paths (Hiển thị trên Desktop/Tablet) ── */}
+            <div className="hidden md:flex items-center gap-1 bg-[#132F5C] px-1.5 py-1 rounded-lg border border-[#3B82F6]/30">
               <button
                 data-testid="toggle-overlay-v3"
                 onClick={() => setShowGraphV3Overlay(v => !v)}

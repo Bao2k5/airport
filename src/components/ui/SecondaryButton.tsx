@@ -17,7 +17,11 @@ export default function SecondaryButton({
   ...props
 }: SecondaryButtonProps) {
   const sizeClasses =
-    size === 'sm' ? 'px-2.5 py-1 text-xs' : size === 'lg' ? 'px-4 py-2.5 text-sm' : 'px-3 py-1.5 text-xs';
+    size === 'sm'
+      ? 'px-2.5 py-1.5 min-h-[36px] sm:min-h-[38px] text-xs'
+      : size === 'lg'
+      ? 'px-4 py-2.5 min-h-[44px] sm:min-h-[48px] text-sm'
+      : 'px-3 py-2 min-h-[40px] sm:min-h-[44px] text-xs sm:text-sm';
 
   const variantClasses =
     variant === 'danger'

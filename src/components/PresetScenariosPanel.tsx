@@ -370,7 +370,7 @@ export default function PresetScenariosPanel({
                             });
                           }}
                           disabled={getActionState('start_scenario').isPending}
-                          className="w-full py-2.5 px-4 rounded-[10px] bg-[#06B6D4] hover:bg-[#22D3EE] active:bg-[#0891B2] disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[42px]"
+                          className="w-full py-2.5 px-4 rounded-[10px] bg-[#06B6D4] hover:bg-[#22D3EE] active:bg-[#0891B2] disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                         >
                           {getActionState('start_scenario').isPending ? (
                             <LoaderCircle className="w-4 h-4 animate-spin" />
