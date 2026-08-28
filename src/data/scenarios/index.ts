@@ -18,8 +18,8 @@ export function getPresetScenarioDefs(graph: AirportGraph = airportGraphV3): Rec
   void graph;
   return {
     lvc_wrong_turn_radio_failure: scenario1WrongTurn,
-    emergency_priority_engine_fire: scenario2EmergencyFire,
     lvc_hsns_intersection_conflict: scenario3HsnsConflict,
+    emergency_priority_engine_fire: scenario2EmergencyFire,
     lvc_w7a_sudden_closure: scenario4FodClosure,
     lvc_peak_runway_direction_change: scenario5RunwayChange,
   };

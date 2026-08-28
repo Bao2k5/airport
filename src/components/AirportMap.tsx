@@ -453,7 +453,7 @@ function AirportMap({
           const aDef = getAirlineDef(ac.airlineCode || ac.callsign);
           const labelColor = isSelected ? '#38bdf8' : (aDef.accentColor || '#fbbf24');
           const isFacingSouth = pos.heading > 135 && pos.heading < 225;
-          const callsignY = isFacingSouth ? pos.y + 19 : pos.y - 17;
+          const callsignY = isFacingSouth ? pos.y + 28 : pos.y - 26;
 
           return (
             <g
@@ -477,9 +477,9 @@ function AirportMap({
               />
               <text
                 x={pos.x} y={callsignY}
-                textAnchor="middle" fontSize={6.8} fontWeight={800}
+                textAnchor="middle" fontSize={8.5} fontWeight={800}
                 fill={labelColor}
-                stroke="#000000" strokeWidth={0.8} paintOrder="stroke"
+                stroke="#000000" strokeWidth={1.2} paintOrder="stroke"
               >
                 {ac.callsign}
               </text>
@@ -492,11 +492,12 @@ function AirportMap({
                   (ac.holdReason === 'stop-bar') ||
                   (ac.callsign === 'BAV315' && ((ac as any).status === 'arrived' || (ac as any).status === 'holding' || (ac.speedKts === 0 && !ac.hidden))) ||
                   (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived' && (ac as any).status !== 'departed')) &&
-                  ac.callsign !== 'RESCUE01' && !ac.aircraftAsset?.includes('xecuuhoa')
+                  ac.callsign !== 'RESCUE01' && ac.callsign !== 'OUT01' && ac.callsign !== 'OUT02' && ac.callsign !== 'OUT03' && ac.callsign !== 'OUT04' && ac.callsign !== 'OUT05' && !ac.aircraftAsset?.includes('xecuuhoa')
                 ) : (
-                  // Màn FTG: Tuyệt đối chỉ 4 tàu bị khóa cố định (OUT03, OUT04, PUSH01, PUSH02) mới hiện Stop Bar đỏ
-                  (ac.callsign === 'OUT03' || ac.callsign === 'OUT04' || ac.callsign === 'PUSH01' || ac.callsign === 'PUSH02') &&
-                  ac.status === 'holding'
+                  // Màn FTG: Chỉ hiện Stop Bar đỏ khi tàu đang holding trên đường lăn chờ nhường đường (INB01 tại W7A, VJ302, etc.), không hiện trên bến đỗ
+                  (ac.status === 'holding' || ac.holdReason === 'stop-bar' || ac.holdReason === 'deviation') &&
+                  ac.callsign !== 'RESCUE01' && ac.callsign !== 'OUT03' && ac.callsign !== 'OUT04' && ac.callsign !== 'OUT05' &&
+                  !(ac.callsign === 'OUT01' && ac.routeEdgeIndex === 0) && !(ac.callsign === 'OUT02' && ac.routeEdgeIndex === 0) && !ac.hidden
                 )
               ) && (
                 <g transform={`translate(${pos.x}, ${pos.y})`}>
@@ -879,12 +880,11 @@ function RoutePreviewBlueRenderer({
   elapsedSeconds?: number;
 }) {
   // In Manual Mode: only render for the selected aircraft with routeVisible === true
-  // In Scenario Mode: render for all scenario aircraft with routeVisible === true and already released
+  // In Scenario Mode: render for all scenario aircraft with routeVisible === true and already active
   const targetAircraft = isScenario
     ? aircraftList.filter(a => {
-        if (!a.routeVisible || a.status === 'queued' || (a as any).hidden || a.status === 'departed') return false;
+        if (!a.routeVisible || a.status === 'queued' || (a as any).hidden || a.status === 'departed' || a.status === 'arrived') return false;
         if ((a as any).releaseAtSeconds !== undefined && elapsedSeconds < (a as any).releaseAtSeconds) return false;
-        if (a.status === 'arrived' && a.callsign !== 'BAV315' && a.role !== 'emergency') return false;
         return true;
       })
     : aircraftList.filter(a => (a.id === selectedAircraftId || (aircraftList.length === 1 && a.id === aircraftList[0].id)) && a.routeVisible);
@@ -899,9 +899,20 @@ function RoutePreviewBlueRenderer({
         const curIdx = Math.max(0, Math.min(ac.assignedRoute.length - 2, ac.routeEdgeIndex ?? 0));
         const curPos = getPositionForAircraft(ac, graph);
 
+        // Nếu là OUT01 hoặc OUT02 ở Kịch bản 5 và chưa có thông báo đổi chiều RUNWAY CHANGE 07R: chỉ vẽ đường xanh dương tới RW 25L (v3_line_17_p16)
+        let maxRouteIndex = ac.assignedRoute.length - 1;
+        const isRunwayChangeAc = (ac.callsign === 'OUT01' || ac.callsign === 'OUT02');
+        const hasRunwayChanged = ac.scenarioLabel?.includes('RUNWAY CHANGE 07R') || ac.scenarioLabel?.includes('RW 07R');
+        if (isRunwayChangeAc && !hasRunwayChanged) {
+          const idx25L = ac.assignedRoute.indexOf('v3_line_17_p16');
+          if (idx25L !== -1) {
+            maxRouteIndex = idx25L;
+          }
+        }
+
         // Build array of line segments ONLY for remaining path (Google Maps navigation style)
         const segments: { f: { x: number; y: number }; t: { x: number; y: number }; edgeId: string }[] = [];
-        for (let i = curIdx; i < ac.assignedRoute.length - 1; i++) {
+        for (let i = curIdx; i < maxRouteIndex; i++) {
           const fromNode = graph.nodes.find(n => n.id === ac.assignedRoute[i]);
           const toNode = graph.nodes.find(n => n.id === ac.assignedRoute[i + 1]);
           if (fromNode && toNode) {
@@ -1115,72 +1126,89 @@ function computeSegmentedGuidanceDots(
   if (!aircraft.assignedRoute || aircraft.assignedRoute.length < 2) return null;
   if (aircraft.routeEdgeIndex >= aircraft.assignedRoute.length - 1) return null;
 
-  const fromNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex]);
-  const toNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 1]);
+  const currentIdx = Math.max(0, Math.min(aircraft.assignedRoute.length - 2, aircraft.routeEdgeIndex ?? 0));
+  const fromNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[currentIdx]);
+  const toNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[currentIdx + 1]);
   if (!fromNode || !toNode) return null;
 
+  // Check if current edge is blocked
   const currentEdge = graph.edges.find(
     e => (e.fromNodeId === fromNode.id && e.toNodeId === toNode.id) ||
          (e.bidirectional && e.fromNodeId === toNode.id && e.toNodeId === fromNode.id)
   );
-
-  // If current edge is blocked, extinguish guidance
   if (currentEdge && blockedEdgeIds.has(currentEdge.id)) {
     return null;
   }
 
-  const dx = toNode.x - fromNode.x;
-  const dy = toNode.y - fromNode.y;
-  const edgePixelLen = Math.hypot(dx, dy) || 1;
-  const dotCount = Math.max(1, Math.round(edgePixelLen / 16));
+  const DOT_STEP_PX = 14; // Khoảng cách cố định chuẩn giữa các bóng đèn tim đường (~40m)
+  const MAX_LOOKAHEAD_PX = 68; // Giới hạn đồng đều: chỉ chiếu sáng 4-5 bóng đèn phía trước mũi (~180-200m)
+  const MAX_BLOCK_EDGES = 2; // Tối đa 2 phân đoạn tiếp theo
 
   const activeDots: GuidanceDot[] = [];
-  const prog = Math.max(0, Math.min(1, aircraft.progressOnEdge));
+  const prog = Math.max(0, Math.min(1, aircraft.progressOnEdge ?? 0));
 
-  // 1. Current Active Edge: ONLY dots in front of aircraft nose (r >= prog)
-  for (let i = 1; i < dotCount; i++) {
-    const r = i / dotCount;
-    if (r >= prog) {
+  // 1. Phân đoạn hiện tại (Current Edge)
+  const curDx = toNode.x - fromNode.x;
+  const curDy = toNode.y - fromNode.y;
+  const curLen = Math.hypot(curDx, curDy);
+  const curNumLights = Math.max(1, Math.round(curLen / DOT_STEP_PX));
+
+  for (let k = 0; k < curNumLights; k++) {
+    const t = (k + 0.5) / curNumLights;
+    const distFromNose = curLen * (t - prog);
+    // Chỉ sáng các đèn ngay phía trước mũi tàu trong phạm vi MAX_LOOKAHEAD_PX (4-5 đèn)
+    if (distFromNose >= -2 && distFromNose <= MAX_LOOKAHEAD_PX) {
       activeDots.push({
-        x: fromNode.x + dx * r,
-        y: fromNode.y + dy * r,
+        x: fromNode.x + curDx * t,
+        y: fromNode.y + curDy * t,
         isPreview: false,
       });
     }
   }
 
-  // 2. Next Edge Preview: Only if progressOnEdge >= 0.75, illuminate first 2-3 dots as preview
-  const previewDots: GuidanceDot[] = [];
-  if (prog >= 0.75 && aircraft.routeEdgeIndex + 1 < aircraft.assignedRoute.length - 1) {
-    const nextToNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[aircraft.routeEdgeIndex + 2]);
-    if (nextToNode) {
-      const nextEdge = graph.edges.find(
-        e => (e.fromNodeId === toNode.id && e.toNodeId === nextToNode.id) ||
-             (e.bidirectional && e.fromNodeId === nextToNode.id && e.toNodeId === toNode.id)
-      );
+  // 2. Các phân đoạn tiếp theo nếu đoạn hiện tại ngắn hơn phạm vi MAX_LOOKAHEAD_PX
+  let accumulatedDist = Math.max(0, curLen * (1 - prog));
 
-      // Only show preview if next edge is NOT blocked
-      if (!nextEdge || !blockedEdgeIds.has(nextEdge.id)) {
-        const ndx = nextToNode.x - toNode.x;
-        const ndy = nextToNode.y - toNode.y;
-        const nextEdgePixelLen = Math.hypot(ndx, ndy) || 1;
-        const nextDotCount = Math.max(1, Math.round(nextEdgePixelLen / 16));
-        const maxPreviewCount = Math.min(3, Math.max(1, Math.ceil(nextDotCount * 0.25)));
+  for (let step = 1; step <= MAX_BLOCK_EDGES && accumulatedDist < MAX_LOOKAHEAD_PX; step++) {
+    const nextIdx = currentIdx + step;
+    if (nextIdx >= aircraft.assignedRoute.length - 1) break;
 
-        for (let i = 1; i <= maxPreviewCount; i++) {
-          const r = i / nextDotCount;
-          previewDots.push({
-            x: toNode.x + ndx * r,
-            y: toNode.y + ndy * r,
-            isPreview: true,
-          });
-        }
+    const sNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[nextIdx]);
+    const eNode = graph.nodes.find(n => n.id === aircraft.assignedRoute[nextIdx + 1]);
+    if (!sNode || !eNode) break;
+
+    const segEdge = graph.edges.find(
+      e => (e.fromNodeId === sNode.id && e.toNodeId === eNode.id) ||
+           (e.bidirectional && e.fromNodeId === eNode.id && e.toNodeId === sNode.id)
+    );
+
+    // Dừng phân đoạn nếu phía trước có Stop Bar hoặc cạnh bị đóng
+    if (segEdge && blockedEdgeIds.has(segEdge.id)) {
+      break;
+    }
+
+    const sdx = eNode.x - sNode.x;
+    const sdy = eNode.y - sNode.y;
+    const slen = Math.hypot(sdx, sdy);
+    if (slen < 1) continue;
+
+    const segNumLights = Math.max(1, Math.round(slen / DOT_STEP_PX));
+    for (let k = 0; k < segNumLights; k++) {
+      const t = (k + 0.5) / segNumLights;
+      const totalDist = accumulatedDist + slen * t;
+      if (totalDist <= MAX_LOOKAHEAD_PX) {
+        activeDots.push({
+          x: sNode.x + sdx * t,
+          y: sNode.y + sdy * t,
+          isPreview: false,
+        });
       }
     }
+
+    accumulatedDist += slen;
   }
 
-  // Farther edges are strictly OFF (omitted)
-  return { activeDots, previewDots };
+  return { activeDots, previewDots: [] };
 }
 
 function FollowTheGreenRenderer({
@@ -1218,7 +1246,7 @@ function FollowTheGreenRenderer({
           : 'drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 8px #16a34a)',
       }}
     >
-      {/* 1. Active Edge Guidance Dots (In front of aircraft nose) */}
+      {/* Active Uniform Distance-based Guidance Dots (In front of aircraft nose) */}
       {guidance.activeDots.map((dot, idx) => {
         const phase = animPhase * 3 + idx * 0.45;
         const pulse = 0.86 + 0.18 * Math.sin(phase);
@@ -1230,19 +1258,6 @@ function FollowTheGreenRenderer({
             <circle cx={dot.x} cy={dot.y} r={3.0 * pulse} fill="#22c55e" />
             {/* Bright core center */}
             <circle cx={dot.x} cy={dot.y} r={1.3} fill="#f0fff6" />
-          </g>
-        );
-      })}
-
-      {/* 2. Next Edge Preview Dots (When progressOnEdge >= 0.75, first 2-3 dots) */}
-      {guidance.previewDots.map((dot, idx) => {
-        const phase = animPhase * 3 + (idx + 4) * 0.45;
-        const pulse = 0.85 + 0.15 * Math.sin(phase);
-        return (
-          <g key={`ftg-prev-${aircraft.id}-${idx}`} opacity={0.65} className="guidance-dot guidance-dot-preview">
-            <circle cx={dot.x} cy={dot.y} r={5.5 * pulse} fill="url(#neon-lead-green)" />
-            <circle cx={dot.x} cy={dot.y} r={2.5 * pulse} fill="#22c55e" />
-            <circle cx={dot.x} cy={dot.y} r={1.1} fill="#f0fff6" />
           </g>
         );
       })}
@@ -1348,29 +1363,37 @@ function AircraftIcon({
 
   // Máy bay TSN được crop chéo 67.1 deg, xe cộ trên mặt đất xoay thẳng theo 0 deg
   const rotationDeg = isPlane ? heading - 67.1 : 0;
-  const size = (isVehicle ? 48 : 36) * scale;
+  const size = (isVehicle ? 64 : 58) * scale;
 
   return (
     <g transform={`translate(${x},${y})`}>
       {/* Invisible broad touch hit area for easy tapping on mobile */}
-      <circle cx={0} cy={0} r={34 * scale} fill="transparent" pointerEvents="all" />
+      <circle cx={0} cy={0} r={46 * scale} fill="transparent" pointerEvents="all" />
 
       {isSelected && (
         <g>
           {/* Distinct high-contrast glowing halo for selected aircraft */}
-          <circle cx={0} cy={0} r={30 * scale} fill="rgba(56, 189, 248, 0.28)" stroke="#38bdf8" strokeWidth={2.8} strokeDasharray="6,4" opacity={0.95} />
-          <circle cx={0} cy={0} r={38 * scale} fill="none" stroke="#00e5ff" strokeWidth={1.8} opacity={0.8} />
-          <circle cx={0} cy={0} r={22 * scale} fill="rgba(0, 229, 255, 0.15)" stroke="#67e8f9" strokeWidth={1.2} />
+          <circle cx={0} cy={0} r={38 * scale} fill="rgba(56, 189, 248, 0.28)" stroke="#38bdf8" strokeWidth={2.8} strokeDasharray="6,4" opacity={0.95} />
+          <circle cx={0} cy={0} r={48 * scale} fill="none" stroke="#00e5ff" strokeWidth={1.8} opacity={0.8} />
+          <circle cx={0} cy={0} r={30 * scale} fill="rgba(0, 229, 255, 0.15)" stroke="#67e8f9" strokeWidth={1.2} />
         </g>
       )}
       {isEmergency && isPlane && !isFireExtinguished && (
-        <circle cx={0} cy={0} r={28 * scale} fill="none" stroke="#ef4444" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+        <circle cx={0} cy={0} r={38 * scale} fill="none" stroke="#ef4444" strokeWidth={3} opacity={0.85} className="animate-ping" />
       )}
       {isDeviated && (
-        <circle cx={0} cy={0} r={28 * scale} fill="none" stroke="#f97316" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+        <g>
+          <circle cx={0} cy={0} r={34 * scale} fill="rgba(239, 68, 68, 0.2)" stroke="#ef4444" strokeWidth={3.5} opacity={0.9} className="animate-ping" />
+          <g transform={`translate(0, ${-size * 0.7})`}>
+            <rect x={-42} y={-11} width={84} height={22} rx={4} fill="#991B1B" stroke="#FCA5A5" strokeWidth={1.5} />
+            <text x={0} y={3.5} textAnchor="middle" fontSize={8} fontWeight={900} fill="#FFFFFF">
+              ⛔ ĐI SAI ĐƯỜNG
+            </text>
+          </g>
+        </g>
       )}
       {isRadioFailure && (
-        <circle cx={0} cy={0} r={28 * scale} fill="none" stroke="#c084fc" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
+        <circle cx={0} cy={0} r={34 * scale} fill="none" stroke="#c084fc" strokeWidth={2.5} opacity={0.85} className="animate-ping" />
       )}
       <g transform={`rotate(${rotationDeg})`} filter="url(#glow-aircraft)">
         <image
@@ -1382,18 +1405,18 @@ function AircraftIcon({
           preserveAspectRatio="xMidYMid meet"
         />
 
-        {/* Ngọn lửa cháy ở đuôi / động cơ máy bay khẩn nguy BAV315 - sẽ biến mất sau khi xe cứu hỏa dập lửa 10s */}
+        {/* Ngọn lửa cháy ở đuôi / động cơ máy bay khẩn nguy BAV315 */}
         {(callsign === 'BAV315' || (isEmergency && isPlane)) && !isFireExtinguished && (
           <g transform={`translate(${-size * 0.28}, ${size * 0.22})`}>
             <image
               href="/lua.png"
-              x={-12 * scale}
-              y={-12 * scale}
-              width={24 * scale}
-              height={24 * scale}
+              x={-14 * scale}
+              y={-14 * scale}
+              width={28 * scale}
+              height={28 * scale}
               preserveAspectRatio="xMidYMid meet"
               className="animate-pulse"
-              filter="drop-shadow(0 0 10px #ff3b00)"
+              filter="drop-shadow(0 0 12px #ff3b00)"
             />
           </g>
         )}

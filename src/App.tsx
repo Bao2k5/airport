@@ -388,6 +388,20 @@ export default function App() {
     setSheetExpanded(true);
   }, [currentGraph]);
 
+  const handleAircraftSpeedChange = useCallback((aircraftId: string, speedKts: number) => {
+    setSimState(prev => {
+      if (!prev.scenarioAircraft) return prev;
+      return {
+        ...prev,
+        scenarioAircraft: prev.scenarioAircraft.map(ac =>
+          ac.id === aircraftId || ac.callsign === aircraftId
+            ? { ...ac, speedKts, speedLimitKts: Math.max(ac.speedLimitKts, speedKts) }
+            : ac
+        ),
+      };
+    });
+  }, []);
+
   const handleStartScenario = useCallback((scId: string) => {
     if (scId === 'lvc_peak_runway_direction_change') {
       if (selectedGraphId !== 'v3') {
@@ -661,6 +675,10 @@ export default function App() {
                     graph={currentGraph}
                     onStartScenario={handleStartScenario}
                     onExitScenario={handleExitScenario}
+                    onPause={handlePause}
+                    isPaused={simState.isPaused}
+                    onSimSpeedChange={setSimSpeed}
+                    onAircraftSpeedChange={handleAircraftSpeedChange}
                     simSpeed={simSpeed}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
@@ -820,6 +838,10 @@ export default function App() {
                       graph={currentGraph}
                       onStartScenario={handleStartScenario}
                       onExitScenario={handleExitScenario}
+                      onPause={handlePause}
+                      isPaused={simState.isPaused}
+                      onSimSpeedChange={setSimSpeed}
+                      onAircraftSpeedChange={handleAircraftSpeedChange}
                       simSpeed={simSpeed}
                     />
                   )}

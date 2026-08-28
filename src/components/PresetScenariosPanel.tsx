@@ -12,8 +12,12 @@ interface Props {
   scenarioState?: ScenarioState | null;
   onStartScenario: (id: string) => void;
   onExitScenario?: () => void;
+  onPause?: () => void;
+  onSimSpeedChange?: (speed: number) => void;
+  onAircraftSpeedChange?: (aircraftId: string, speedKts: number) => void;
   graph?: AirportGraph;
   simSpeed?: number;
+  isPaused?: boolean;
 }
 
 export default function PresetScenariosPanel({
@@ -21,8 +25,12 @@ export default function PresetScenariosPanel({
   scenarioState,
   onStartScenario,
   onExitScenario,
+  onPause,
+  onSimSpeedChange,
+  onAircraftSpeedChange,
   graph = airportGraphV3,
   simSpeed = 1,
+  isPaused = false,
 }: Props) {
   const { executeAction, getActionState } = useActionLock(2000);
   const [showList, setShowList] = useState(false);
@@ -74,13 +82,17 @@ export default function PresetScenariosPanel({
           Kịch bản mô phỏng huấn luyện
         </h2>
         {currentScenarioState && (
-          <span className="text-[11px] font-mono px-2.5 py-0.5 rounded-md bg-[#EFF6FF] text-[#1C67DA] border border-[#BFDBFE] font-bold">
-            {currentScenarioState.completed ? 'HOÀN TẤT' : 'ĐANG CHẠY'}
+          <span className={`text-[11px] font-mono px-2.5 py-0.5 rounded-md font-bold border ${
+            isPaused
+              ? 'bg-[#FEF3C7] text-[#B45309] border-[#FCD34D]'
+              : currentScenarioState.completed
+              ? 'bg-[#F0FDF4] text-[#16A34A] border-[#86EFAC]'
+              : 'bg-[#EFF6FF] text-[#1C67DA] border-[#BFDBFE]'
+          }`}>
+            {isPaused ? '⏸ TẠM DỪNG' : currentScenarioState.completed ? 'HOÀN TẤT' : 'ĐANG CHẠY'}
           </span>
         )}
       </div>
-
-
 
       {/* ── KHI SCENARIO ĐANG HOẠT ĐỘNG VÀ KHÔNG Ở CHẾ ĐỘ CHỌN LẠI ── */}
       {currentScenarioState && !showList && (
@@ -88,7 +100,7 @@ export default function PresetScenariosPanel({
           <div className="flex items-center justify-between">
             <div className="flex flex-col">
               <span className="font-bold text-[#0D254C] text-sm">{currentScenarioState.title}</span>
-              <span className="text-[10px] font-mono text-[#1C67DA] font-bold mt-0.5">Tốc độ hiện tại: {simSpeed}x ({15 * simSpeed} kts tương đương)</span>
+              <span className="text-[10px] font-mono text-[#1C67DA] font-bold mt-0.5">Tốc độ kịch bản: {simSpeed}x ({15 * simSpeed} kts tương đương)</span>
             </div>
             {onExitScenario && (
               <button
@@ -97,6 +109,98 @@ export default function PresetScenariosPanel({
               >
                 ✕ Thoát
               </button>
+            )}
+          </div>
+
+          {/* ── BỘ ĐIỀU KHIỂN TẠM DỪNG & TỐC ĐỘ KỊCH BẢN (KỊCH BẢN 4) ── */}
+          <div className="p-3 bg-[#F8FAFC] border border-[#CBD5E1] rounded-xl flex flex-col gap-2.5 shadow-2xs">
+            <div className="flex items-center justify-between">
+              <span className="text-[11px] font-bold text-[#0D254C] uppercase tracking-wider">
+                ⚡ Điều khiển tốc độ & Tạm dừng
+              </span>
+              {onPause && (
+                <button
+                  onClick={onPause}
+                  className={`text-xs font-bold px-3 py-1.5 rounded-lg border transition flex items-center gap-1.5 cursor-pointer shadow-2xs ${
+                    isPaused
+                      ? 'bg-[#16A34A] hover:bg-[#15803D] text-white border-[#15803D]'
+                      : 'bg-[#EAB308] hover:bg-[#CA8A04] text-slate-900 border-[#CA8A04]'
+                  }`}
+                >
+                  {isPaused ? '▶ Tiếp tục kịch bản' : '⏸ Tạm dừng kịch bản'}
+                </button>
+              )}
+            </div>
+
+            {/* Bộ chuyển đổi tốc độ mô phỏng nhanh */}
+            {onSimSpeedChange && (
+              <div className="flex items-center gap-1.5">
+                <span className="text-[11px] text-[#475569] font-medium">Tốc độ chạy:</span>
+                {[0.5, 1, 2, 5, 10].map(spd => (
+                  <button
+                    key={`scenario-spd-${spd}`}
+                    onClick={() => onSimSpeedChange(spd)}
+                    className={`text-xs font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
+                      simSpeed === spd
+                        ? 'bg-[#1C67DA] text-white border-[#1C67DA] shadow-xs'
+                        : 'bg-white text-[#475569] border-[#CBD5E1] hover:bg-[#F1F5F9]'
+                    }`}
+                  >
+                    {spd}x
+                  </button>
+                ))}
+              </div>
+            )}
+
+            {/* Thay đổi tốc độ trực tiếp từng tàu bay trong kịch bản */}
+            {state?.scenarioAircraft && state.scenarioAircraft.length > 0 && onAircraftSpeedChange && (
+              <div className="flex flex-col gap-1.5 mt-1 border-t border-[#E2E8F0] pt-2">
+                <span className="text-[10px] font-bold text-[#64748B] uppercase">
+                  Tùy chỉnh tốc độ từng tàu bay (kts):
+                </span>
+                <div className="flex flex-col gap-1.5 max-h-36 overflow-y-auto">
+                  {state.scenarioAircraft.map(ac => (
+                    <div key={ac.id} className="flex items-center justify-between bg-white px-2 py-1.5 rounded-lg border border-[#E2E8F0] text-xs">
+                      <div className="flex items-center gap-1.5">
+                        <span className="font-bold text-[#0D254C]">{ac.callsign}</span>
+                        <span className="text-[10px] font-mono px-1.5 py-0.5 rounded bg-slate-100 text-slate-700">
+                          {ac.speedKts.toFixed(0)} kts
+                        </span>
+                      </div>
+                      <div className="flex items-center gap-1">
+                        <button
+                          onClick={() => onAircraftSpeedChange(ac.id, Math.max(0, ac.speedKts - 5))}
+                          className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-bold text-[10px]"
+                          title="Giảm 5 kts"
+                        >
+                          -5
+                        </button>
+                        <button
+                          onClick={() => onAircraftSpeedChange(ac.id, 15)}
+                          className="px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded font-bold text-[10px]"
+                          title="15 kts (Chuẩn LVC)"
+                        >
+                          15
+                        </button>
+                        <button
+                          onClick={() => onAircraftSpeedChange(ac.id, 25)}
+                          className="px-1.5 py-0.5 bg-blue-50 hover:bg-blue-100 text-blue-700 rounded font-bold text-[10px]"
+                          title="25 kts (Tốc độ cao)"
+                        >
+                          25
+                        </button>
+                        <button
+                          onClick={() => onAircraftSpeedChange(ac.id, ac.speedKts + 5)}
+                          className="px-1.5 py-0.5 bg-slate-100 hover:bg-slate-200 text-slate-800 rounded font-bold text-[10px]"
+                          title="Tăng 5 kts"
+                        >
+                          +5
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </div>
             )}
           </div>
 

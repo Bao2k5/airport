@@ -812,14 +812,17 @@ export function scenarioTick(
       currentOccupancy[currentCorridor] = ac.id;
     }
 
-    // Đồng bộ Kịch bản 2: HVN123 và RESCUE01 CHỈ ĐƯỢC CHẠY khi BAV315 đã tới chính xác điểm dừng cách ly tại W5 MID
+    // Đồng bộ Kịch bản 3 (Khẩn nguy BAV315):
+    // - BAV315 hạ cánh 25R, thoát vào W4 và dừng lại ở điểm giữa W4/25R và W4/25L (v3_line_04_p02).
+    // - RESCUE01 đứng chờ sẵn ở W4/25L (v3_line_04_p03). Khi BAV315 vào điểm giữa và dừng lại, RESCUE01 chạy lên áp sát đuôi dập lửa.
+    // - HVN123 hạ cánh sau thoát vào W5 về Stand 17.
     if (state.scenario?.id === 'emergency_priority_engine_fire') {
       const bav315 = fleet.find(a => a.callsign === 'BAV315');
       const bav315Isolated = bav315 && (
-        bav315.currentNodeId === 'v3_line_03_p_mid' ||
-        (bav315.routeEdgeIndex >= bav315.assignedRoute.length - 1 && bav315.progressOnEdge >= 0.95) ||
+        bav315.currentNodeId === 'v3_line_04_p02' ||
+        (bav315.routeEdgeIndex >= bav315.assignedRoute.length - 1 && bav315.progressOnEdge >= 0.85) ||
         bav315.status === 'arrived' ||
-        (bav315.status === 'holding' && (bav315.currentNodeId.includes('03_p_mid') || bav315.currentNodeId.includes('03_p01')))
+        (bav315.status === 'holding' && bav315.currentNodeId === 'v3_line_04_p02')
       );
 
       if (ac.callsign === 'HVN123') {
@@ -832,13 +835,37 @@ export function scenarioTick(
             speedLimitKts: 0,
           };
           continue;
-        } else if (ac.status === 'waiting' || ac.hidden) {
+        } else if (ac.status === 'waiting' || ac.hidden || ac.status === 'queued') {
           ac = {
             ...ac,
             hidden: false,
             status: 'taxiing',
+            speedKts: 20,
             speedLimitKts: 22,
-            scenarioLabel: 'HẠ CÁNH 25L ➔ VỀ STAND 17',
+            scenarioLabel: 'HẠ CÁNH 25R ➔ VÀO W5 ➔ VỀ STAND 17',
+          };
+        }
+      }
+
+      // Tàu 3 (BAV456) và Tàu 4 (THA101) chỉ xuất hiện và lăn ở Giai đoạn 2 (cùng thời điểm HVN123 xuất hiện)
+      if (ac.callsign === 'BAV456' || ac.callsign === 'THA101') {
+        if (!bav315Isolated) {
+          updatedFleet[idx] = {
+            ...ac,
+            hidden: true,
+            status: 'waiting',
+            speedKts: 0,
+            speedLimitKts: 0,
+          };
+          continue;
+        } else if (ac.status === 'waiting' || ac.hidden || ac.status === 'queued') {
+          ac = {
+            ...ac,
+            hidden: false,
+            status: 'taxiing',
+            speedLimitKts: ac.callsign === 'BAV456' ? 16 : 14,
+            speedKts: ac.callsign === 'BAV456' ? 16 : 14,
+            scenarioLabel: ac.callsign === 'BAV456' ? 'E6/E4 ➔ E6 ➔ RW 25L' : 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
           };
         }
       }
@@ -851,6 +878,7 @@ export function scenarioTick(
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
+            scenarioLabel: '🚒 CHỜ TẠI W4/25L ĐỢI BAV315 VÀO ĐIỂM DỪNG',
           };
           continue;
         } else if (ac.status === 'holding') {
@@ -859,18 +887,18 @@ export function scenarioTick(
             status: 'taxiing',
             holdReason: undefined,
             heldSeconds: 0,
-            speedKts: 35,
-            speedLimitKts: 35,
+            speedKts: 25,
+            speedLimitKts: 25,
             isMoving: true,
-            scenarioLabel: 'XE CỨU HỎA TIẾP CẬN BAV315',
+            scenarioLabel: '🚒 CHẠY LÊN ÁP SÁT BAV315 DẬP LỬA',
           };
-        } else if (ac.currentNodeId === 'v3_line_03_p_mid' || ac.status === 'arrived' || (ac.routeEdgeIndex >= ac.assignedRoute.length - 1 && ac.progressOnEdge >= 0.85)) {
-          // Xe cứu hỏa đã tiếp cận đuôi BAV315 tại W5 MID -> đếm 5s dập lửa
+        } else if (ac.currentNodeId === 'v3_line_04_p02' || ac.status === 'arrived' || (ac.routeEdgeIndex >= ac.assignedRoute.length - 1 && ac.progressOnEdge >= 0.85)) {
+          // Xe cứu hỏa đã tiếp cận đuôi BAV315 tại điểm giữa W4 -> đếm 5s dập lửa
           const rescueHeld = (ac.heldSeconds ?? 0) + dt;
           ac.heldSeconds = rescueHeld;
           if (rescueHeld >= 5.0) {
             ac.scenarioLabel = 'ĐÃ DẬP TẮT LỬA AN TOÀN';
-            // Cập nhật BAV315 dập tắt lửa (hình lửa biến mất)
+            // Cập nhật BAV315 dập tắt lửa (ngọn lửa biến mất)
             for (let j = 0; j < updatedFleet.length; j++) {
               if (updatedFleet[j]?.callsign === 'BAV315') {
                 updatedFleet[j] = {
@@ -887,41 +915,52 @@ export function scenarioTick(
       }
     }
 
-    // Khóa dừng nhường đường cho Kịch bản 2: BAV456 và THA101 giữ nguyên Dấu X Stop Bar cho đến khi HVN123 về tới Stand 17
-    if (state.scenario?.id === 'emergency_priority_engine_fire' && (ac.callsign === 'BAV456' || ac.callsign === 'THA101')) {
-      const hvn = fleet.find(a => a.callsign === 'HVN123');
-      const hvnArrived = hvn && (hvn.status === 'arrived' || (hvn.routeEdgeIndex >= hvn.assignedRoute.length - 2 && hvn.progressOnEdge >= 0.8) || hvn.currentNodeId === 'v3_line_34_p00');
-      if (!hvnArrived) {
-        steppedAc = {
-          ...ac,
-          status: 'holding',
-          holdReason: 'stop-bar',
-          heldSeconds: (ac.heldSeconds ?? 0) + dt,
-          speedKts: 0,
-          speedLimitKts: 0,
-          speedReason: 'Dừng: Nhường đường cho HVN123 về Stand 17',
-          scenarioLabel: '⛔ HOLD POSITION (NHƯỜNG HVN123)',
-        };
-        updatedFleet[idx] = steppedAc;
-        continue;
-      } else if (ac.status === 'holding' && ac.holdReason === 'stop-bar') {
-        // HVN123 đã về tới bến Stand 17 -> gỡ bỏ dấu X, cấp đèn xanh cho 2 tàu chạy
-        ac = {
-          ...ac,
-          status: 'taxiing',
-          holdReason: undefined,
-          heldSeconds: 0,
-          speedLimitKts: ac.callsign === 'BAV456' ? 18 : 14,
-          scenarioLabel: ac.callsign === 'BAV456' ? 'ĐÃ GIẢI TỎA: QUA E6 ➔ STOP BAR 25L' : 'ĐÃ GIẢI TỎA: PUSHBACK ➔ QUA E6 ➔ 25L',
-        };
-      }
-    }
-
-    // Khóa dừng nhường đường cho Kịch bản 3: VJ302 giữ nguyên Dấu X Stop Bar cho đến khi HVN301 về tới Stand 17
+    // Kịch bản 2 (Xung đột HS NS):
+    // Giai đoạn 1:
+    // - VJ302 chỉ bắt đầu pushback từ Stand 11 khi HVN301 đã lăn đến W7 (v3_line_18_p03).
+    // - VJ302 lăn ra đến trước ngã tư HS NS (edge index >= 6) thì dừng lại trước Stop Bar đỏ.
+    // - HVN301 lăn qua HS NS về tới tận Bến 17 (Stand 17) -> Hoàn tất Giai đoạn 1.
+    // Giai đoạn 2:
+    // - Khi HVN301 đã vào hẳn Bến 17, VJ302 mới được giải phóng (Stop Bar chuyển xanh FtG) lăn tiếp qua E6 ra RW 25L.
     if (state.scenario?.id === 'lvc_hsns_intersection_conflict' && ac.callsign === 'VJ302') {
       const hvn = fleet.find(a => a.callsign === 'HVN301');
-      const hvnArrived = hvn && (hvn.status === 'arrived' || (hvn.routeEdgeIndex >= hvn.assignedRoute.length - 2 && hvn.progressOnEdge >= 0.8) || hvn.currentNodeId === 'v3_line_22_p01' || hvn.currentNodeId === 'v3_line_34_p00');
-      if (!hvnArrived) {
+      const hvnReachedW7 = hvn && (
+        hvn.currentNodeId === 'v3_line_18_p03' ||
+        hvn.routeEdgeIndex >= 12
+      );
+      const hvnArrivedAtStand = hvn && (
+        hvn.status === 'arrived' ||
+        hvn.currentNodeId === 'v3_line_22_p01' ||
+        (hvn.routeEdgeIndex >= hvn.assignedRoute.length - 2 && hvn.progressOnEdge >= 0.6) ||
+        hvn.routeEdgeIndex >= 24
+      );
+
+      // 1. Khi HVN301 chưa đến W7: VJ302 ở Stand 11 chờ
+      if (!hvnReachedW7 && ac.routeEdgeIndex === 0 && ac.progressOnEdge === 0) {
+        steppedAc = {
+          ...ac,
+          status: 'holding',
+          speedKts: 0,
+          speedLimitKts: 0,
+          scenarioLabel: 'STAND 11: CHỜ HVN301 ĐẾN W7',
+        };
+        updatedFleet[idx] = steppedAc;
+        continue;
+      }
+
+      // 2. Khi HVN301 đã đến W7 nhưng VJ302 chưa lăn ra: kích hoạt lăn
+      if (hvnReachedW7 && !hvnArrivedAtStand && ac.routeEdgeIndex < 6 && ac.status === 'holding' && ac.speedKts === 0) {
+        ac = {
+          ...ac,
+          status: 'taxiing',
+          speedKts: 14,
+          speedLimitKts: 14,
+          scenarioLabel: 'PUSHBACK STAND 11 ➔ LĂN RA HS NS',
+        };
+      }
+
+      // 3. Khi VJ302 lăn đến trước ngã tư HS NS (routeEdgeIndex >= 6) và HVN301 chưa vào Stand 17: DỪNG LẠI CHỜ
+      if (!hvnArrivedAtStand && ac.routeEdgeIndex >= 6) {
         steppedAc = {
           ...ac,
           status: 'holding',
@@ -929,20 +968,23 @@ export function scenarioTick(
           heldSeconds: (ac.heldSeconds ?? 0) + dt,
           speedKts: 0,
           speedLimitKts: 0,
-          speedReason: 'Dừng: Nhường đường cho HVN301 về Stand 17',
-          scenarioLabel: '⛔ HOLD POSITION (NHƯỜNG HVN301)',
+          speedReason: 'Dừng trước Stop Bar đỏ tại HS NS nhường HVN301 về Stand 17',
+          scenarioLabel: '🛑 DỪNG TẠI HS NS (NHƯỜNG HVN301 VỀ STAND 17)',
         };
         updatedFleet[idx] = steppedAc;
         continue;
-      } else if (ac.status === 'holding' && ac.holdReason === 'stop-bar') {
-        // HVN301 đã về tới bến Stand 17 -> gỡ bỏ dấu X, cấp đèn xanh cho VJ302 chạy
+      }
+
+      // 4. Khi HVN301 đã vào hẳn Stand 17 (Hết Giai đoạn 1 -> Bắt đầu Giai đoạn 2): VJ302 tiếp tục di chuyển ra RW 25L
+      if (hvnArrivedAtStand && (ac.status === 'holding' || ac.holdReason === 'stop-bar')) {
         ac = {
           ...ac,
           status: 'taxiing',
           holdReason: undefined,
           heldSeconds: 0,
+          speedKts: 16,
           speedLimitKts: 16,
-          scenarioLabel: 'ĐÃ GIẢI TỎA: PUSHBACK ➔ QUA E6 ➔ 25L',
+          scenarioLabel: '🟢 GIAI ĐOẠN 2: QUA E6 ➔ STOP BAR 25L',
         };
       }
     }

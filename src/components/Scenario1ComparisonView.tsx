@@ -19,7 +19,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
 
 
 
-  // Tuyến đường Truyền thống — vòng qua T35→E4/25L→T63→E2/25L→E6/E2→INTL_S2→E6→STOP BAR
+  // Tuyến đường Truyền thống — STAND 10 -> HS NS -> rẽ nhầm vào E4 (Dừng lại khi rẽ sai)
   const traditionalRoute = [
     'v3_line_33_p00', 'v3_line_33_p01', 'v3_line_32_p01', 'v3_line_12_p03',
     'v3_line_31_p01', 'v3_line_30_p01', 'v3_line_28_p00', 'v3_line_27_p00',
@@ -27,30 +27,11 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
     'v3_line_22_p00', 'v3_line_15_p01', 'v3_line_23_p00', 'v3_line_24_p00',
     'v3_line_25_p00', 'v3_line_17_p11', 'v3_line_17_p12',
     'v3_line_26_p03', // E6/E4
-    'v3_line_26_p02', // T35
+    'v3_line_26_p02', // E4 (RẼ SAI ĐƯỜNG)
     'v3_line_26_p01', // E4/25L
-    'v3_line_26_p00',
-    'v3_line_05_p06',
-    'v3_line_09_p01',
-    'v3_line_13_p00',
-    'v3_line_05_p05', // T63
-    'v3_line_13_p01', // E2/25L
-    'v3_line_13_p02', // E6/E2
-    'v3_line_15_p00',
-    'v3_line_15_p01', // INTL_S2
-    'v3_line_23_p00', // INTL_S3
-    'v3_line_24_p00', // INTL_S4
-    'v3_line_25_p00', // T38
-    'v3_line_17_p11',
-    'v3_line_17_p12', // T39
-    'v3_line_17_p13', // E6
-    'v3_line_17_p14',
-    'v3_line_17_p15', // L03_P18
-    'v3_line_05_p07',
-    'v3_line_17_p16', // STOP BAR 25L
   ];
 
-  // Khởi tạo màn Truyền thống với tuyến vòng dài hơn
+  // Khởi tạo màn Truyền thống
   const initLeftState = () => {
     const s = startScenario('lvc_wrong_turn_radio_failure', graph);
     const edges = routeToEdges(traditionalRoute, graph.edges) ?? [];
@@ -63,7 +44,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
       speedKts: 12, speedLimitKts: 12, status: 'taxiing',
       assignedRoute: traditionalRoute, routeEdgeIndex: 0,
       role: 'departing', priority: 1,
-      scenarioLabel: 'KHỞI HÀNH 25L (THOẠI THỦ CÔNG)',
+      scenarioLabel: 'HUẤN LỆNH: STAND 10 ➔ E6 ➔ 25L',
       clearedRoute: traditionalRoute, routeVisible: false, guidanceVisible: false,
     }];
     return s;
@@ -98,11 +79,35 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
     };
     const next = scenarioTick(st, dt, graph);
     if (next.scenarioAircraft) {
-      next.scenarioAircraft = next.scenarioAircraft.map(ac => ({ ...ac, guidanceVisible: false, routeVisible: false }));
+      next.scenarioAircraft = next.scenarioAircraft.map(ac => {
+        // Kiểm tra khi vừa rẽ vào E4 (v3_line_26_p02 / v3_line_26_p01)
+        if (ac.currentNodeId === 'v3_line_26_p02' || ac.currentNodeId === 'v3_line_26_p01' || ac.routeEdgeIndex >= 19) {
+          return {
+            ...ac,
+            status: 'holding' as const,
+            holdReason: 'deviation' as const,
+            deviated: true,
+            speedKts: 0,
+            scenarioLabel: '⛔ ĐI SAI ĐƯỜNG: RẼ NHẦM E4',
+            guidanceVisible: false,
+            routeVisible: false,
+          };
+        }
+        return { ...ac, guidanceVisible: false, routeVisible: false };
+      });
     }
-    if (countCompleted(next.scenarioAircraft) >= 1 && !leftDone) {
+
+    const ac = next.scenarioAircraft?.find(a => a.callsign === 'HVN216');
+    if (ac && (ac.deviated || ac.currentNodeId === 'v3_line_26_p02' || ac.currentNodeId === 'v3_line_26_p01' || ac.routeEdgeIndex >= 19) && !leftDone) {
       setLeftDone(true);
       setLeftFinalTime(Math.round(next.elapsedSeconds * 10) / 10);
+      if (next.scenario) {
+        next.scenario.events.push({
+          atSeconds: next.elapsedSeconds,
+          message: '⛔ [CẢNH BÁO] HVN216 đi sai huấn lệnh, đã rẽ vào E4 thay vì E6! Tàu bay bị khóa dừng tại chỗ.',
+          severity: 'critical',
+        });
+      }
     }
     return next;
   }, [graph, leftDone]);
@@ -175,7 +180,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
       <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0 overflow-hidden relative">
 
         {/* LEFT: Truyền thống */}
-        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#334155] overflow-hidden shadow-2xl">
+        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#334155] overflow-hidden shadow-2xl relative">
           <div className="flex items-center justify-between px-3 py-2 bg-[#1E293B] border-b border-[#334155]">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${leftDone ? 'bg-[#10B981]' : 'bg-[#EF4444] animate-pulse'}`}></span>
@@ -185,20 +190,50 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
           </div>
           <div className="flex-1 relative min-h-0">
             <AirportMap state={leftState} graph={graph} bgImage={bgImage} renderMode="traditional" />
-            <div className="absolute top-2 left-2 z-10 bg-[#0F172A]/90 border border-[#334155] rounded-lg p-2 text-[10px] pointer-events-none">
-              <div className="text-[#F87171] font-bold mb-1">📻 Thoại VHF thủ công — Không có đèn dẫn đường</div>
+            
+            {/* Khung Huấn lệnh KSVKL (Giai đoạn 1: hiển thị 6.5s đầu rồi tự động tắt) */}
+            {leftState.elapsedSeconds < 6.5 && (
+              <div className="absolute top-2 left-2 right-2 z-20 bg-[#0F172A]/95 border border-[#3B82F6]/60 rounded-xl p-2.5 shadow-2xl backdrop-blur-md animate-fadeIn transition-all duration-500">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#38BDF8] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0284C7]"></span>
+                    </span>
+                    <span className="text-[11px] font-black text-[#38BDF8]">
+                      🎙️ GIAI ĐOẠN 1 — HUẤN LỆNH KSVKL (ATC CLEARANCE):
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#1E3A8A] text-[#93C5FD]">
+                    TWR 118.1 MHz
+                  </span>
+                </div>
+                <div className="mt-1 text-[11px] font-mono font-bold text-[#F8FAFC] pl-3 border-l-2 border-[#38BDF8]">
+                  “HVN216 taxi to holding point runway 25L via NS and E6 taxiways”
+                </div>
+              </div>
+            )}
+
+            <div className="absolute bottom-2 left-2 z-10 bg-[#0F172A]/90 border border-[#334155] rounded-lg p-2 text-[10px] pointer-events-none">
+              <div className="text-[#F87171] font-bold mb-0.5">📻 Thoại VHF thủ công — Không có đèn dẫn đường</div>
               <div className="text-[#94A3B8]">Vị trí: <span className="text-[#FCA5A5] font-mono">{leftState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span></div>
               <div className="text-[#94A3B8]">Tốc độ: <span className="text-[#FCA5A5] font-mono">{leftState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span></div>
             </div>
           </div>
-          <div className="px-3 py-1.5 bg-[#090D16] border-t border-[#1E293B] text-[10px] text-[#94A3B8] flex justify-between">
-            <span>{leftDone ? `✓ Hoàn thành lúc ${fmt(lE)}` : 'Lăn theo thoại VHF — không có đèn tim đường hỗ trợ'}</span>
-            <span className="text-[#EF4444] font-bold">FtG: OFF</span>
+          <div className="px-3 py-1.5 bg-[#090D16] border-t border-[#1E293B] text-[10px] text-[#94A3B8] flex justify-between items-center">
+            <span className={leftDone ? 'text-[#EF4444] font-bold' : ''}>
+              {leftDone
+                ? '⛔ GIAI ĐOẠN 2: Tàu bay đi sai đường (vừa rẽ vào E4) ➔ Kích hoạt Stop Bar đỏ & khóa dừng!'
+                : (leftState.elapsedSeconds < 6.5
+                    ? '🎙️ [GIAI ĐOẠN 1] KSVKL cấp huấn lệnh cho HVN216 tại Stand 10'
+                    : 'Giai đoạn 2: Lăn theo thoại VHF thủ công — Phi công tự quan sát')}
+            </span>
+            <span className="text-[#EF4444] font-bold ml-2">FtG: OFF</span>
           </div>
         </div>
 
         {/* RIGHT: FtG */}
-        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#059669] overflow-hidden shadow-2xl">
+        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#059669] overflow-hidden shadow-2xl relative">
           <div className="flex items-center justify-between px-3 py-2 bg-[#064E3B] border-b border-[#059669]">
             <div className="flex items-center gap-2">
               <span className={`w-2.5 h-2.5 rounded-full ${rightDone ? 'bg-[#34D399]' : 'bg-[#10B981] animate-pulse'}`}></span>
@@ -208,15 +243,45 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
           </div>
           <div className="flex-1 relative min-h-0">
             <AirportMap state={rightState} graph={graph} bgImage={bgImage} renderMode="ftg" />
-            <div className="absolute top-2 left-2 z-10 bg-[#062419]/90 border border-[#059669] rounded-lg p-2 text-[10px] pointer-events-none">
-              <div className="text-[#34D399] font-bold mb-1">⚡ Đèn xanh FtG dẫn hướng tự động</div>
+            
+            {/* Khung Huấn lệnh KSVKL (Giai đoạn 1: hiển thị 6.5s đầu rồi tự động tắt) */}
+            {rightState.elapsedSeconds < 6.5 && (
+              <div className="absolute top-2 left-2 right-2 z-20 bg-[#062419]/95 border border-[#10B981]/60 rounded-xl p-2.5 shadow-2xl backdrop-blur-md animate-fadeIn transition-all duration-500">
+                <div className="flex items-center justify-between gap-2">
+                  <div className="flex items-center gap-2">
+                    <span className="flex h-2 w-2 relative">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34D399] opacity-75"></span>
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]"></span>
+                    </span>
+                    <span className="text-[11px] font-black text-[#34D399]">
+                      🎙️ GIAI ĐOẠN 1 — HUẤN LỆNH KSVKL (ATC CLEARANCE):
+                    </span>
+                  </div>
+                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#064E3B] text-[#A7F3D0]">
+                    TWR 118.1 MHz
+                  </span>
+                </div>
+                <div className="mt-1 text-[11px] font-mono font-bold text-[#F8FAFC] pl-3 border-l-2 border-[#10B981]">
+                  “HVN216 taxi to holding point runway 25L via NS and E6 taxiways”
+                </div>
+              </div>
+            )}
+
+            <div className="absolute bottom-2 left-2 z-10 bg-[#062419]/90 border border-[#059669] rounded-lg p-2 text-[10px] pointer-events-none">
+              <div className="text-[#34D399] font-bold mb-0.5">⚡ Đèn xanh FtG dẫn hướng tự động</div>
               <div className="text-[#A7F3D0]">Vị trí: <span className="text-[#34D399] font-mono">{rightState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span></div>
               <div className="text-[#A7F3D0]">Tốc độ: <span className="text-[#34D399] font-mono">{rightState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span></div>
             </div>
           </div>
-          <div className="px-3 py-1.5 bg-[#062419] border-t border-[#059669] text-[10px] text-[#A7F3D0] flex justify-between">
-            <span>{rightDone ? `✓ Hoàn thành lúc ${fmt(rE)} — nhanh và an toàn` : '✓ Đèn xanh rolling window dẫn HVN216 thông suốt qua HS NS → E6/E4 → 25L'}</span>
-            <span className="text-[#34D399] font-bold">FtG: ACTIVE</span>
+          <div className="px-3 py-1.5 bg-[#062419] border-t border-[#059669] text-[10px] text-[#A7F3D0] flex justify-between items-center">
+            <span className={rightDone ? 'text-[#34D399] font-bold' : ''}>
+              {rightDone
+                ? '🟢 GIAI ĐOẠN 2: Follow-the-Green dẫn đúng STAND 10 ➔ HS NS ➔ E6/E4 ➔ E6 ➔ STOP BAR 25L an toàn 100%!'
+                : (rightState.elapsedSeconds < 6.5
+                    ? '🎙️ [GIAI ĐOẠN 1] KSVKL cấp huấn lệnh cho HVN216 tại Stand 10'
+                    : 'Giai đoạn 2: Đèn FtG xanh lá dẫn trước mũi tàu qua HS NS → E6/E4 → E6')}
+            </span>
+            <span className="text-[#34D399] font-bold ml-2">FtG: ACTIVE</span>
           </div>
         </div>
 

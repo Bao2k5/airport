@@ -7,18 +7,18 @@ import { filterNonNull } from './common';
 
 export const scenario1WrongTurn: PresetScenarioDef = {
   id: 'lvc_wrong_turn_radio_failure',
-  title: 'Kịch bản 1 — Khởi hành STAND_10 qua HS NS, E6/E4, E6 đến STOP BAR 25L',
-  teaser: 'HVN216 khởi hành từ STAND_10 qua ngã tư HS NS -> E6/E4 -> E6 và kết thúc hành trình an toàn tại STOP BAR 25L.',
-  situation: 'Trong điều kiện tầm nhìn thấp LVC (RVR < 550m), tàu bay HVN216 khởi hành từ STAND_10 đẩy lùi quẹo phải ra Line 12, lăn dọc hành lang chính về phía Bắc. Khi đến ngã tư xung đột HS NS, hệ thống Follow-the-Greens cấp dải đèn xanh thông suốt dẫn tàu bay quẹo phải ra E6/E4, tiếp tục hành trình qua E6 và đến dừng an toàn tại vạch chờ cất cánh STOP BAR 25L.',
+  title: 'Kịch bản 1 — Huấn lệnh STAND 10 qua HS NS, E6 ra RWY 25L (So sánh Rẽ nhầm E4 vs FtG)',
+  teaser: 'KSVKL cấp huấn lệnh HVN216 lăn ra 25L qua NS & E6 — Truyền thống rẽ nhầm vào E4 bị chặn dừng vs FtG dẫn đúng ra E6.',
+  situation: 'Giai đoạn 1: KSVKL cấp huấn lệnh cho tàu bay "HVN216 taxi to holding point runway 25L via NS and E6 taxiways".\n\nGiai đoạn 2:\n• Kịch bản truyền thống: Tàu bay đi theo tuyến STAND 10 -> HS NS -> E4. Khi vừa rẽ vào E4 (thay vì E6), hệ thống phát hiện đi sai đường, kích hoạt đèn đỏ cảnh báo và dừng kịch bản.\n• Kịch bản FtG: Tàu bay đi STAND 10 -> HS NS -> E6/E4 -> E6 -> STOP BAR 25L. Đèn xanh FtG dẫn đường liên tục và chính xác trước mũi tàu bay.',
   challenges: [
-    'Tàu bay đẩy lùi an toàn từ STAND_10 quẹo phải vào tim đường lăn Line 12.',
-    'Hệ thống Follow the Greens bật đèn tim đường xanh dẫn hướng qua ngã tư HS NS và quẹo phải ra E6/E4.',
-    'Duy trì lộ trình liên tục thông suốt qua E6 đến vạch dừng STOP BAR 25L.'
+    'Giai đoạn 1: Tiếp nhận và xác nhận huấn lệnh thoại "HVN216 taxi to holding point runway 25L via NS and E6 taxiways".',
+    'Giai đoạn 2 (Truyền thống): Không có đèn dẫn đường, phi công rẽ nhầm vào E4 và bị phát hiện sai lộ trình.',
+    'Giai đoạn 2 (FtG): Dải đèn xanh bật sáng dẫn hướng trực quan qua HS NS -> E6/E4 -> E6 đến STOP BAR 25L an toàn 100%.'
   ],
   watchFor: [
-    'HVN216 xuất phát từ STAND_10 ra Line 12 và lăn về phía Bắc.',
-    'Tại giao điểm HS NS, đèn xanh FtG dẫn hướng rẽ phải sang E6/E4.',
-    'Tàu bay tiếp tục hành trình qua E6 và đến dừng an toàn tại STOP BAR 25L.'
+    'HVN216 nhận huấn lệnh từ KSVKL tại STAND 10.',
+    'Dải đèn xanh FtG dẫn đường chuẩn xác qua tim đường lăn E6.',
+    'Tại nút giao E6/E4, đèn FtG ngăn ngừa tuyệt đối nguy cơ rẽ nhầm sang E4.'
   ],
   setup: (g: AirportGraph = airportGraphV3) => {
     const fullRoute = [
