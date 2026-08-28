@@ -185,7 +185,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
           ) : null
         }
         hudContent={
-          <SurfaceCard className="absolute top-3 left-3 z-10 p-2 sm:p-2.5 text-xs pointer-events-none flex flex-col gap-1 backdrop-blur-sm max-w-[260px] sm:max-w-xs">
+          <SurfaceCard className="relative lg:absolute lg:top-3 lg:left-3 z-10 p-2 sm:p-2.5 text-xs flex flex-col gap-1 backdrop-blur-sm w-full lg:max-w-xs">
             <div className="text-[#94A3B8] font-bold flex items-center gap-1.5">
               <Radio className="w-3.5 h-3.5 text-[#F43F5E]" />
               Thoại VHF thủ công · Không có đèn
@@ -246,7 +246,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
           ) : null
         }
         hudContent={
-          <SurfaceCard className="absolute top-3 left-3 z-10 p-2 sm:p-2.5 text-xs pointer-events-none flex flex-col gap-1 backdrop-blur-sm max-w-[260px] sm:max-w-xs">
+          <SurfaceCard className="relative lg:absolute lg:top-3 lg:left-3 z-10 p-2 sm:p-2.5 text-xs flex flex-col gap-1 backdrop-blur-sm w-full lg:max-w-xs">
             <div className="text-[#22C55E] font-bold flex items-center gap-1.5">
               <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" />
               Đèn xanh FtG dẫn hướng thông minh
