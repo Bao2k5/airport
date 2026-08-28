@@ -4,6 +4,9 @@ import type { ScenarioAircraft } from '../data/presetScenarios';
 import { setupScenario5Traditional, setupScenario5FTG } from '../data/presetScenarios';
 import AirportMap from './AirportMap';
 import { scenarioTick, startScenario } from '../simulation/scenarioRunner';
+import AppShell from './ui/AppShell';
+import SurfaceCard from './ui/SurfaceCard';
+import { Radio, CheckCircle2 } from 'lucide-react';
 
 interface Props {
   graph: AirportGraph;
@@ -94,10 +97,7 @@ export default function Scenario5ComparisonView({
     return aircraftList.filter(a => a.status === 'arrived' || a.status === 'departed').length;
   };
 
-  const leftCount = countCompleted(leftState.scenarioAircraft);
-  const rightCount = countCompleted(rightState.scenarioAircraft);
-
-    // Custom Tick for Left Screen: Traditional ATC without FtG
+  // Custom Tick for Left Screen: Traditional ATC without FtG
   const leftTick = useCallback((prev: SimulationState, dt: number): SimulationState => {
     if (leftDone) return prev;
 
@@ -114,6 +114,8 @@ export default function Scenario5ComparisonView({
     }
 
     // Traditional ATC delays & Gridlock at direction change
+    const isStage2Traditional = stage3StartSecRef.current !== null;
+
     if (currentSec >= 6 && currentSec - dt < 6) {
       setTraditionalEvents(e => [
         ...e,
@@ -121,50 +123,83 @@ export default function Scenario5ComparisonView({
       ]);
     }
 
-    if (currentSec >= 18 && currentSec - dt < 18) {
+    if (isStage2Traditional && !prev.scenarioAircraft?.some(a => a.callsign === 'OUT03' && !a.hidden)) {
       setTraditionalEvents(e => [
         ...e,
-        { time: 18, text: '📻 [GIAI ĐOẠN 2] KSVKL giải tỏa thủ công: INB01 qua HS NS vào bến 17; OUT01 & OUT02 tiếp tục ra RW 07R. Tàu 4, 5, 6 ở Stand chờ lượt.' },
+        { time: Math.round(currentSec), text: '📻 [GIAI ĐOẠN 2] KSVKL giải tỏa thủ công: INB01 qua HS NS vào bến 17; OUT01 & OUT02 tiếp tục ra RW 07R. Tàu 4, 5, 6 ở Stand chờ lượt.' },
       ]);
     }
 
     stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
-      // Giai đoạn 1 (currentSec < 18s):
-      if (currentSec < 18) {
-        // INB01 dừng tại HS NS
-        if (ac.callsign === 'INB01' && ((ac.routeEdgeIndex >= 18 && ac.progressOnEdge >= 0.85) || ac.currentNodeId === 'v3_line_17_p09')) {
+      // ── GIAI ĐOẠN 1: KHI FTG CHƯA CHẠY TÀU 4 (!isStage2Traditional) ──
+      if (!isStage2Traditional) {
+        // 1. INB01: Hạ cánh di chuyển đến HS NS (v3_line_17_p09 / index >= 20) thì DỪNG LẠI
+        if (ac.callsign === 'INB01') {
+          const atHSNS = ac.currentNodeId === 'v3_line_17_p09' || ac.routeEdgeIndex >= 20;
+          if (atHSNS) {
+            return {
+              ...ac,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: 'stop-bar',
+              scenarioLabel: '🛑 DỪNG TẠI HS NS (CHỜ GIẢI TỎA)',
+            };
+          }
           return {
             ...ac,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
-            holdReason: 'stop-bar',
-            scenarioLabel: '⛔ DỪNG TẠI HS NS (CHỜ THỦ CÔNG)',
+            status: 'taxiing',
+            speedKts: 16,
+            speedLimitKts: 16,
+            scenarioLabel: 'RW 25R ➔ W4 ➔ CROSS 25L ➔ HS NS',
           };
         }
-        // OUT01 dừng tại NS2
-        if (ac.callsign === 'OUT01' && ac.routeEdgeIndex >= 26) {
+
+        // 2. OUT01: Lăn ra qua NS2 xuống đúng ngã ba E6/NS2 (v3_line_12_p02 / index >= 28) thì DỪNG LẠI do xung đột với Tàu 1
+        if (ac.callsign === 'OUT01') {
+          const atE6NS2 = ac.currentNodeId === 'v3_line_12_p02' || (ac.routeEdgeIndex >= 28 && ac.progressOnEdge >= 0.5);
+          if (atE6NS2) {
+            return {
+              ...ac,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: 'stop-bar',
+              scenarioLabel: '🛑 DỪNG TẠI E6/NS2 (XUNG ĐỘT TÀU 1)',
+            };
+          }
           return {
             ...ac,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
-            holdReason: 'stop-bar',
-            scenarioLabel: '⛔ DỪNG TẠI NS2 (XUNG ĐỘT INB01)',
+            status: 'taxiing',
+            speedKts: 16,
+            speedLimitKts: 16,
+            scenarioLabel: 'STAND 9 ➔ E6 ➔ RW 25L ➔ NS2 ➔ E6/NS2',
           };
         }
-        // OUT02 dừng sau OUT01
-        if (ac.callsign === 'OUT02' && ac.routeEdgeIndex >= 25) {
+
+        // 3. OUT02: Lăn theo đuôi OUT01 đến NS2 (v3_line_12_p01 / index >= 30) thì DỪNG LẠI
+        if (ac.callsign === 'OUT02') {
+          const atNS2 = ac.currentNodeId === 'v3_line_12_p01' || (ac.routeEdgeIndex >= 30 && ac.progressOnEdge >= 0.5);
+          if (atNS2) {
+            return {
+              ...ac,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: 'stop-bar',
+              scenarioLabel: '🛑 DỪNG THEO ĐUÔI TÀU 2 TẠI NS2',
+            };
+          }
           return {
             ...ac,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
-            holdReason: 'stop-bar',
-            scenarioLabel: '⛔ DỪNG THEO ĐUÔI OUT01 TẠI NS2',
+            status: 'taxiing',
+            speedKts: 14,
+            speedLimitKts: 14,
+            scenarioLabel: 'STAND 12 ➔ E6 ➔ RW 25L ➔ NS2',
           };
         }
-        // Tàu 4, 5, 6 chưa xuất hiện ở Giai đoạn 1
+
+        // 4, 5, 6: Chưa xuất hiện ở Giai đoạn 1
         if (ac.callsign === 'OUT03' || ac.callsign === 'OUT04' || ac.callsign === 'OUT05') {
           return {
             ...ac,
@@ -175,30 +210,74 @@ export default function Scenario5ComparisonView({
           };
         }
       } else {
-        // Giai đoạn 2 (currentSec >= 18s):
-        // INB01 được giải tỏa qua HS NS vào bến 17
-        if (ac.callsign === 'INB01' && ac.status === 'holding') {
+        // ── GIAI ĐOẠN 2: BẮT ĐẦU KHI FTG CHẠY TÀU 4 (isStage2Traditional) ──
+        // 1. INB01: Được KSVKL giải tỏa đi qua HS NS vào bến đỗ Stand 17
+        if (ac.callsign === 'INB01') {
+          const isAtStand17 = ac.currentNodeId === 'v3_line_22_p01' || ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1;
+          if (isAtStand17) {
+            return {
+              ...ac,
+              status: 'arrived',
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: '✓ ĐÃ VỀ BẾN STAND 17',
+            };
+          }
           return {
             ...ac,
             status: 'taxiing',
             speedKts: 16,
             speedLimitKts: 16,
             holdReason: undefined,
-            scenarioLabel: 'HẠ CÁNH 25R ➔ VÀO STAND 17',
+            scenarioLabel: 'HS NS ➔ VÀO BẾN ĐỖ STAND 17',
           };
         }
-        // OUT01 & OUT02 tiếp tục đi ra RW 07R
-        if ((ac.callsign === 'OUT01' || ac.callsign === 'OUT02') && ac.status === 'holding') {
+
+        // 2. OUT01: Được KSVKL giải tỏa tiếp tục đi theo tuyến ban đầu ra RW 07R
+        if (ac.callsign === 'OUT01') {
+          const at07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1;
+          if (at07R) {
+            return {
+              ...ac,
+              status: 'departed',
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: '🛫 ĐÃ RA ĐẦU RW 07R',
+            };
+          }
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: ac.callsign === 'OUT01' ? 16 : 14,
-            speedLimitKts: ac.callsign === 'OUT01' ? 16 : 14,
+            speedKts: 16,
+            speedLimitKts: 16,
             holdReason: undefined,
-            scenarioLabel: 'TIẾP TỤC LĂN RA RW 07R',
+            scenarioLabel: 'NS2 ➔ HS NS ➔ W7B ➔ W11 ➔ RW 07R',
           };
         }
-        // Tàu 4, 5, 6 ở Stand và KHÔNG PUSHBACK RA vì chưa đến lượt
+
+        // 3. OUT02: Được KSVKL giải tỏa tiếp tục đi theo tuyến ban đầu ra RW 07R
+        if (ac.callsign === 'OUT02') {
+          const at07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1;
+          if (at07R) {
+            return {
+              ...ac,
+              status: 'departed',
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: '🛫 ĐÃ RA ĐẦU RW 07R',
+            };
+          }
+          return {
+            ...ac,
+            status: 'taxiing',
+            speedKts: 14,
+            speedLimitKts: 14,
+            holdReason: undefined,
+            scenarioLabel: 'NS2 ➔ NỐI ĐUÔI TÀU 2 RA RW 07R',
+          };
+        }
+
+        // 4, 5, 6: Ở stand lần lượt 8, 11, 4 và KHÔNG PUSHBACK RA VÌ CHƯA ĐẾN LƯỢT
         if (ac.callsign === 'OUT03' || ac.callsign === 'OUT04' || ac.callsign === 'OUT05') {
           const standName = ac.callsign === 'OUT03' ? 'STAND 8' : ac.callsign === 'OUT04' ? 'STAND 11' : 'STAND 4';
           return {
@@ -207,7 +286,7 @@ export default function Scenario5ComparisonView({
             status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
-            holdReason: 'stop-bar',
+            holdReason: undefined,
             scenarioLabel: `${standName} (CHƯA ĐẾN LƯỢT PUSHBACK)`,
           };
         }
@@ -396,9 +475,10 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // 3. OUT02: Đứng chờ tại Stand 12 cho đến khi Tàu 1 đến W7A và dừng lại mới được đi
+      // 3. OUT02: Đứng chờ tại Stand 12 cho đến khi Tàu 1 đến W7A và Tàu 2 bắt đầu lăn thì mới xuất phát sau
       if (ac.callsign === 'OUT02') {
-        if (!inb1ReachedW7A) {
+        const out1Started = out1 ? (out1.routeEdgeIndex >= 2 || out1.progressOnEdge >= 0.5 || out1.status === 'taxiing') : false;
+        if (!inb1ReachedW7A || !out1Started) {
           return {
             ...ac,
             status: 'holding',
@@ -425,16 +505,16 @@ export default function Scenario5ComparisonView({
             clearedRoute: pOut2Full,
             targetNodeId: 'v3_line_16_p00',
             status: 'taxiing',
-            speedKts: 20,
-            speedLimitKts: 20,
+            speedKts: 18.5,
+            speedLimitKts: 18.5,
             scenarioLabel: '🔄 RUNWAY CHANGE 07R ➔ NỐI ĐUÔI TÀU 2 RA 07R',
           };
         }
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 20,
-          speedLimitKts: 20,
+          speedKts: 18.5,
+          speedLimitKts: 18.5,
           scenarioLabel: 'STAND 12 ➔ NỐI ĐUÔI TÀU 2 ➔ E6',
         };
       }
@@ -462,8 +542,8 @@ export default function Scenario5ComparisonView({
             routeVisible: true,
             guidanceVisible: true,
             status: 'taxiing',
-            speedKts: 18,
-            speedLimitKts: 18,
+            speedKts: 20,
+            speedLimitKts: 20,
             scenarioLabel: 'STAND 8 ➔ PUSHBACK RA RW 07R',
           };
         }
@@ -480,10 +560,10 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // 5. OUT04: Stand 11 -> Pushback ra RW 07R (Cách Tàu 4 khoảng 2.5s)
+      // 5. OUT04: Stand 11 -> Pushback ra RW 07R (Cách Tàu 4 thêm một khoảng an toàn)
       if (ac.callsign === 'OUT04') {
         const at07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1;
-        if (at07R && stage3StartSecRef.current !== null && stage3Elapsed >= 3.5) {
+        if (at07R && stage3StartSecRef.current !== null && stage3Elapsed >= 4.6) {
           return {
             ...ac,
             status: 'departed',
@@ -492,7 +572,7 @@ export default function Scenario5ComparisonView({
             scenarioLabel: '🛫 ĐÃ RA ĐẦU RW 07R',
           };
         }
-        if (stage3StartSecRef.current !== null && stage3Elapsed >= 3.5) {
+        if (stage3StartSecRef.current !== null && stage3Elapsed >= 4.6) {
           return {
             ...ac,
             hidden: false,
@@ -517,10 +597,10 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // 6. OUT05: Stand 4 -> Pushback ra RW 07R (Cách Tàu 5 khoảng 2.5s)
+      // 6. OUT05: Stand 4 -> Pushback ra RW 07R (Cách Tàu 5 thêm một khoảng an toàn)
       if (ac.callsign === 'OUT05') {
         const at07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1;
-        if (at07R && stage3StartSecRef.current !== null && stage3Elapsed >= 6.0) {
+        if (at07R && stage3StartSecRef.current !== null && stage3Elapsed >= 8.2) {
           return {
             ...ac,
             status: 'departed',
@@ -529,15 +609,15 @@ export default function Scenario5ComparisonView({
             scenarioLabel: '🛫 ĐÃ RA ĐẦU RW 07R',
           };
         }
-        if (stage3StartSecRef.current !== null && stage3Elapsed >= 6.0) {
+        if (stage3StartSecRef.current !== null && stage3Elapsed >= 8.2) {
           return {
             ...ac,
             hidden: false,
             routeVisible: true,
             guidanceVisible: true,
             status: 'taxiing',
-            speedKts: 18,
-            speedLimitKts: 18,
+            speedKts: 16.5,
+            speedLimitKts: 16.5,
             scenarioLabel: 'STAND 4 ➔ NỐI ĐUÔI TÀU 5 RA 07R',
           };
         }
@@ -550,7 +630,7 @@ export default function Scenario5ComparisonView({
           speedKts: 0,
           speedLimitKts: 0,
           holdReason: undefined,
-          scenarioLabel: 'STAND 4 (CHỜ GIAI ĐOẠN 3)',
+          scenarioLabel: 'STAND 4 (CHỜ TÀU 1, 2, 3 HOÀN TẤT)',
         };
       }
 
@@ -631,324 +711,207 @@ export default function Scenario5ComparisonView({
   const leftElapsed = leftFinalTime !== null ? leftFinalTime : (leftState.elapsedSeconds || 0);
   const rightElapsed = rightFinalTime !== null ? rightFinalTime : (rightState.elapsedSeconds || 0);
 
-  const bothFinished = leftDone && rightDone;
-  const timeSavedSec = Math.max(0, (leftFinalTime || 0) - (rightFinalTime || 0));
-  const timeSavedPct = leftFinalTime ? Math.round((timeSavedSec / leftFinalTime) * 1000) / 10 : 0;
-  const isFtgFaster = (leftFinalTime || 0) > (rightFinalTime || 0);
+  const globalStatus = (leftDone && rightDone)
+    ? 'completed'
+    : isPaused
+    ? 'paused'
+    : 'running';
 
   return (
-    <div className="fixed inset-0 w-screen h-screen z-50 bg-[#070D18] flex flex-col text-white animate-fadeIn select-none overflow-hidden">
-      {/* ── Top Header / Control Bar ── */}
-      <div className="flex items-center justify-between px-4 py-2 bg-[#0C192E] border-b border-[#1E3A8A] flex-shrink-0 shadow-md">
-        <div className="flex items-center gap-3">
-          <div className="px-2.5 py-1 rounded bg-[#1E3A8A] text-[#93C5FD] font-mono text-xs font-bold border border-[#3B82F6]/40">
-            SO SÁNH ĐIỀU HÀNH KỊCH BẢN 5
-          </div>
-          <h2 className="text-sm md:text-base font-bold text-white tracking-wide">
-            Đảo chiều cất/hạ cánh Runway Change 07R (6 tàu bay)
-          </h2>
-        </div>
-
-        {/* Speed Controls & Action Buttons */}
-        <div className="flex items-center gap-2 md:gap-3">
-          {/* Speed Scale Selector */}
-          <div className="flex items-center bg-[#071326] p-0.5 rounded-lg border border-[#1E3A8A]">
-            <span className="text-[10px] text-[#94A3B8] font-bold px-2">TỐC ĐỘ:</span>
-            {[1, 2, 4].map(s => (
-              <button
-                key={s}
-                onClick={() => setSpeedMultiplier(s)}
-                className={`px-2 py-1 text-xs font-mono font-bold rounded transition cursor-pointer ${
-                  speedMultiplier === s
-                    ? 'bg-[#3B82F6] text-white shadow-sm'
-                    : 'text-[#94A3B8] hover:text-white hover:bg-[#1E293B]'
-                }`}
-              >
-                {s}x
-              </button>
-            ))}
-          </div>
-
-          <button
-            onClick={() => setIsPaused(p => !p)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold transition flex items-center gap-1 cursor-pointer ${
-              isPaused ? 'bg-[#059669] hover:bg-[#047857] text-white' : 'bg-[#D97706] hover:bg-[#B45309] text-white'
-            }`}
-          >
-            {isPaused ? '▶ Tiếp tục' : '⏸ Tạm dừng'}
-          </button>
-
-          <button
-            onClick={handleRestart}
-            className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#1E293B] hover:bg-[#334155] text-[#CBD5E1] border border-[#475569] transition cursor-pointer"
-          >
-            🔄 Chạy lại
-          </button>
-
-          <button
-            onClick={onExit}
-            className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#DC2626] hover:bg-[#B91C1C] text-white shadow-sm transition cursor-pointer"
-          >
-            ✕ Thoát so sánh
-          </button>
-        </div>
-      </div>
-
-      {/* ── Main Dual Map Container ── */}
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0 overflow-hidden relative">
+    <AppShell
+      category="So sánh Kịch bản 5"
+      title="Đảo chiều cất/hạ cánh Runway Change 07R"
+      description="Đánh giá hiệu năng giải tỏa luồng và chống ùn tắc giao lộ giữa điều hành thoại thủ công và tự động hóa A-SMGCS Follow-the-Green."
+      status={globalStatus}
+      speedMultiplier={speedMultiplier}
+      onSpeedChange={setSpeedMultiplier}
+      isPaused={isPaused}
+      onTogglePause={() => setIsPaused(p => !p)}
+      onRestart={handleRestart}
+      onExit={onExit}
+    >
+      <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0 overflow-hidden">
         {/* ── LEFT SCREEN: Traditional ATC (No FtG) ── */}
-        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#334155] overflow-hidden shadow-2xl relative">
+        <SurfaceCard className="flex flex-col h-full overflow-hidden shadow-md relative">
           {/* Individual Panel Header */}
-          <div className="flex items-center justify-between px-3 py-2 bg-[#1E293B] border-b border-[#334155] flex-shrink-0">
+          <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#131E2E] border-b border-[rgba(148,163,184,0.16)] flex-shrink-0">
             <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${leftDone ? 'bg-[#10B981]' : 'bg-[#EF4444] animate-pulse'}`}></span>
-              <span className="font-bold text-xs md:text-sm text-[#F87171]">MÀN TRÁI: ĐIỀU HÀNH TRUYỀN THỐNG (KHÔNG FTG)</span>
-            </div>
-            
-            {/* Panel Individual Clock & Completed Status */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-[#0B132B] px-2.5 py-0.5 rounded border border-[#334155]">
-                <span className="text-[10px] text-[#94A3B8] font-bold">Thời gian:</span>
-                <span className="font-mono text-xs font-black text-[#F87171]">{formatMMSS(leftElapsed)}</span>
-              </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#334155] text-[#E2E8F0]">
-                {leftDone ? `HOÀN TẤT — ${formatMMSS(leftElapsed)}` : `Đang chạy · ${leftCount}/6`}
+              <span className="w-2 h-2 rounded-full bg-[#F43F5E]" />
+              <span className="font-bold text-xs text-[#F1F5F9] uppercase tracking-wider">
+                Màn Trái: Điều Hành Truyền Thống (VHF)
               </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#94A3B8] font-medium">Thời gian:</span>
+              <span className="font-mono text-xs font-bold text-[#F43F5E]">{formatMMSS(leftElapsed)}</span>
             </div>
           </div>
 
           {/* Map Viewer */}
-          <div className="flex-1 relative min-h-0">
+          <div className="flex-1 relative min-h-0 bg-[#070B13]">
             <AirportMap
               state={leftState}
               graph={graph}
               bgImage={bgImage}
               renderMode="traditional"
+              aircraftScale={1.5}
             />
+
             {/* Live Telemetry HUD Overlay */}
-            <div className="absolute top-2 left-2 z-10 bg-[#0F172A]/90 border border-[#334155] rounded-lg p-2.5 text-[11px] shadow-lg backdrop-blur flex flex-col gap-1.5 pointer-events-none max-w-xs">
-              <div className="text-[11px] font-bold text-[#F87171] uppercase tracking-wider border-b border-[#334155] pb-1">
-                📻 Nhật ký thoại VHF / KSVKL (Tuần tự)
+            <SurfaceCard className="absolute bottom-3 left-3 z-10 p-2.5 text-[11px] backdrop-blur-sm flex flex-col gap-1.5 pointer-events-none max-w-xs">
+              <div className="text-[11px] font-bold text-[#F1F5F9] uppercase tracking-wider border-b border-[rgba(148,163,184,0.16)] pb-1 flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-[#F43F5E]" />
+                Nhật ký thoại VHF / KSVKL
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#94A3B8] font-bold">Pha điều phối:</span>
-                <span className="text-[#F87171] font-mono font-bold">
+              <div className="flex items-center justify-between gap-3 text-[#94A3B8]">
+                <span>Pha điều phối:</span>
+                <span className="text-[#F1F5F9] font-mono font-bold">
                   {leftElapsed < 18 ? 'GĐ 1: Xung đột dừng HS NS & NS2' : 'GĐ 2: Giải tỏa thủ công'}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#94A3B8] font-bold">Tàu đang holding:</span>
-                <span className="text-[#FCA5A5] font-mono font-bold">
+              <div className="flex items-center justify-between gap-3 text-[#94A3B8]">
+                <span>Tàu đang holding:</span>
+                <span className="text-[#F43F5E] font-mono font-bold">
                   {leftState.scenarioAircraft?.filter(a => a.status === 'holding' || a.status === 'stopped' || a.status === 'waiting').length || 0}/6
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#94A3B8] font-bold">Tổng chờ tích lũy:</span>
-                <span className="text-[#FCA5A5] font-mono font-bold">
+              <div className="flex items-center justify-between gap-3 text-[#94A3B8]">
+                <span>Tổng chờ tích lũy:</span>
+                <span className="text-[#F1F5F9] font-mono font-bold">
                   {Math.round(leftState.scenarioAircraft?.reduce((sum, a) => sum + (a.heldSeconds || 0), 0) || 0)}s
                 </span>
               </div>
-              <div className="text-[10px] text-[#CBD5E1] bg-[#1E293B]/80 p-1.5 rounded border border-[#334155] max-h-20 overflow-y-auto flex flex-col gap-1">
+              <div className="text-[10px] text-[#94A3B8] bg-[#070B13] p-1.5 rounded-[6px] border border-[rgba(148,163,184,0.12)] max-h-20 overflow-y-auto flex flex-col gap-1">
                 {traditionalEvents.slice(-3).map((ev, idx) => (
-                  <div key={`trad-ev-${idx}`}>
-                    <span className="text-[#F87171] font-mono font-bold">[{formatMMSS(ev.time)}]</span> {ev.text}
+                  <div key={`trad-ev-${idx}`} className="text-[#CBD5E1]">
+                    <span className="text-[#F43F5E] font-mono font-bold">[{formatMMSS(ev.time)}]</span> {ev.text}
                   </div>
                 ))}
               </div>
-            </div>
+            </SurfaceCard>
 
             {leftDone && (
-              <div className="absolute top-3 right-3 z-10 bg-[#0F172A]/90 border border-[#10B981] px-3 py-1.5 rounded-lg shadow-lg backdrop-blur flex items-center gap-2 animate-fadeIn">
-                <span className="w-2 h-2 rounded-full bg-[#10B981]"></span>
-                <span className="text-xs font-bold text-[#34D399]">Hoàn thành: {formatMMSS(leftElapsed)}</span>
-              </div>
+              <SurfaceCard variant="active" className="absolute top-3 right-3 z-10 px-3 py-1.5 backdrop-blur-sm flex items-center gap-2 animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />
+                <span className="text-xs font-bold text-[#F1F5F9]">Hoàn thành: {formatMMSS(leftElapsed)}</span>
+              </SurfaceCard>
             )}
           </div>
 
           {/* Bottom Live Status Banner */}
-          <div className="px-3 py-2 bg-[#090D16] border-t border-[#1E293B] text-[11px] text-[#94A3B8] flex items-center justify-between flex-shrink-0">
-            <div>
-              <strong className="text-[#FCA5A5]">Tình trạng:</strong>{' '}
-              {leftElapsed < 18 ? '⚠️ Giai đoạn 1: INB01 dừng tại HS NS, OUT01 & OUT02 dừng tại NS2 do xung đột luồng.' : (
-                leftDone ? `✓ Đã hoàn tất giải tỏa lúc ${formatMMSS(leftElapsed)}.` :
-                '📻 Giai đoạn 2: KSVKL phát lệnh giải tỏa thủ công từng tàu. Tàu 4, 5, 6 chờ trong bến.'
+          <div className="px-3.5 py-2 bg-[#0E1523] border-t border-[rgba(148,163,184,0.16)] text-xs text-[#94A3B8] flex items-center justify-between flex-shrink-0">
+            <span className="flex items-center gap-1.5">
+              {leftElapsed < 18 ? (
+                'Giai đoạn 1: INB01 dừng tại HS NS; OUT01 & OUT02 dừng tại E6/NS2 do xung đột luồng.'
+              ) : leftDone ? (
+                `Hoàn tất giải tỏa thủ công lúc ${formatMMSS(leftElapsed)}.`
+              ) : (
+                'Giai đoạn 2: KSVKL phát lệnh giải tỏa thủ công từng tàu. Tàu 4, 5, 6 chờ trong bến.'
               )}
-            </div>
-            <span className="font-mono text-[10px] text-[#EF4444] font-bold">FtG: OFF (0 Lights)</span>
+            </span>
+            <span className="text-[11px] font-mono font-bold text-[#94A3B8]">FtG: OFF</span>
           </div>
-        </div>
+        </SurfaceCard>
 
         {/* ── RIGHT SCREEN: A-SMGCS + Follow-the-Green ── */}
-        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#059669] overflow-hidden shadow-2xl relative">
+        <SurfaceCard className="flex flex-col h-full overflow-hidden shadow-md relative">
           {/* Individual Panel Header */}
-          <div className="flex items-center justify-between px-3 py-2 bg-[#064E3B] border-b border-[#059669] flex-shrink-0">
+          <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#131E2E] border-b border-[rgba(148,163,184,0.16)] flex-shrink-0">
             <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${rightDone ? 'bg-[#34D399]' : 'bg-[#10B981] animate-pulse'}`}></span>
-              <span className="font-bold text-xs md:text-sm text-[#34D399]">MÀN PHẢI: A-SMGCS + FOLLOW-THE-GREEN</span>
-            </div>
-
-            {/* Panel Individual Clock & Completed Status */}
-            <div className="flex items-center gap-2">
-              <div className="flex items-center gap-1.5 bg-[#062419] px-2.5 py-0.5 rounded border border-[#059669]">
-                <span className="text-[10px] text-[#A7F3D0] font-bold">Thời gian:</span>
-                <span className="font-mono text-xs font-black text-[#34D399]">{formatMMSS(rightElapsed)}</span>
-              </div>
-              <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded bg-[#065F46] text-[#A7F3D0]">
-                {rightDone ? `HOÀN TẤT — ${formatMMSS(rightElapsed)}` : `Đang chạy · ${rightCount}/6`}
+              <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
+              <span className="font-bold text-xs text-[#F1F5F9] uppercase tracking-wider">
+                Màn Phải: A-SMGCS + Follow-the-Green
               </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#94A3B8] font-medium">Thời gian:</span>
+              <span className="font-mono text-xs font-bold text-[#22C55E]">{formatMMSS(rightElapsed)}</span>
             </div>
           </div>
 
           {/* Map Viewer */}
-          <div className="flex-1 relative min-h-0">
+          <div className="flex-1 relative min-h-0 bg-[#070B13]">
             <AirportMap
               state={rightState}
               graph={graph}
               bgImage={bgImage}
               renderMode="ftg"
+              aircraftScale={1.5}
             />
 
-            {/* ── Runway Change 07R Alert Notification inside FTG Panel (Hiển thị 4 giây thực) ── */}
+            {/* Runway Change Alert Notification */}
             {showRunwayChangeAlert && (
-              <div className="absolute top-3 right-3 z-30 animate-bounce pointer-events-none max-w-sm transition-opacity duration-500">
-                <div className="bg-[#062419]/95 border-2 border-[#34D399] text-white px-3.5 py-2 rounded-xl shadow-[0_0_25px_rgba(52,211,153,0.6)] backdrop-blur-md flex items-center gap-2.5">
-                  <span className="text-xl animate-pulse">📻</span>
-                  <div>
-                    <div className="text-[9px] text-[#A7F3D0] font-bold uppercase tracking-wider flex items-center gap-1">
-                      <span className="w-1.5 h-1.5 rounded-full bg-[#34D399] animate-ping inline-block"></span>
-                      KSVKL THÔNG BÁO:
-                    </div>
-                    <div className="text-xs font-black text-[#FDE047] font-mono tracking-wide">
-                      “RUNWAY CHANGE 07R” — ĐỔI CHIỀU SANG 07R
-                    </div>
+              <SurfaceCard variant="active" className="absolute top-3 right-3 z-30 p-3 shadow-lg backdrop-blur-md flex items-center gap-2.5 max-w-sm animate-fadeIn">
+                <Radio className="w-4 h-4 text-[#06B6D4] animate-pulse" />
+                <div>
+                  <div className="text-[9px] text-[#06B6D4] font-bold uppercase tracking-wider">
+                    KSVKL THÔNG BÁO:
+                  </div>
+                  <div className="text-xs font-mono font-bold text-[#F1F5F9]">
+                    “RUNWAY CHANGE 07R” — ĐỔI CHIỀU SANG 07R
                   </div>
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
             {/* Live Telemetry HUD Overlay */}
-            <div className="absolute top-2 left-2 z-10 bg-[#062419]/90 border border-[#059669] rounded-lg p-2.5 text-[11px] shadow-lg backdrop-blur flex flex-col gap-1.5 pointer-events-none max-w-xs">
-              <div className="text-[11px] font-bold text-[#34D399] uppercase tracking-wider border-b border-[#059669] pb-1">
-                ⚡ Tự Động Hóa A-SMGCS + FtG
+            <SurfaceCard className="absolute bottom-3 left-3 z-10 p-2.5 text-[11px] backdrop-blur-sm flex flex-col gap-1.5 pointer-events-none max-w-xs">
+              <div className="text-[11px] font-bold text-[#06B6D4] uppercase tracking-wider border-b border-[rgba(148,163,184,0.16)] pb-1 flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#06B6D4]" />
+                Tự Động Hóa A-SMGCS + FtG
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#A7F3D0] font-bold">Pha điều phối:</span>
-                <span className="text-[#34D399] font-mono font-bold">
+              <div className="flex items-center justify-between gap-3 text-[#94A3B8]">
+                <span>Pha điều phối:</span>
+                <span className="text-[#F1F5F9] font-mono font-bold">
                   {rightElapsed < 5 ? 'GĐ 1: INB01 dừng W7A nhường đường' : (rightElapsed < 16 ? 'GĐ 2: OUT01/02 đổi hướng 07R' : 'GĐ 3: Pushback Stand 8, 11, 4')}
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#A7F3D0] font-bold">Tàu đang holding:</span>
-                <span className="text-[#34D399] font-mono font-bold">
+              <div className="flex items-center justify-between gap-3 text-[#94A3B8]">
+                <span>Tàu đang holding:</span>
+                <span className="text-[#22C55E] font-mono font-bold">
                   {rightState.scenarioAircraft?.filter(a => a.status === 'holding' || a.status === 'stopped' || a.status === 'waiting').length || 0}/6
                 </span>
               </div>
-              <div className="flex items-center justify-between gap-3">
-                <span className="text-[#A7F3D0] font-bold">Tổng chờ tích lũy:</span>
-                <span className="text-[#34D399] font-mono font-bold">
+              <div className="flex items-center justify-between gap-3 text-[#94A3B8]">
+                <span>Tổng chờ tích lũy:</span>
+                <span className="text-[#F1F5F9] font-mono font-bold">
                   {Math.round(rightState.scenarioAircraft?.reduce((sum, a) => sum + (a.heldSeconds || 0), 0) || 0)}s
                 </span>
               </div>
-              <div className="text-[10px] text-[#A7F3D0] bg-[#064E3B]/80 p-1.5 rounded border border-[#059669] max-h-20 overflow-y-auto flex flex-col gap-1">
+              <div className="text-[10px] text-[#94A3B8] bg-[#070B13] p-1.5 rounded-[6px] border border-[rgba(148,163,184,0.12)] max-h-20 overflow-y-auto flex flex-col gap-1">
                 {ftgEvents.slice(-3).map((ev, idx) => (
-                  <div key={`ftg-ev-${idx}`}>
-                    <span className="text-[#34D399] font-mono font-bold">[{formatMMSS(ev.time)}]</span> {ev.text}
+                  <div key={`ftg-ev-${idx}`} className="text-[#CBD5E1]">
+                    <span className="text-[#06B6D4] font-mono font-bold">[{formatMMSS(ev.time)}]</span> {ev.text}
                   </div>
                 ))}
               </div>
-            </div>
+            </SurfaceCard>
 
             {rightDone && (
-              <div className="absolute top-3 right-3 z-10 bg-[#062419]/90 border border-[#34D399] px-3 py-1.5 rounded-lg shadow-lg backdrop-blur flex items-center gap-2 animate-fadeIn">
-                <span className="w-2 h-2 rounded-full bg-[#34D399]"></span>
-                <span className="text-xs font-bold text-[#34D399]">Hoàn thành: {formatMMSS(rightElapsed)}</span>
-              </div>
+              <SurfaceCard variant="active" className="absolute top-3 right-3 z-10 px-3 py-1.5 backdrop-blur-sm flex items-center gap-2 animate-fadeIn">
+                <CheckCircle2 className="w-4 h-4 text-[#22C55E]" />
+                <span className="text-xs font-bold text-[#F1F5F9]">Hoàn thành: {formatMMSS(rightElapsed)}</span>
+              </SurfaceCard>
             )}
           </div>
 
           {/* Bottom Live Status Banner */}
-          <div className="px-3 py-2 bg-[#062419] border-t border-[#059669] text-[11px] text-[#A7F3D0] flex items-center justify-between flex-shrink-0">
-            <div>
-              <strong className="text-[#34D399]">Tình trạng:</strong>{' '}
-              {rightElapsed < 5 ? 'INB01 nhường đường tự động tại W7A; OUT01 & OUT02 lăn thông suốt.' : (
-                rightElapsed < 16 ? '✓ OUT01 & OUT02 đổi hướng 07R; INB01 tiếp tục lăn về Stand 17.' :
-                rightDone ? `✓ Toàn bộ 6 tàu bay đã hoàn tất chuyển hướng an toàn lúc ${formatMMSS(rightElapsed)}.` :
-                '✓ Giai đoạn 3: Stand 8, 11, 4 pushback nối đuôi cách nhau 2s ra 07R.'
+          <div className="px-3.5 py-2 bg-[#0E1523] border-t border-[rgba(148,163,184,0.16)] text-xs text-[#94A3B8] flex items-center justify-between flex-shrink-0">
+            <span className="flex items-center gap-1.5">
+              {rightElapsed < 5 ? (
+                'GĐ 1: INB01 nhường đường tự động tại W7A; OUT01 & OUT02 lăn thông suốt.'
+              ) : rightElapsed < 16 ? (
+                'GĐ 2: OUT01 & OUT02 đổi hướng 07R; INB01 tiếp tục lăn về Stand 17.'
+              ) : rightDone ? (
+                `Toàn bộ 6 tàu bay hoàn tất chuyển hướng an toàn lúc ${formatMMSS(rightElapsed)}.`
+              ) : (
+                'GĐ 3: Stand 8, 11, 4 pushback nối đuôi cách nhau ra 07R.'
               )}
-            </div>
-            <span className="font-mono text-[10px] text-[#34D399] font-bold">FtG: ACTIVE</span>
+            </span>
+            <span className="text-[11px] font-mono font-bold text-[#22C55E]">FtG: ACTIVE</span>
           </div>
-        </div>
-
-        {/* ── FINAL COMPARISON SUMMARY MODAL (Appears when both finish) ── */}
-        {bothFinished && (
-          <div className="absolute inset-0 z-30 bg-[#070D18]/80 backdrop-blur-md flex items-center justify-center p-4 animate-fadeIn">
-            <div className="bg-[#0F172A] border-2 border-[#3B82F6] rounded-2xl p-6 max-w-xl w-full shadow-2xl text-center">
-              <div className="inline-flex items-center justify-center w-12 h-12 rounded-full bg-[#1E3A8A] text-[#38BDF8] mb-3 text-2xl font-black">
-                ⏱️
-              </div>
-              <h3 className="text-lg md:text-xl font-black text-white mb-1">
-                KẾT QUẢ SO SÁNH HIỆU QUẢ ĐIỀU HÀNH
-              </h3>
-              <p className="text-xs text-[#94A3B8] mb-5">
-                Kịch bản 5: Đảo chiều cất/hạ cánh Runway Change 07R (6 tàu bay)
-              </p>
-
-              <div className="grid grid-cols-2 gap-4 mb-5 text-left">
-                <div className="bg-[#1E293B] p-3.5 rounded-xl border border-[#334155]">
-                  <div className="text-[11px] font-bold text-[#F87171] mb-1">ĐIỀU HÀNH TRUYỀN THỐNG</div>
-                  <div className="font-mono text-2xl font-black text-white">{formatMMSS(leftFinalTime || 0)}</div>
-                  <div className="text-[10px] text-[#94A3B8] mt-1">Huấn lệnh thoại · Xếp hàng thủ công</div>
-                </div>
-
-                <div className="bg-[#064E3B] p-3.5 rounded-xl border border-[#059669]">
-                  <div className="text-[11px] font-bold text-[#34D399] mb-1">A-SMGCS + FOLLOW-THE-GREEN</div>
-                  <div className="font-mono text-2xl font-black text-[#34D399]">{formatMMSS(rightFinalTime || 0)}</div>
-                  <div className="text-[10px] text-[#A7F3D0] mt-1">Đèn xanh dẫn hướng · Tự động nhường đường</div>
-                </div>
-              </div>
-
-              {/* Performance Difference Highlight */}
-              <div className={`p-4 rounded-xl mb-5 text-center border ${
-                isFtgFaster ? 'bg-[#062419] border-[#10B981]' : 'bg-[#3E1F1F] border-[#EF4444]'
-              }`}>
-                {isFtgFaster ? (
-                  <>
-                    <div className="text-xs font-bold text-[#34D399] uppercase tracking-wider mb-1">
-                      ✓ A-SMGCS + FtG Nhanh Hơn Vượt Trội
-                    </div>
-                    <div className="text-xl md:text-2xl font-black text-white font-mono">
-                      Tiết kiệm {formatMMSS(timeSavedSec)} ({timeSavedPct}%)
-                    </div>
-                    <div className="text-[11px] text-[#A7F3D0] mt-1">
-                      Giảm 100% nguy cơ nhầm lẫn thoại và ngăn ngừa ùn tắc giao lộ trong sương mù.
-                    </div>
-                  </>
-                ) : (
-                  <div className="text-xs font-bold text-[#F87171]">
-                    ⚠️ KẾT QUẢ CẦN REVIEW: Thời gian FtG không nhanh hơn truyền thống.
-                  </div>
-                )}
-              </div>
-
-              <div className="flex items-center justify-center gap-3">
-                <button
-                  onClick={handleRestart}
-                  className="px-4 py-2 rounded-xl text-xs font-bold bg-[#1E293B] hover:bg-[#334155] text-white border border-[#475569] transition cursor-pointer"
-                >
-                  🔄 Chạy lại so sánh
-                </button>
-                <button
-                  onClick={onExit}
-                  className="px-5 py-2 rounded-xl text-xs font-bold bg-[#3B82F6] hover:bg-[#2563EB] text-white transition cursor-pointer shadow-lg"
-                >
-                  ✓ Đóng kết quả
-                </button>
-              </div>
-            </div>
-          </div>
-        )}
+        </SurfaceCard>
       </div>
-    </div>
+    </AppShell>
   );
 }

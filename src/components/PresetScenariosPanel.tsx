@@ -1,11 +1,10 @@
-// Bảng kịch bản mô phỏng mẫu — Chuẩn nhận diện Học viện Hàng không Việt Nam (VAA).
-
 import { useState, useMemo } from 'react';
-import type { ScenarioState, ScenarioObservation } from '../data/presetScenarios';
+import type { ScenarioState } from '../data/presetScenarios';
 import { getPresetScenarioDefs } from '../data/presetScenarios';
 import { airportGraphV3 } from '../data/airportGraph.v3';
 import { useActionLock } from '../utils/useActionLock';
 import type { AirportGraph, SimulationState } from '../types';
+import { Play, LoaderCircle } from 'lucide-react';
 
 interface Props {
   state?: SimulationState;
@@ -50,10 +49,6 @@ export default function PresetScenariosPanel({
   const latestEvent = currentScenarioState && currentScenarioState.events.length > 0
     ? currentScenarioState.events[currentScenarioState.events.length - 1]
     : null;
-
-  const currentObservations: ScenarioObservation[] = currentScenarioState?.observations || activeDef.observations || [];
-  const passedCount = currentObservations.filter(o => o.status === 'pass').length;
-  const totalCount = currentObservations.length;
 
   // Tính số lượng máy bay cho từng kịch bản
   const aircraftCounts = useMemo(() => {
@@ -227,71 +222,7 @@ export default function PresetScenariosPanel({
             </button>
           </div>
 
-          {/* ── TIÊU CHÍ KIỂM THỬ BẮT BUỘC (ĐIỀU CẦN QUAN SÁT RUNTIME) ── */}
-          {currentObservations.length > 0 && (
-            <div className="p-3 bg-[#FFFBEB] border border-[#FCD34D] rounded-xl text-xs flex flex-col gap-2 shadow-2xs">
-              <div className="flex items-center justify-between">
-                <div className="text-[#92400E] font-bold tracking-wider uppercase text-[11px]">
-                  Điều cần quan sát (Tiêu chí Đạt/Chưa đạt)
-                </div>
-                <span className={`font-mono text-[10px] px-2 py-0.5 rounded-md font-bold ${
-                  passedCount === totalCount
-                    ? 'bg-[#F0FDF4] text-[#16845B] border border-[#86EFAC]'
-                    : 'bg-[#FEF3C7] text-[#B45309] border border-[#FCD34D]'
-                }`}>
-                  {passedCount}/{totalCount} ĐẠT
-                </span>
-              </div>
-
-              <div className="flex flex-col gap-2">
-                {currentObservations.map((obs, idx) => {
-                  const isPass = obs.status === 'pass';
-                  const isFail = obs.status === 'fail';
-                  return (
-                    <div
-                      key={obs.id || idx}
-                      className={`p-2.5 rounded-lg border flex flex-col gap-1 transition ${
-                        isPass
-                          ? 'bg-[#F0FDF4] border-[#86EFAC] text-[#166534]'
-                          : isFail
-                          ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
-                          : 'bg-white border-[#FDE68A] text-[#78350F]'
-                      }`}
-                    >
-                      <div className="flex items-start justify-between gap-2">
-                        <div className="flex items-start gap-1.5 leading-snug">
-                          <span className="font-bold flex-shrink-0">{idx + 1}.</span>
-                          <span className="font-medium text-[11px]">{obs.text}</span>
-                        </div>
-                        <span className={`px-2 py-0.5 rounded text-[10px] font-bold font-mono flex-shrink-0 flex items-center gap-0.5 ${
-                          isPass
-                            ? 'bg-[#16845B] text-white'
-                            : isFail
-                            ? 'bg-[#D32F2F] text-white'
-                            : 'bg-[#E8A72B] text-white'
-                        }`}>
-                          {isPass ? 'ĐẠT' : isFail ? 'SAI' : 'CHƯA ĐẠT'}
-                        </span>
-                      </div>
-
-                      {obs.evidence && (
-                        <div className="font-mono text-[10px] pl-2 text-[#64748B] bg-[#F8FAFC] p-1 rounded border border-[#E2E8F0] flex items-center justify-between mt-1">
-                          <span className="truncate">Bằng chứng: {obs.evidence}</span>
-                          {obs.checkedAtSeconds != null && (
-                            <span className="text-[#94A3B8] font-bold ml-1 flex-shrink-0">
-                              [{obs.checkedAtSeconds.toFixed(1)}s]
-                            </span>
-                          )}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
-          {/* Box THÁCH THỨC */}
+            {/* Box THÁCH THỨC */}
           {activeDef.challenges && activeDef.challenges.length > 0 && (
             <div className="p-3 bg-[#EFF6FF] border border-[#BFDBFE] rounded-xl text-xs flex flex-col gap-1.5 shadow-2xs">
               <div className="text-[#1E40AF] font-bold tracking-wider uppercase text-[11px]">
@@ -318,12 +249,6 @@ export default function PresetScenariosPanel({
               <span>{latestEvent.message}</span>
             </div>
           )}
-
-          {/* Tình huống chi tiết */}
-          <div className="text-xs text-[#475569] border-t border-[#E6ECF0] pt-2">
-            <span className="text-[#0D254C] font-bold">Tình huống: </span>
-            <span className="leading-relaxed">{activeDef.situation}</span>
-          </div>
 
           {/* Event Log Timeline */}
           <div className="border-t border-[#E6ECF0] pt-2.5 flex flex-col gap-2">
@@ -420,12 +345,6 @@ export default function PresetScenariosPanel({
                   {/* ── NỘI DUNG MỞ RỘNG (KHI CHỌN HOẶC MỞ RỘNG CARD) ── */}
                   {isExpanded && (
                     <div className="flex flex-col gap-2.5 pt-2 mt-1 border-t border-[#E6ECF0]">
-                      {/* Tình huống chi tiết */}
-                      <div className="text-xs bg-[#F8FAFC] p-2.5 rounded-lg border border-[#E2E8F0] text-[#334155] leading-relaxed">
-                        <strong className="text-[#0D254C] block mb-1">Tình huống:</strong>
-                        {def.situation}
-                      </div>
-
                       {/* Thách thức vận hành */}
                       {def.challenges && def.challenges.length > 0 && (
                         <div className="text-xs text-[#1E40AF] bg-[#EFF6FF] p-2 rounded-lg border border-[#BFDBFE] leading-relaxed">
@@ -451,14 +370,20 @@ export default function PresetScenariosPanel({
                             });
                           }}
                           disabled={getActionState('start_scenario').isPending}
-                          className="w-full py-2.5 px-4 rounded-xl bg-[#0D254C] hover:bg-[#173A73] active:bg-[#091B38] disabled:bg-[#E2E8F0] text-white font-bold text-xs sm:text-sm transition shadow-md flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+                          className="w-full py-2.5 px-4 rounded-[10px] bg-[#06B6D4] hover:bg-[#22D3EE] active:bg-[#0891B2] disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[42px]"
                         >
-                          <span>{getActionState('start_scenario').isPending ? '⏳' : '▶'}</span>
-                          {getActionState('start_scenario').isPending
-                            ? 'Đang xử lý…'
-                            : getActionState('start_scenario').canRetry
-                            ? 'Thử lại bắt đầu'
-                            : `Chạy kịch bản: ${def.title}`}
+                          {getActionState('start_scenario').isPending ? (
+                            <LoaderCircle className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Play className="w-4 h-4" />
+                          )}
+                          <span>
+                            {getActionState('start_scenario').isPending
+                              ? 'Đang xử lý…'
+                              : getActionState('start_scenario').canRetry
+                              ? 'Thử lại bắt đầu'
+                              : `Chạy kịch bản: ${def.title}`}
+                          </span>
                         </button>
                       </div>
                     </div>

@@ -14,8 +14,6 @@ import { getAircraftSpec } from '../data/aircraftTypes';
 import { getAirlineDef, AIRLINES } from '../data/airlineTypes';
 import { findPath, routeToEdges, estimateTravelTimeSeconds } from './pathfinding';
 
-const KNOTS_TO_MS = 0.5144;
-
 /** Apply weather speed penalty (fraction of max speed to use) */
 export function weatherSpeedFactor(config: SimulationConfig): number {
   switch (config.weather) {
@@ -648,8 +646,7 @@ export function simulationTick(
       ...state.config,
       aircraftType: ac.aircraftType || state.config.aircraftType,
       taxiSpeedKts: state.config.taxiSpeedKts,
-    }) * 0.85; // Giảm tốc độ lăn bánh xuống một chút theo yêu cầu
-    const effectiveSpeedMs = effectiveSpeed * KNOTS_TO_MS;
+    });
     const edges = graph.edges;
     const routeEdgeIds = routeToEdges(ac.assignedRoute, edges) ?? [];
 
@@ -800,19 +797,14 @@ export function simulationTick(
     }
 
     const currentEdge = edges.find(e => e.id === currentEdgeId);
-    let edgeLengthMs = 50;
-    if (currentEdge && Number.isFinite(currentEdge.lengthMeters) && currentEdge.lengthMeters > 0) {
-      edgeLengthMs = currentEdge.lengthMeters;
-    } else {
-      console.warn(`[Kinematics Fallback] Edge ${currentEdge?.id || currentEdgeId || 'unknown'} has invalid length (${currentEdge?.lengthMeters}m). Fallback 50m applied.`);
-    }
+    const fromNode = graph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex]);
+    const toNode = graph.nodes.find(n => n.id === ac.assignedRoute[ac.routeEdgeIndex + 1]);
+    const edgePixelLen = (fromNode && toNode)
+      ? Math.hypot(toNode.x - fromNode.x, toNode.y - fromNode.y) || 1
+      : 20;
 
-    const progressPerSecond = Number.isFinite(effectiveSpeedMs) && edgeLengthMs > 0
-      ? effectiveSpeedMs / edgeLengthMs
-      : 0;
-    const deltaP = Number.isFinite(progressPerSecond) && Number.isFinite(dt)
-      ? Math.max(0, progressPerSecond * dt)
-      : 0;
+    const currentSpeedKts = (ac.speedKts !== undefined && ac.speedKts > 0) ? ac.speedKts : effectiveSpeed;
+    const deltaP = Number.isFinite(dt) ? Math.max(0, (currentSpeedKts * 0.52 * dt) / edgePixelLen) : 0;
 
     let newProgress = Number.isFinite(ac.progressOnEdge)
       ? ac.progressOnEdge + deltaP

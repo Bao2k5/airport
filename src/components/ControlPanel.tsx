@@ -4,7 +4,7 @@ import React from 'react';
 import { airportGraphV3 } from '../data/airportGraph.v3';
 import { AIRLINES, type AirlineCode } from '../data/airlineTypes';
 import { useActionLock } from '../utils/useActionLock';
-import { V3_EXACT_OPERATIONAL_NODES, toSafeNodeId } from '../data/v3OperationalNodes';
+import { V3_EXACT_OPERATIONAL_NODES, V3_OPERATIONAL_STANDS, toSafeNodeId } from '../data/v3OperationalNodes';
 import type { AirportGraph, Aircraft, SimulationConfig } from '../types';
 
 interface Props {
@@ -27,9 +27,6 @@ interface Props {
   onToggleAutoIncidents: () => void;
   onTriggerIncident: () => void;
   onClearIncidents: () => void;
-  onOpenPathInspector?: () => void;
-  onCaptureAudit?: () => void;
-  isCapturing?: boolean;
 }
 
 export default function ControlPanel({
@@ -52,9 +49,6 @@ export default function ControlPanel({
   onToggleAutoIncidents,
   onTriggerIncident,
   onClearIncidents,
-  onOpenPathInspector,
-  onCaptureAudit,
-  isCapturing = false,
 }: Props) {
   const { executeAction, getActionState } = useActionLock(2000);
 
@@ -90,7 +84,48 @@ export default function ControlPanel({
   }, [graph]);
 
   const startOptions = operationalDropdownOptions;
-  const destOptions = operationalDropdownOptions;
+
+  const destOptions = React.useMemo(() => {
+    return operationalDropdownOptions.map(opt => {
+      // Tìm xem có tàu bay nào khác trong manualFleet đang đỗ / chiếm dụng tại bến này không
+      const occupyingAircraft = manualFleet.find(ac => {
+        if (ac.id === selectedAircraftId) return false;
+
+        // Chỉ kiểm tra đối với các điểm là Bến đỗ (Stand)
+        const isStand = opt.value.includes('STAND') ||
+          opt.label.includes('STAND') ||
+          V3_OPERATIONAL_STANDS.some(s => s.id === opt.value || s.label === opt.label);
+
+        if (!isStand) return false;
+
+        // Kiểm tra xem tàu bay khác có đang ở vị trí này không (đỗ hoặc chờ)
+        const isAtCurrentNode = ac.currentNodeId === opt.value;
+        const isDestinedAndParked = (ac.targetNodeId === opt.value) &&
+          (ac.status === 'parked' || ac.status === 'arrived' || ac.status === 'waiting');
+
+        // Đối chiếu qua label/node id trong đồ thị
+        const optNode = graph.nodes.find(n => n.id === opt.value || n.label === opt.label);
+        const acCurNode = graph.nodes.find(n => n.id === ac.currentNodeId || n.label === ac.currentNodeId);
+        const isNodeMatch = optNode && acCurNode && (optNode.id === acCurNode.id || (optNode.label && optNode.label === acCurNode.label));
+
+        return isAtCurrentNode || isDestinedAndParked || isNodeMatch;
+      });
+
+      if (occupyingAircraft) {
+        return {
+          value: opt.value,
+          label: `${opt.label} — 🚫 (Đã có ${occupyingAircraft.callsign} đỗ - Không thể chọn)`,
+          disabled: true,
+        };
+      }
+
+      return {
+        value: opt.value,
+        label: opt.label,
+        disabled: false,
+      };
+    });
+  }, [operationalDropdownOptions, manualFleet, selectedAircraftId, graph.nodes]);
 
   return (
     <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
@@ -416,31 +451,6 @@ export default function ControlPanel({
             ? 'Thử lại đặt lại'
             : `Đặt lại máy bay: ${selectedAircraft?.callsign || selectedAircraftId}`}
         </button>
-
-        {/* Nút Xem Path & Chụp ảnh kiểm tra Path */}
-        <div className="grid grid-cols-2 gap-2 mt-1">
-          <button
-            data-testid="inspect-path-btn"
-            onClick={onOpenPathInspector}
-            disabled={routeStatus !== 'accepted' || !canStart}
-            className="w-full bg-[#1C67DA] hover:bg-[#1558BC] active:bg-[#0F4499] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer min-h-[38px]"
-            title={routeStatus === 'accepted' ? 'Xem chi tiết Node & Edge của tuyến hiện tại' : 'Chỉ khả dụng sau khi bấm Chấp nhận tuyến'}
-          >
-            <span>🔍</span>
-            <span>Xem Path</span>
-          </button>
-
-          <button
-            data-testid="capture-path-audit-btn"
-            onClick={onCaptureAudit}
-            disabled={routeStatus !== 'accepted' || isCapturing}
-            className="w-full bg-[#0F766E] hover:bg-[#115E59] active:bg-[#134E4A] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-2 rounded-xl transition text-xs flex items-center justify-center gap-1.5 shadow-xs cursor-pointer min-h-[38px]"
-            title={routeStatus === 'accepted' ? 'Tự động chụp và lưu 4 ảnh bằng chứng kiểm tra Path' : 'Chỉ khả dụng sau khi bấm Chấp nhận tuyến'}
-          >
-            <span>📷</span>
-            <span>{isCapturing ? 'Đang chụp...' : 'Chụp ảnh Path'}</span>
-          </button>
-        </div>
       </div>
     </div>
   );
@@ -467,7 +477,7 @@ function LabeledSelect({
   label: string;
   value: string;
   onChange: (v: string) => void;
-  options: { value: string; label: string }[];
+  options: { value: string; label: string; disabled?: boolean }[];
 }) {
   return (
     <div className="flex flex-col gap-1">
@@ -478,7 +488,14 @@ function LabeledSelect({
         className="bg-white border border-[#CBD5E1] text-[#172033] rounded-lg px-3 py-2 min-h-[42px] text-xs sm:text-sm focus:outline-none focus:border-[#1C67DA] focus:ring-1 focus:ring-[#1C67DA] cursor-pointer"
       >
         {options.map(o => (
-          <option key={o.value} value={o.value}>{o.label}</option>
+          <option
+            key={o.value}
+            value={o.value}
+            disabled={o.disabled}
+            className={o.disabled ? 'text-[#94A3B8] bg-[#F1F5F9] font-medium' : ''}
+          >
+            {o.label}
+          </option>
         ))}
       </select>
     </div>

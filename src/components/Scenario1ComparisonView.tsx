@@ -3,9 +3,11 @@ import type { AirportGraph, SimulationState } from '../types';
 import AirportMap from './AirportMap';
 import { scenarioTick, startScenario } from '../simulation/scenarioRunner';
 import { scenario1WrongTurn } from '../data/scenarios/scenario1_wrongTurn';
-
 import { routeToEdges } from '../simulation/pathfinding';
 import { getAirlineDef } from '../data/airlineTypes';
+import AppShell from './ui/AppShell';
+import SurfaceCard from './ui/SurfaceCard';
+import { Radio, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 interface Props {
   graph: AirportGraph;
@@ -16,8 +18,6 @@ interface Props {
 export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Props) {
   const [speedMultiplier, setSpeedMultiplier] = useState<number>(2);
   const [isPaused, setIsPaused] = useState(false);
-
-
 
   // Tuyến đường Truyền thống — STAND 10 -> HS NS -> rẽ nhầm vào E4 (Dừng lại khi rẽ sai)
   const traditionalRoute = [
@@ -41,7 +41,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
       airlineName: vnDef.name, aircraftAsset: vnDef.asset, aircraftType: 'A321',
       currentNodeId: traditionalRoute[0], targetNodeId: traditionalRoute[traditionalRoute.length - 1],
       currentEdgeId: edges[0] ?? null, progressOnEdge: 0,
-      speedKts: 12, speedLimitKts: 12, status: 'taxiing',
+      speedKts: 15, speedLimitKts: 15, status: 'taxiing',
       assignedRoute: traditionalRoute, routeEdgeIndex: 0,
       role: 'departing', priority: 1,
       scenarioLabel: 'HUẤN LỆNH: STAND 10 ➔ E6 ➔ 25L',
@@ -146,183 +146,167 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
   const fmt = (s: number) => `${String(Math.floor(s / 60)).padStart(2, '0')}:${String(Math.floor(s % 60)).padStart(2, '0')}`;
   const lE = leftFinalTime ?? leftState.elapsedSeconds ?? 0;
   const rE = rightFinalTime ?? rightState.elapsedSeconds ?? 0;
-  const both = leftDone && rightDone;
-  const saved = Math.max(0, (leftFinalTime || 0) - (rightFinalTime || 0));
-  const pct = leftFinalTime ? Math.round(saved / leftFinalTime * 1000) / 10 : 0;
-  const faster = (leftFinalTime || 0) > (rightFinalTime || 0);
+
+  const globalStatus = (leftDone && rightDone)
+    ? 'completed'
+    : isPaused
+    ? 'paused'
+    : 'running';
 
   return (
-    <div className="fixed inset-0 z-50 bg-[#070D18] flex flex-col text-white select-none">
-      <div className="flex items-center justify-between px-4 py-2 bg-[#0C192E] border-b border-[#1E3A8A] flex-shrink-0">
-        <div className="flex items-center gap-3">
-          <div className="px-2.5 py-1 rounded bg-[#1E3A8A] text-[#93C5FD] font-mono text-xs font-bold border border-[#3B82F6]/40">SO SÁNH KỊCH BẢN 1</div>
-          <h2 className="text-sm font-bold text-white">HVN216 — STAND_10 → STOP BAR 25L (Sương mù LVC)</h2>
-        </div>
-        <div className="flex items-center gap-2">
-          <div className="flex items-center bg-[#071326] p-0.5 rounded-lg border border-[#1E3A8A]">
-            <span className="text-[10px] text-[#94A3B8] font-bold px-2">TỐC ĐỘ:</span>
-            {[1, 2, 4].map(s => (
-              <button key={s} onClick={() => setSpeedMultiplier(s)}
-                className={`px-2 py-1 text-xs font-mono font-bold rounded transition cursor-pointer ${speedMultiplier === s ? 'bg-[#3B82F6] text-white' : 'text-[#94A3B8] hover:text-white hover:bg-[#1E293B]'}`}>
-                {s}x
-              </button>
-            ))}
-          </div>
-          <button onClick={() => setIsPaused(p => !p)}
-            className={`px-3 py-1.5 rounded-lg text-xs font-bold cursor-pointer ${isPaused ? 'bg-[#059669] text-white' : 'bg-[#D97706] text-white'}`}>
-            {isPaused ? '▶ Tiếp tục' : '⏸ Tạm dừng'}
-          </button>
-          <button onClick={handleRestart} className="px-3 py-1.5 rounded-lg text-xs font-bold bg-[#1E293B] text-[#CBD5E1] border border-[#475569] cursor-pointer">🔄 Chạy lại</button>
-          <button onClick={onExit} className="px-3.5 py-1.5 rounded-lg text-xs font-bold bg-[#DC2626] text-white cursor-pointer">✕ Thoát</button>
-        </div>
-      </div>
-
-      <div className="flex-1 grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0 overflow-hidden relative">
-
-        {/* LEFT: Truyền thống */}
-        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#334155] overflow-hidden shadow-2xl relative">
-          <div className="flex items-center justify-between px-3 py-2 bg-[#1E293B] border-b border-[#334155]">
+    <AppShell
+      category="So sánh Kịch bản 1"
+      title="HVN216: STAND 10 ➔ STOP BAR 25L"
+      description="Đối chiếu an toàn giữa điều hành thủ công VHF và tự động hóa A-SMGCS Follow-the-Green."
+      status={globalStatus}
+      speedMultiplier={speedMultiplier}
+      onSpeedChange={setSpeedMultiplier}
+      isPaused={isPaused}
+      onTogglePause={() => setIsPaused(p => !p)}
+      onRestart={handleRestart}
+      onExit={onExit}
+    >
+      <div className="h-full grid grid-cols-1 md:grid-cols-2 gap-3 p-3 min-h-0 overflow-hidden">
+        {/* ── LEFT SCREEN: Truyền thống ── */}
+        <SurfaceCard className="flex flex-col h-full overflow-hidden shadow-md relative">
+          <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#131E2E] border-b border-[rgba(148,163,184,0.16)] flex-shrink-0">
             <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${leftDone ? 'bg-[#10B981]' : 'bg-[#EF4444] animate-pulse'}`}></span>
-              <span className="font-bold text-xs text-[#F87171]">MÀN TRÁI: ĐIỀU HÀNH TRUYỀN THỐNG (KHÔNG FTG)</span>
+              <span className="w-2 h-2 rounded-full bg-[#F43F5E]" />
+              <span className="font-bold text-xs text-[#F1F5F9] uppercase tracking-wider">
+                Màn Trái: Điều Hành Truyền Thống (VHF)
+              </span>
             </div>
-            <span className="font-mono text-xs font-black text-[#F87171]">{fmt(lE)}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#94A3B8] font-medium">Thời gian:</span>
+              <span className="font-mono text-xs font-bold text-[#F43F5E]">{fmt(lE)}</span>
+            </div>
           </div>
-          <div className="flex-1 relative min-h-0">
-            <AirportMap state={leftState} graph={graph} bgImage={bgImage} renderMode="traditional" />
-            
+
+          <div className="flex-1 relative min-h-0 bg-[#070B13]">
+            <AirportMap state={leftState} graph={graph} bgImage={bgImage} renderMode="traditional" aircraftScale={1.5} />
+
             {/* Khung Huấn lệnh KSVKL (Giai đoạn 1: hiển thị 6.5s đầu rồi tự động tắt) */}
             {leftState.elapsedSeconds < 6.5 && (
-              <div className="absolute top-2 left-2 right-2 z-20 bg-[#0F172A]/95 border border-[#3B82F6]/60 rounded-xl p-2.5 shadow-2xl backdrop-blur-md animate-fadeIn transition-all duration-500">
+              <SurfaceCard variant="active" className="absolute top-3 left-3 right-3 z-20 p-3 backdrop-blur-md animate-fadeIn">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#38BDF8] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#0284C7]"></span>
-                    </span>
-                    <span className="text-[11px] font-black text-[#38BDF8]">
-                      🎙️ GIAI ĐOẠN 1 — HUẤN LỆNH KSVKL (ATC CLEARANCE):
+                    <Radio className="w-4 h-4 text-[#06B6D4] animate-pulse" />
+                    <span className="text-xs font-bold text-[#06B6D4] uppercase tracking-wide">
+                      Giai đoạn 1: Huấn lệnh KSVKL (ATC Clearance)
                     </span>
                   </div>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#1E3A8A] text-[#93C5FD]">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-[6px] bg-[#0E1523] text-[#93C5FD] border border-[rgba(56,189,248,0.3)]">
                     TWR 118.1 MHz
                   </span>
                 </div>
-                <div className="mt-1 text-[11px] font-mono font-bold text-[#F8FAFC] pl-3 border-l-2 border-[#38BDF8]">
+                <div className="mt-1.5 text-xs font-mono font-bold text-[#F1F5F9] pl-3 border-l-2 border-[#06B6D4]">
                   “HVN216 taxi to holding point runway 25L via NS and E6 taxiways”
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
-            <div className="absolute bottom-2 left-2 z-10 bg-[#0F172A]/90 border border-[#334155] rounded-lg p-2 text-[10px] pointer-events-none">
-              <div className="text-[#F87171] font-bold mb-0.5">📻 Thoại VHF thủ công — Không có đèn dẫn đường</div>
-              <div className="text-[#94A3B8]">Vị trí: <span className="text-[#FCA5A5] font-mono">{leftState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span></div>
-              <div className="text-[#94A3B8]">Tốc độ: <span className="text-[#FCA5A5] font-mono">{leftState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span></div>
-            </div>
+            {/* Telemetry HUD góc dưới */}
+            <SurfaceCard className="absolute bottom-3 left-3 z-10 p-2.5 text-[11px] pointer-events-none flex flex-col gap-1 backdrop-blur-sm max-w-xs">
+              <div className="text-[#94A3B8] font-bold flex items-center gap-1.5">
+                <Radio className="w-3.5 h-3.5 text-[#F43F5E]" />
+                Thoại VHF thủ công · Không có đèn dẫn đường
+              </div>
+              <div className="text-[#94A3B8]">
+                Vị trí: <span className="text-[#F1F5F9] font-mono font-bold">{leftState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span>
+              </div>
+              <div className="text-[#94A3B8]">
+                Tốc độ: <span className="text-[#F1F5F9] font-mono font-bold">{leftState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span>
+              </div>
+            </SurfaceCard>
           </div>
-          <div className="px-3 py-1.5 bg-[#090D16] border-t border-[#1E293B] text-[10px] text-[#94A3B8] flex justify-between items-center">
-            <span className={leftDone ? 'text-[#EF4444] font-bold' : ''}>
-              {leftDone
-                ? '⛔ GIAI ĐOẠN 2: Tàu bay đi sai đường (vừa rẽ vào E4) ➔ Kích hoạt Stop Bar đỏ & khóa dừng!'
-                : (leftState.elapsedSeconds < 6.5
-                    ? '🎙️ [GIAI ĐOẠN 1] KSVKL cấp huấn lệnh cho HVN216 tại Stand 10'
-                    : 'Giai đoạn 2: Lăn theo thoại VHF thủ công — Phi công tự quan sát')}
-            </span>
-            <span className="text-[#EF4444] font-bold ml-2">FtG: OFF</span>
-          </div>
-        </div>
 
-        {/* RIGHT: FtG */}
-        <div className="flex flex-col bg-[#0F172A] rounded-xl border border-[#059669] overflow-hidden shadow-2xl relative">
-          <div className="flex items-center justify-between px-3 py-2 bg-[#064E3B] border-b border-[#059669]">
-            <div className="flex items-center gap-2">
-              <span className={`w-2.5 h-2.5 rounded-full ${rightDone ? 'bg-[#34D399]' : 'bg-[#10B981] animate-pulse'}`}></span>
-              <span className="font-bold text-xs text-[#34D399]">MÀN PHẢI: A-SMGCS + FOLLOW-THE-GREEN</span>
-            </div>
-            <span className="font-mono text-xs font-black text-[#34D399]">{fmt(rE)}</span>
+          <div className="px-3.5 py-2 bg-[#0E1523] border-t border-[rgba(148,163,184,0.16)] text-xs text-[#94A3B8] flex justify-between items-center flex-shrink-0">
+            <span className={leftDone ? 'text-[#F43F5E] font-bold flex items-center gap-1.5' : 'flex items-center gap-1.5'}>
+              {leftDone ? (
+                <>
+                  <ShieldAlert className="w-3.5 h-3.5 text-[#F43F5E]" />
+                  Giai đoạn 2: Tàu bay đi sai đường (rẽ nhầm E4) ➔ Stop Bar đỏ khóa dừng!
+                </>
+              ) : leftState.elapsedSeconds < 6.5 ? (
+                'Giai đoạn 1: KSVKL cấp huấn lệnh thoại cho HVN216 tại Stand 10'
+              ) : (
+                'Giai đoạn 2: Lăn theo thoại VHF thủ công — Phi công tự quan sát trong sương mù'
+              )}
+            </span>
+            <span className="text-[11px] font-mono font-bold text-[#94A3B8]">FtG: OFF</span>
           </div>
-          <div className="flex-1 relative min-h-0">
-            <AirportMap state={rightState} graph={graph} bgImage={bgImage} renderMode="ftg" />
-            
+        </SurfaceCard>
+
+        {/* ── RIGHT SCREEN: Follow-the-Green ── */}
+        <SurfaceCard className="flex flex-col h-full overflow-hidden shadow-md relative">
+          <div className="flex items-center justify-between px-3.5 py-2.5 bg-[#131E2E] border-b border-[rgba(148,163,184,0.16)] flex-shrink-0">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-[#22C55E]" />
+              <span className="font-bold text-xs text-[#F1F5F9] uppercase tracking-wider">
+                Màn Phải: A-SMGCS + Follow-the-Green
+              </span>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="text-[11px] text-[#94A3B8] font-medium">Thời gian:</span>
+              <span className="font-mono text-xs font-bold text-[#22C55E]">{fmt(rE)}</span>
+            </div>
+          </div>
+
+          <div className="flex-1 relative min-h-0 bg-[#070B13]">
+            <AirportMap state={rightState} graph={graph} bgImage={bgImage} renderMode="ftg" aircraftScale={1.5} />
+
             {/* Khung Huấn lệnh KSVKL (Giai đoạn 1: hiển thị 6.5s đầu rồi tự động tắt) */}
             {rightState.elapsedSeconds < 6.5 && (
-              <div className="absolute top-2 left-2 right-2 z-20 bg-[#062419]/95 border border-[#10B981]/60 rounded-xl p-2.5 shadow-2xl backdrop-blur-md animate-fadeIn transition-all duration-500">
+              <SurfaceCard variant="active" className="absolute top-3 left-3 right-3 z-20 p-3 backdrop-blur-md animate-fadeIn">
                 <div className="flex items-center justify-between gap-2">
                   <div className="flex items-center gap-2">
-                    <span className="flex h-2 w-2 relative">
-                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-[#34D399] opacity-75"></span>
-                      <span className="relative inline-flex rounded-full h-2 w-2 bg-[#10B981]"></span>
-                    </span>
-                    <span className="text-[11px] font-black text-[#34D399]">
-                      🎙️ GIAI ĐOẠN 1 — HUẤN LỆNH KSVKL (ATC CLEARANCE):
+                    <Radio className="w-4 h-4 text-[#06B6D4] animate-pulse" />
+                    <span className="text-xs font-bold text-[#06B6D4] uppercase tracking-wide">
+                      Giai đoạn 1: Huấn lệnh KSVKL (ATC Clearance)
                     </span>
                   </div>
-                  <span className="text-[9px] font-mono font-bold px-1.5 py-0.5 rounded bg-[#064E3B] text-[#A7F3D0]">
+                  <span className="text-[10px] font-mono font-bold px-2 py-0.5 rounded-[6px] bg-[#0E1523] text-[#93C5FD] border border-[rgba(56,189,248,0.3)]">
                     TWR 118.1 MHz
                   </span>
                 </div>
-                <div className="mt-1 text-[11px] font-mono font-bold text-[#F8FAFC] pl-3 border-l-2 border-[#10B981]">
+                <div className="mt-1.5 text-xs font-mono font-bold text-[#F1F5F9] pl-3 border-l-2 border-[#06B6D4]">
                   “HVN216 taxi to holding point runway 25L via NS and E6 taxiways”
                 </div>
-              </div>
+              </SurfaceCard>
             )}
 
-            <div className="absolute bottom-2 left-2 z-10 bg-[#062419]/90 border border-[#059669] rounded-lg p-2 text-[10px] pointer-events-none">
-              <div className="text-[#34D399] font-bold mb-0.5">⚡ Đèn xanh FtG dẫn hướng tự động</div>
-              <div className="text-[#A7F3D0]">Vị trí: <span className="text-[#34D399] font-mono">{rightState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span></div>
-              <div className="text-[#A7F3D0]">Tốc độ: <span className="text-[#34D399] font-mono">{rightState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span></div>
-            </div>
+            {/* Telemetry HUD góc dưới */}
+            <SurfaceCard className="absolute bottom-3 left-3 z-10 p-2.5 text-[11px] pointer-events-none flex flex-col gap-1 backdrop-blur-sm max-w-xs">
+              <div className="text-[#22C55E] font-bold flex items-center gap-1.5">
+                <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" />
+                Đèn xanh FtG dẫn hướng tự động thông minh
+              </div>
+              <div className="text-[#94A3B8]">
+                Vị trí: <span className="text-[#F1F5F9] font-mono font-bold">{rightState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span>
+              </div>
+              <div className="text-[#94A3B8]">
+                Tốc độ: <span className="text-[#F1F5F9] font-mono font-bold">{rightState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span>
+              </div>
+            </SurfaceCard>
           </div>
-          <div className="px-3 py-1.5 bg-[#062419] border-t border-[#059669] text-[10px] text-[#A7F3D0] flex justify-between items-center">
-            <span className={rightDone ? 'text-[#34D399] font-bold' : ''}>
-              {rightDone
-                ? '🟢 GIAI ĐOẠN 2: Follow-the-Green dẫn đúng STAND 10 ➔ HS NS ➔ E6/E4 ➔ E6 ➔ STOP BAR 25L an toàn 100%!'
-                : (rightState.elapsedSeconds < 6.5
-                    ? '🎙️ [GIAI ĐOẠN 1] KSVKL cấp huấn lệnh cho HVN216 tại Stand 10'
-                    : 'Giai đoạn 2: Đèn FtG xanh lá dẫn trước mũi tàu qua HS NS → E6/E4 → E6')}
-            </span>
-            <span className="text-[#34D399] font-bold ml-2">FtG: ACTIVE</span>
-          </div>
-        </div>
 
-        {/* SUMMARY MODAL */}
-        {both && (
-          <div className="absolute inset-0 z-30 bg-[#070D18]/80 backdrop-blur-md flex items-center justify-center p-4">
-            <div className="bg-[#0F172A] border-2 border-[#3B82F6] rounded-2xl p-6 max-w-xl w-full shadow-2xl text-center">
-              <div className="text-2xl mb-2">⏱️</div>
-              <h3 className="text-lg font-black text-white mb-1">KẾT QUẢ SO SÁNH HIỆU QUẢ ĐIỀU HÀNH</h3>
-              <p className="text-xs text-[#94A3B8] mb-5">Kịch bản 1: HVN216 khởi hành STAND_10 → STOP BAR 25L trong điều kiện LVC</p>
-              <div className="grid grid-cols-2 gap-4 mb-5 text-left">
-                <div className="bg-[#1E293B] p-3.5 rounded-xl border border-[#334155]">
-                  <div className="text-[11px] font-bold text-[#F87171] mb-1">ĐIỀU HÀNH TRUYỀN THỐNG</div>
-                  <div className="font-mono text-2xl font-black text-white">{fmt(leftFinalTime || 0)}</div>
-                  <div className="text-[10px] text-[#94A3B8] mt-1">Thoại VHF thủ công · Không có đèn dẫn đường</div>
-                </div>
-                <div className="bg-[#064E3B] p-3.5 rounded-xl border border-[#059669]">
-                  <div className="text-[11px] font-bold text-[#34D399] mb-1">A-SMGCS + FOLLOW-THE-GREEN</div>
-                  <div className="font-mono text-2xl font-black text-[#34D399]">{fmt(rightFinalTime || 0)}</div>
-                  <div className="text-[10px] text-[#A7F3D0] mt-1">Đèn xanh FtG dẫn hướng · Tự động</div>
-                </div>
-              </div>
-              <div className={`p-4 rounded-xl mb-5 border ${faster ? 'bg-[#062419] border-[#10B981]' : 'bg-[#3E1F1F] border-[#EF4444]'}`}>
-                {faster ? (
-                  <>
-                    <div className="text-xs font-bold text-[#34D399] mb-1">✓ A-SMGCS + FtG Nhanh Hơn Vượt Trội</div>
-                    <div className="text-xl font-black text-white font-mono">Tiết kiệm {fmt(saved)} ({pct}%)</div>
-                    <div className="text-[11px] text-[#A7F3D0] mt-1">Giảm thiểu nguy cơ nhầm đường lăn trong điều kiện sương mù LVC.</div>
-                  </>
-                ) : (
-                  <div className="text-xs font-bold text-[#F87171]">⚠️ Kết quả cần review.</div>
-                )}
-              </div>
-              <div className="flex justify-center gap-3">
-                <button onClick={handleRestart} className="px-4 py-2 rounded-xl text-xs font-bold bg-[#1E293B] text-white border border-[#475569] cursor-pointer">🔄 Chạy lại</button>
-                <button onClick={onExit} className="px-5 py-2 rounded-xl text-xs font-bold bg-[#3B82F6] text-white cursor-pointer">✓ Đóng</button>
-              </div>
-            </div>
+          <div className="px-3.5 py-2 bg-[#0E1523] border-t border-[rgba(148,163,184,0.16)] text-xs text-[#94A3B8] flex justify-between items-center flex-shrink-0">
+            <span className={rightDone ? 'text-[#22C55E] font-bold flex items-center gap-1.5' : 'flex items-center gap-1.5'}>
+              {rightDone ? (
+                <>
+                  <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" />
+                  Giai đoạn 2: Follow-the-Green dẫn đúng STAND 10 ➔ E6 ➔ 25L an toàn 100%!
+                </>
+              ) : rightState.elapsedSeconds < 6.5 ? (
+                'Giai đoạn 1: KSVKL cấp huấn lệnh cho HVN216 tại Stand 10'
+              ) : (
+                'Giai đoạn 2: Đèn FtG xanh lá dẫn trước mũi tàu qua HS NS → E6/E4 → E6'
+              )}
+            </span>
+            <span className="text-[11px] font-mono font-bold text-[#22C55E]">FtG: ACTIVE</span>
           </div>
-        )}
+        </SurfaceCard>
       </div>
-    </div>
+    </AppShell>
   );
 }

@@ -7,7 +7,7 @@ import { filterNonNull } from './common';
 
 export const scenario1WrongTurn: PresetScenarioDef = {
   id: 'lvc_wrong_turn_radio_failure',
-  title: 'Kịch bản 1 — Huấn lệnh STAND 10 qua HS NS, E6 ra RWY 25L (So sánh Rẽ nhầm E4 vs FtG)',
+  title: 'Kịch bản 1 — Huấn lệnh STAND 10 qua HS NS, E6 ra RWY 25L',
   teaser: 'KSVKL cấp huấn lệnh HVN216 lăn ra 25L qua NS & E6 — Truyền thống rẽ nhầm vào E4 bị chặn dừng vs FtG dẫn đúng ra E6.',
   situation: 'Giai đoạn 1: KSVKL cấp huấn lệnh cho tàu bay "HVN216 taxi to holding point runway 25L via NS and E6 taxiways".\n\nGiai đoạn 2:\n• Kịch bản truyền thống: Tàu bay đi theo tuyến STAND 10 -> HS NS -> E4. Khi vừa rẽ vào E4 (thay vì E6), hệ thống phát hiện đi sai đường, kích hoạt đèn đỏ cảnh báo và dừng kịch bản.\n• Kịch bản FtG: Tàu bay đi STAND 10 -> HS NS -> E6/E4 -> E6 -> STOP BAR 25L. Đèn xanh FtG dẫn đường liên tục và chính xác trước mũi tàu bay.',
   challenges: [

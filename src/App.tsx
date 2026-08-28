@@ -258,49 +258,75 @@ export default function App() {
   }, [currentGraph]);
 
   const handleConfigChange = useCallback((patch: Partial<SimulationConfig>) => {
-    console.log(`GRAPH_SELECTED: ${selectedGraphId}`);
-    console.log(`ROUTE_SOURCE: v3_coordinates_new.json`);
-    console.log(`ROUTE_ACCEPTED: false`);
-    setInspectingPathAircraftId(null);
-
     setConfig(prev => {
       const next = { ...prev, ...patch };
+      const isRouteEndpointsChanged =
+        (patch.startNodeId !== undefined && patch.startNodeId !== prev.startNodeId) ||
+        (patch.destinationNodeId !== undefined && patch.destinationNodeId !== prev.destinationNodeId);
+
       setSimState(prevSim => {
         const sanitized = sanitizeManualFleet(prevSim.manualFleet, currentGraph);
         const selectedId = prevSim.selectedAircraftId || 'VN001';
         const blockedEdgeIds = prevSim.blockedEdgeIds;
+
+        if (isRouteEndpointsChanged) {
+          const updatedFleet = sanitized.map(ac => {
+            if (ac.id !== selectedId) return ac;
+            const newStart = patch.startNodeId ?? ac.currentNodeId;
+            const newDest = patch.destinationNodeId ?? ac.targetNodeId;
+            const newRoute = findPath(currentGraph, newStart, newDest, blockedEdgeIds) || [newStart];
+            const newEdges = routeToEdges(newRoute, currentGraph.edges);
+            const newAirlineCode = patch.airlineCode ?? ac.airlineCode ?? 'VN';
+            const aDef = getAirlineDef(newAirlineCode);
+            return {
+              ...ac,
+              callsign: patch.callsign ? patch.callsign.toUpperCase() : ac.callsign,
+              airlineCode: newAirlineCode as any,
+              airlineName: aDef.name,
+              aircraftAsset: aDef.asset,
+              aircraftType: patch.aircraftType ?? ac.aircraftType ?? 'A321',
+              currentNodeId: newStart,
+              targetNodeId: newDest,
+              assignedRoute: newRoute,
+              routeEdgeIndex: 0,
+              progressOnEdge: 0,
+              currentEdgeId: newEdges ? newEdges[0] : null,
+              routeVisible: false,
+              guidanceVisible: false,
+              isMoving: false,
+              status: 'parked' as const,
+            };
+          });
+          const activeAc = updatedFleet.find(a => a.id === selectedId) || updatedFleet[0] || null;
+          return {
+            ...prevSim,
+            routeStatus: 'pending',
+            manualFleet: updatedFleet,
+            aircraft: activeAc,
+            config: next,
+          };
+        }
+
+        // Real-time property update (speed slider, callsign, livery, weather) without resetting motion
         const updatedFleet = sanitized.map(ac => {
           if (ac.id !== selectedId) return ac;
-          const newStart = patch.startNodeId ?? ac.currentNodeId;
-          const newDest = patch.destinationNodeId ?? ac.targetNodeId;
-          const newRoute = findPath(currentGraph, newStart, newDest, blockedEdgeIds) || [newStart];
-          const newEdges = routeToEdges(newRoute, currentGraph.edges);
           const newAirlineCode = patch.airlineCode ?? ac.airlineCode ?? 'VN';
           const aDef = getAirlineDef(newAirlineCode);
+          const newSpeed = patch.taxiSpeedKts ?? ac.speedKts ?? next.taxiSpeedKts;
           return {
             ...ac,
-            // id is IMMUTABLE - never changes with form edit
             callsign: patch.callsign ? patch.callsign.toUpperCase() : ac.callsign,
             airlineCode: newAirlineCode as any,
             airlineName: aDef.name,
             aircraftAsset: aDef.asset,
             aircraftType: patch.aircraftType ?? ac.aircraftType ?? 'A321',
-            currentNodeId: newStart,
-            targetNodeId: newDest,
-            assignedRoute: newRoute,
-            routeEdgeIndex: 0,
-            progressOnEdge: 0,
-            currentEdgeId: newEdges ? newEdges[0] : null,
-            routeVisible: false,
-            guidanceVisible: false,
-            isMoving: false,
-            status: 'parked' as const,
+            speedKts: ac.status === 'taxiing' ? newSpeed : ac.speedKts,
+            speedLimitKts: newSpeed,
           };
         });
         const activeAc = updatedFleet.find(a => a.id === selectedId) || updatedFleet[0] || null;
         return {
           ...prevSim,
-          routeStatus: 'pending',
           manualFleet: updatedFleet,
           aircraft: activeAc,
           config: next,
@@ -308,7 +334,7 @@ export default function App() {
       });
       return next;
     });
-  }, [currentGraph, selectedGraphId]);
+  }, [currentGraph]);
 
   const handleStart = useCallback(() => {
     setSimState(prev => {
@@ -555,27 +581,6 @@ export default function App() {
               </button>
             </div>
 
-            {/* Quick Speed Multiplier Switcher (1x, 2x, 4x) */}
-            <div className="flex items-center gap-1 bg-[#1e293b] p-1 rounded-lg border border-[#3b82f6]/50 shadow-xs">
-              <span className="text-[11px] text-[#93c5fd] font-bold px-1 flex items-center gap-1">
-                ⚡ <span className="hidden sm:inline">Tốc độ:</span>
-              </span>
-              {[1, 2, 4].map(spd => (
-                <button
-                  key={`nav-spd-${spd}`}
-                  onClick={() => setSimSpeed(spd)}
-                  className={`text-xs font-black px-2.5 py-0.5 rounded transition cursor-pointer ${
-                    simSpeed === spd
-                      ? 'bg-[#2563eb] text-white shadow-xs scale-105 ring-1 ring-white/50'
-                      : 'text-[#94a3b8] hover:text-white hover:bg-[#334155]'
-                  }`}
-                  title={`Tốc độ mô phỏng ${spd}x`}
-                >
-                  {spd}x
-                </button>
-              ))}
-            </div>
-
             {/* Nút Hướng dẫn */}
             <button
               onClick={() => setShowGuide(true)}
@@ -661,9 +666,6 @@ export default function App() {
                     onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
                     onTriggerIncident={handleTriggerIncident}
                     onClearIncidents={handleClearIncidents}
-                    onOpenPathInspector={() => setInspectingPathAircraftId(simState.selectedAircraftId || 'VN001')}
-                    onCaptureAudit={handleCaptureAudit}
-                    isCapturing={isCapturingAudit}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
                   <ScenarioPanel state={simState} graph={currentGraph} />
@@ -820,9 +822,6 @@ export default function App() {
                         onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
                         onTriggerIncident={handleTriggerIncident}
                         onClearIncidents={handleClearIncidents}
-                        onOpenPathInspector={() => setInspectingPathAircraftId(simState.selectedAircraftId || 'VN001')}
-                        onCaptureAudit={handleCaptureAudit}
-                        isCapturing={isCapturingAudit}
                       />
                       <ScenarioPanel state={simState} graph={currentGraph} />
                     </>

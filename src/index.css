@@ -1,15 +1,29 @@
 @import "tailwindcss";
 
 :root {
-  --primary: #0c2444;
-  --primary-hover: #163660;
-  --brand-gold: #e6af31;
-  --foreground: #202224;
-  --muted-foreground: #64748b;
-  --card-border: #e4e4e7;
-  --background: #f8fafc;
-  --card: #ffffff;
-  --radius: 0.625rem;
+  --app-bg: #090D16;
+  --surface: #0E1523;
+  --surface-hover: #131E2E;
+  --surface-active: #18263A;
+  --border: rgba(148, 163, 184, 0.16);
+  --border-strong: rgba(56, 189, 248, 0.38);
+  --text-primary: #F1F5F9;
+  --text-secondary: #94A3B8;
+  --text-muted: #64748B;
+  --primary: #06B6D4;
+  --primary-hover: #22D3EE;
+  --primary-active: #0891B2;
+  --success: #22C55E;
+  --warning: #F59E0B;
+  --danger: #F43F5E;
+  --radius: 10px;
+
+  /* Theme color helpers */
+  --foreground: #F1F5F9;
+  --muted-foreground: #94A3B8;
+  --background: #090D16;
+  --card: #0E1523;
+  --card-border: rgba(148, 163, 184, 0.16);
 }
 
 *, *::before, *::after {
@@ -22,8 +36,8 @@ html, body {
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  background: var(--background);
-  color: var(--foreground);
+  background: var(--app-bg);
+  color: var(--text-primary);
   font-family: Inter, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
   -webkit-font-smoothing: antialiased;
   -webkit-tap-highlight-color: transparent;
@@ -37,22 +51,22 @@ html, body {
   display: flex;
   flex-direction: column;
   overflow-x: hidden;
-  background: var(--background);
+  background: var(--app-bg);
   padding-bottom: env(safe-area-inset-bottom, 0);
 }
 
-/* Custom scrollbars matching thi.vaa.edu.vn */
+/* Custom dark ops scrollbars */
 ::-webkit-scrollbar {
   width: 6px;
   height: 6px;
 }
 ::-webkit-scrollbar-track {
-  background: #f3f4f6;
+  background: #090D16;
 }
 ::-webkit-scrollbar-thumb {
-  background: #d1d5db;
+  background: #1E293B;
   border-radius: 4px;
 }
 ::-webkit-scrollbar-thumb:hover {
-  background: #9ca3af;
+  background: #334155;
 }

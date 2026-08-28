@@ -21,6 +21,7 @@ interface Props {
   bgImage?: string;
   /** traditional = no route preview / no Follow-the-Green visual guidance */
   renderMode?: 'normal' | 'traditional' | 'ftg';
+  aircraftScale?: number;
   onSelectAircraft?: (aircraftId: string) => void;
   showGraphV3Overlay?: boolean;
   showGrid?: boolean;
@@ -35,6 +36,7 @@ function AirportMap({
   graph = airportGraphV3,
   bgImage = '/anhchinh.png',
   renderMode = 'normal',
+  aircraftScale,
   onSelectAircraft,
   showGraphV3Overlay = false,
   showGrid = false,
@@ -452,8 +454,11 @@ function AirportMap({
           const isSelected = ac.id === (state.selectedAircraftId || state.aircraft?.id);
           const aDef = getAirlineDef(ac.airlineCode || ac.callsign);
           const labelColor = isSelected ? '#38bdf8' : (aDef.accentColor || '#fbbf24');
+          const planeScale = aircraftScale ?? (renderMode !== 'normal' ? 1.5 : 1.1);
           const isFacingSouth = pos.heading > 135 && pos.heading < 225;
-          const callsignY = isFacingSouth ? pos.y + 28 : pos.y - 26;
+          const callsignOffset = 26 * planeScale;
+          const callsignY = isFacingSouth ? pos.y + callsignOffset : pos.y - callsignOffset;
+          const labelFontSize = 8.5 * Math.min(1.3, planeScale);
 
           return (
             <g
@@ -468,7 +473,7 @@ function AirportMap({
                 callsign={ac.callsign}
                 airlineCode={ac.airlineCode}
                 aircraftAsset={ac.aircraftAsset}
-                scale={1}
+                scale={planeScale}
                 isEmergency={ac.role === 'emergency' || ac.scenarioLabel === 'KHẨN NGUY'}
                 isDeviated={ac.deviated}
                 isRadioFailure={ac.radioFailure}
@@ -477,29 +482,44 @@ function AirportMap({
               />
               <text
                 x={pos.x} y={callsignY}
-                textAnchor="middle" fontSize={8.5} fontWeight={800}
+                textAnchor="middle" fontSize={labelFontSize} fontWeight={900}
                 fill={labelColor}
-                stroke="#000000" strokeWidth={1.2} paintOrder="stroke"
+                stroke="#000000" strokeWidth={1.5} paintOrder="stroke"
               >
                 {ac.callsign}
               </text>
 
-              {/* Dấu X STOP & Đèn đỏ Stop Bar phát sáng trước mũi các tàu khi dừng chờ hoặc cách ly */}
-              {(
-                renderMode !== 'ftg' ? (
-                  (((ac as any).status === 'holding') ||
-                  ((ac as any).status === 'waiting') ||
-                  (ac.holdReason === 'stop-bar') ||
-                  (ac.callsign === 'BAV315' && ((ac as any).status === 'arrived' || (ac as any).status === 'holding' || (ac.speedKts === 0 && !ac.hidden))) ||
-                  (ac.speedKts === 0 && !ac.hidden && (ac as any).status !== 'parked' && (ac as any).status !== 'arrived' && (ac as any).status !== 'departed')) &&
-                  ac.callsign !== 'RESCUE01' && ac.callsign !== 'OUT01' && ac.callsign !== 'OUT02' && ac.callsign !== 'OUT03' && ac.callsign !== 'OUT04' && ac.callsign !== 'OUT05' && !ac.aircraftAsset?.includes('xecuuhoa')
-                ) : (
-                  // Màn FTG: Chỉ hiện Stop Bar đỏ khi tàu đang holding trên đường lăn chờ nhường đường (INB01 tại W7A, VJ302, etc.), không hiện trên bến đỗ
-                  (ac.status === 'holding' || ac.holdReason === 'stop-bar' || ac.holdReason === 'deviation') &&
-                  ac.callsign !== 'RESCUE01' && ac.callsign !== 'OUT03' && ac.callsign !== 'OUT04' && ac.callsign !== 'OUT05' &&
-                  !(ac.callsign === 'OUT01' && ac.routeEdgeIndex === 0) && !(ac.callsign === 'OUT02' && ac.routeEdgeIndex === 0) && !ac.hidden
-                )
-              ) && (
+              {/* Dấu X STOP & Đèn đỏ Stop Bar phát sáng trước mũi các tàu khi dừng chờ trên đường lăn hoặc cách ly */}
+              {(() => {
+                if (ac.hidden || ac.callsign === 'RESCUE01' || ac.aircraftAsset?.includes('xecuuhoa')) return false;
+
+                // Tàu đang đỗ trong bến (Stand) trước khi khởi hành -> KHÔNG HIỆN ĐÈN ĐỎ TRƯỚC MŨI
+                const isAtInitialStand = (ac.routeEdgeIndex === 0 || ac.routeEdgeIndex === undefined) &&
+                  (ac.role === 'pushback' || ac.role === 'departing' || ac.status === 'queued' || (ac.scenarioLabel && ac.scenarioLabel.toUpperCase().includes('STAND')));
+                if (isAtInitialStand) return false;
+
+                // Tàu đã về bến an toàn hoặc đã cất cánh
+                if (ac.status === 'arrived' || ac.status === 'departed' || ac.status === 'parked') {
+                  // Riêng BAV315 cháy động cơ dừng cô lập ở giữa W4 thì hiện đèn đỏ cảnh báo cách ly
+                  if (ac.callsign === 'BAV315' && (ac.currentNodeId === 'v3_line_04_p02' || ac.currentNodeId === 'v3_line_04_p01')) {
+                    return true;
+                  }
+                  return false;
+                }
+
+                // Khi tàu đã ra đường lăn và cần dừng chờ nhường đường hoặc giữ vị trí:
+                const isHoldingOnTaxiway = (ac.status === 'holding' || ac.status === 'waiting' || ac.holdReason === 'stop-bar' || ac.holdReason === 'deviation');
+                if (isHoldingOnTaxiway && (ac.routeEdgeIndex ?? 0) > 0) {
+                  return true;
+                }
+
+                // Tàu BAV315 dừng tại W4 sau khi thoát khỏi đường băng
+                if (ac.callsign === 'BAV315' && ac.speedKts === 0 && (ac.routeEdgeIndex ?? 0) >= 3) {
+                  return true;
+                }
+
+                return false;
+              })() && (
                 <g transform={`translate(${pos.x}, ${pos.y})`}>
                   {/* Position X marker in front of aircraft along its heading */}
                   <g transform={`rotate(${pos.heading}) translate(0, -22)`}>

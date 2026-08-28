@@ -6,7 +6,7 @@ import type { PresetScenarioDef, ScenarioAircraft } from './common';
 
 export const scenario5RunwayChange: PresetScenarioDef = {
   id: 'lvc_peak_runway_direction_change',
-  title: 'Kịch bản 5 — Đảo chiều cất/hạ cánh 07R: So Sánh 2 Màn Hình (Truyền Thống vs FTG)',
+  title: 'Kịch bản 5 — Đảo chiều cất/hạ cánh Runway Change 07R',
   teaser: 'Gió đổi hướng trong LVC — So sánh song song: Điều hành truyền thống ùn tắc tại NS2 vs Follow-the-Green điều phối 6 tàu bay mượt mà.',
   situation: 'Giai đoạn 1 (FtG):\n• Tàu bay 1 (INB01): Hạ cánh RW 25R lăn vào W4 về bến đỗ 17. Đến W7A thì dừng chờ trước ngã ba, nhường đường cho tàu bay 2 và tàu bay 3 đi qua rồi mới tiếp tục vào bến đỗ 17 (RW 25R - W4 - CROSS 25L - W7A [DỪNG] - HS NS - STAND 17).\n• Tàu bay 2 (OUT01): từ Stand 9 taxi ra RW 25L (STAND 9 - HS NS - E6 - RW 25L).\n• Tàu bay 3 (OUT02): từ Stand 12 taxi ra nối đuôi tàu bay 2 ra RW 25L (STAND 12 - HS NS - E6 - RW 25L).\n\nGiai đoạn 2:\n• Tàu bay 2 di chuyển đến đoạn rẽ vào E6, KSVKL thông báo đổi chiều đường chc "RUNWAY CHANGE 07R". Tàu bay 2 và 3 nối đuôi nhau di chuyển qua đầu RW 07R (E6 - RW 25L - NS2 - HS NS - W7B - W11 - RW 07R).\n\nGiai đoạn 3:\n• Tàu bay 4 ở Stand 8, Tàu bay 5 ở Stand 11, Tàu bay 6 ở Stand 4 lần lượt pushback và di chuyển nối đuôi nhau (cách nhau khoảng 2s) ra RW 07R (STAND ... - HS NS - W7 - W11 - RW 07R).\n\nĐối với Kịch bản truyền thống:\n• Giai đoạn 1: Tàu bay 1 đến HS NS thì dừng lại. Tàu bay 2 và 3 đến NS2 thì dừng lại do xung đột với tàu 1 (tàu 4, 5, 6 chưa xuất hiện).\n• Giai đoạn 2: Đến khi FtG bắt đầu chạy tàu 4 thì màn truyền thống: tàu 1 đi qua NS vào bến 17, tàu 2 & 3 tiếp tục đi ra RW 07R. Tàu 4, 5, 6 ở Stand chưa đến lượt.',
   challenges: [

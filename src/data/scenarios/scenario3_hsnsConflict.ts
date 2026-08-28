@@ -6,7 +6,7 @@ import type { PresetScenarioDef, ScenarioAircraft, ScenarioObservation, Scenario
 
 export const scenario3HsnsConflict: PresetScenarioDef = {
   id: 'lvc_hsns_intersection_conflict',
-  title: 'Kịch bản 2 — Xung đột ngã tư HS NS (Tàu hạ cánh về Stand 17 vs Tàu cất cánh từ Stand 11)',
+  title: 'Kịch bản 2 — Xung đột ngã tư HS NS',
   teaser: 'HVN301 hạ cánh 25R qua W4 về Stand 17 — VJ302 pushback Stand 11 dừng chờ Stop Bar đỏ tại HS NS, sau đó tiếp nối ra RW 25L.',
   situation: 'Giai đoạn 1:\n• Tàu bay 1 (HVN301) vừa hạ cánh đang lăn vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W4 -> CROSS 25L -> W7 -> HS NS -> STAND 17.\n• Tàu bay 2 (VJ302) pushback tại vị trí Stand 11, di chuyển ra đường cất hạ cánh 25L. Khi tàu bay 1 taxi đến W7 thì tàu bay 2 mới bắt đầu pushback ra. Vì thế tàu bay 2 sau khi taxi ra đến NS thì dừng lại (hiện đường Stop Bar màu đỏ) nhường đường cho tàu bay 1. Tuyến di chuyển: STAND 11 -> HS NS (DỪNG) -> E6 -> RW 25L.\n\nGiai đoạn 2:\n• Khi tàu bay 1 taxi tới ngang Stand 16, tàu bay 2 bắt đầu di chuyển theo sau và tiến thẳng ra RW 25L qua E6 an toàn.',
   challenges: [
