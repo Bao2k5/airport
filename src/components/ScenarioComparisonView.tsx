@@ -758,7 +758,7 @@ export default function Scenario5ComparisonView({
             />
 
             {/* Live Telemetry HUD Overlay */}
-            <SurfaceCard className="absolute bottom-3 left-3 z-10 p-2.5 text-[11px] backdrop-blur-sm flex flex-col gap-1.5 pointer-events-none max-w-xs">
+            <SurfaceCard className="absolute top-3 left-3 z-10 p-2.5 text-[11px] backdrop-blur-sm flex flex-col gap-1.5 pointer-events-none max-w-xs">
               <div className="text-[11px] font-bold text-[#F1F5F9] uppercase tracking-wider border-b border-[rgba(148,163,184,0.16)] pb-1 flex items-center gap-1.5">
                 <Radio className="w-3.5 h-3.5 text-[#F43F5E]" />
                 Nhật ký thoại VHF / KSVKL
@@ -855,7 +855,7 @@ export default function Scenario5ComparisonView({
             )}
 
             {/* Live Telemetry HUD Overlay */}
-            <SurfaceCard className="absolute bottom-3 left-3 z-10 p-2.5 text-[11px] backdrop-blur-sm flex flex-col gap-1.5 pointer-events-none max-w-xs">
+            <SurfaceCard className="absolute top-3 left-3 z-10 p-2.5 text-[11px] backdrop-blur-sm flex flex-col gap-1.5 pointer-events-none max-w-xs">
               <div className="text-[11px] font-bold text-[#06B6D4] uppercase tracking-wider border-b border-[rgba(148,163,184,0.16)] pb-1 flex items-center gap-1.5">
                 <CheckCircle2 className="w-3.5 h-3.5 text-[#06B6D4]" />
                 Tự Động Hóa A-SMGCS + FtG
