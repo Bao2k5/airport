@@ -3,7 +3,7 @@ interface Props {
   fill?: string;
 }
 
-export default function VaaLogo({ className = 'w-7 h-7', fill = '#FFFFFF' }: Props) {
+export default function VaaLogo({ className = 'w-7 h-7', fill = '#F59E0B' }: Props) {
   return (
     <svg
       xmlns="http://www.w3.org/2000/svg"

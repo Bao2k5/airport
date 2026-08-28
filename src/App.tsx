@@ -510,7 +510,7 @@ export default function App() {
           <div className="flex items-center gap-2.5 min-w-0">
             {/* VAA Official Vector Logo */}
             <div className="w-8 h-8 rounded-lg bg-[#163660] p-1 flex items-center justify-center border border-[#3B82F6]/30 flex-shrink-0 shadow-2xs">
-              <VaaLogo className="w-6 h-6" fill="#FFFFFF" />
+              <VaaLogo className="w-6 h-6" fill="#F59E0B" />
             </div>
 
             <div className="flex flex-col min-w-0">
