@@ -113,10 +113,16 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
             ac.currentNodeId === 'v3_line_17_p16' ||
             (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1 && ac.progressOnEdge >= 0.95);
           if (atDestination) {
-            setRightDone(true);
-            setRightFinalTime(next.elapsedSeconds);
-            ac.status = 'departed';
-            ac.speedKts = 0;
+            if (ac.status !== 'departed') {
+              ac.status = 'departed';
+              ac.heldSeconds = 0;
+            } else {
+              ac.heldSeconds = (ac.heldSeconds ?? 0) + dt;
+              if (ac.heldSeconds >= 1.3) {
+                setRightDone(true);
+                setRightFinalTime(next.elapsedSeconds);
+              }
+            }
           }
         }
         return { ...next };

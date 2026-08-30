@@ -379,6 +379,11 @@ export default function Scenario5ComparisonView({
     const out1Finished = out1 ? (out1.status === 'departed' || out1.currentNodeId === 'v3_line_16_p00' || (out1.routeEdgeIndex >= (out1.assignedRoute?.length ?? 1) - 1)) : false;
     const out2Finished = out2 ? (out2.status === 'departed' || out2.currentNodeId === 'v3_line_16_p00' || (out2.routeEdgeIndex >= (out2.assignedRoute?.length ?? 1) - 1)) : false;
 
+    const out3 = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT03');
+    const out4 = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT04');
+    const out3Finished = out3 ? (out3.status === 'departed' || out3.currentNodeId === 'v3_line_16_p00' || (out3.routeEdgeIndex >= (out3.assignedRoute?.length ?? 1) - 1)) : false;
+    const out4Finished = out4 ? (out4.status === 'departed' || out4.currentNodeId === 'v3_line_16_p00' || (out4.routeEdgeIndex >= (out4.assignedRoute?.length ?? 1) - 1)) : false;
+
     // Giai đoạn 3 chỉ bắt đầu KHI CẢ 3 TÀU BAY 1, 2, 3 ĐÃ KẾT THÚC GIAI ĐOẠN 1 & 2
     const stage1And2AllFinished = inb1Finished && out1Finished && out2Finished;
     if (stage1And2AllFinished && stage3StartSecRef.current === null) {
@@ -481,6 +486,19 @@ export default function Scenario5ComparisonView({
             scenarioLabel: '🛫 ĐÃ RA ĐẦU RW 07R',
           };
         }
+        // Dừng chờ tại vạch dừng W11/07R nếu OUT01 chưa cất cánh xong
+        const at07R_Hold = ac.currentNodeId === 'v3_line_16_p01' || (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2 && ac.progressOnEdge >= 0.4);
+        if (!out1Finished && at07R_Hold) {
+          return {
+            ...ac,
+            currentNodeId: 'v3_line_16_p01',
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            scenarioLabel: '🛑 W11/07R (CHỜ TÀU 2 CẤT CÁNH 07R)',
+          };
+        }
         const reachedE6 = ac.routeEdgeIndex >= 12 || ac.currentNodeId === 'v3_line_17_p12' || ac.currentNodeId === 'v3_line_17_p13';
         if (reachedE6 || runwayChangeTriggeredRef.current) {
           return {
@@ -556,6 +574,19 @@ export default function Scenario5ComparisonView({
             scenarioLabel: '🛫 ĐÃ RA ĐẦU RW 07R',
           };
         }
+        // Dừng chờ tại vạch dừng W11/07R nếu OUT03 chưa cất cánh xong
+        const at07R_Hold = ac.currentNodeId === 'v3_line_16_p01' || (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2 && ac.progressOnEdge >= 0.4);
+        if (!out3Finished && at07R_Hold) {
+          return {
+            ...ac,
+            currentNodeId: 'v3_line_16_p01',
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            scenarioLabel: '🛑 W11/07R (CHỜ TÀU 4 CẤT CÁNH 07R)',
+          };
+        }
         if (stage3StartSecRef.current !== null && stage3Elapsed >= 4.6) {
           return {
             ...ac,
@@ -593,6 +624,19 @@ export default function Scenario5ComparisonView({
             scenarioLabel: '🛫 ĐÃ RA ĐẦU RW 07R',
           };
         }
+        // Dừng chờ tại vạch dừng W11/07R nếu OUT04 chưa cất cánh xong
+        const at07R_Hold = ac.currentNodeId === 'v3_line_16_p01' || (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2 && ac.progressOnEdge >= 0.4);
+        if (!out4Finished && at07R_Hold) {
+          return {
+            ...ac,
+            currentNodeId: 'v3_line_16_p01',
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            scenarioLabel: '🛑 W11/07R (CHỜ TÀU 5 CẤT CÁNH 07R)',
+          };
+        }
         if (stage3StartSecRef.current !== null && stage3Elapsed >= 8.2) {
           return {
             ...ac,
@@ -626,8 +670,10 @@ export default function Scenario5ComparisonView({
     // Check completion for Right Panel (6 aircraft finished)
     const finished = countCompleted(next.scenarioAircraft);
     if (finished === 6 && !rightDone) {
-      setRightDone(true);
-      setRightFinalTime(Math.round(next.elapsedSeconds * 10) / 10);
+      setTimeout(() => {
+        setRightDone(true);
+        setRightFinalTime(Math.round(next.elapsedSeconds * 10) / 10);
+      }, 2500);
     }
 
     return next;

@@ -82,16 +82,14 @@ function AirportMap({
     const frame = (now: number) => {
       const dt = (now - lastT) / 1000;
       lastT = now;
-      if (state.isRunning && !state.isPaused) {
-        setAnimPhase(prev => (prev + dt * 3.5) % (Math.PI * 200));
-      }
+      setAnimPhase(prev => (prev + dt * 3.5) % (Math.PI * 200));
       animRef.current = requestAnimationFrame(frame);
     };
     animRef.current = requestAnimationFrame(frame);
     return () => {
       if (animRef.current) cancelAnimationFrame(animRef.current);
     };
-  }, [state.isRunning, state.isPaused]);
+  }, []);
 
   // ── Pan / zoom (viewBox-based with 1-finger drag & 2-finger pinch zoom) ──
   const svgRef = useRef<SVGSVGElement | null>(null);
@@ -100,6 +98,7 @@ function AirportMap({
   const pointersRef = useRef<Map<number, { x: number; y: number }>>(new Map());
   const dragRef = useRef<{ px: number; py: number; vx: number; vy: number } | null>(null);
   const pinchRef = useRef<{ initialDist: number; lastDist: number; lastView: { x: number; y: number; w: number; h: number } } | null>(null);
+  const departedAnimMap = useRef<Map<string, { startTime: number; startX: number; startY: number; heading: number }>>(new Map());
 
   const ASPECT = SVG_HEIGHT / SVG_WIDTH;
   const MIN_W = SVG_WIDTH * 0.12;
@@ -217,20 +216,42 @@ function AirportMap({
   };
 
   const zoomed = view.w < SVG_WIDTH - 0.5;
-
+  const nowMs = performance.now();
   const allActiveAircraft: Aircraft[] = isScenario
     ? (state.scenarioAircraft ?? []).filter((ac: any) => {
         if (ac.hidden) return false;
-        // BAV456, THA101, VJ302 cất cánh là biến mất hoàn toàn
-        if (ac.status === 'departed' && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && ac.callsign !== 'HVN123' && ac.callsign !== 'HVN301') return false;
-        // Nếu tàu khởi hành đã đến vạch STOP BAR 25L thì biến mất ngay lập tức
-        if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101' || ac.callsign === 'VJ302' || (ac.callsign === 'HVN216' && renderMode === 'ftg')) && (
-          ac.status === 'departed' ||
-          ac.currentNodeId === 'v3_line_17_p16' ||
-          ac.currentNodeId === 'v3_line_05_p07' ||
-          (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1)
-        )) return false;
-        // Máy bay về bến đỗ (HVN123, HVN301) hoặc khẩn nguy (BAV315, RESCUE01) luôn hiển thị đứng yên
+        
+        // Tàu đến và xe cứu hỏa giữ nguyên hiện trường
+        const isInboundOrFixed = ac.callsign === 'BAV315' || ac.callsign === 'RESCUE01' || ac.callsign === 'HVN123' || ac.callsign === 'HVN301' || ac.callsign === 'INB01' || ac.callsign === 'HVN401';
+        if (isInboundOrFixed) return true;
+
+        // Tàu rẽ sai ở màn truyền thống thì dừng lại không cất cánh
+        if (ac.callsign === 'HVN216' && renderMode === 'traditional') return true;
+
+        const targetNode = ac.assignedRoute?.[ac.assignedRoute.length - 1] || ac.targetNodeId;
+        const isAtRouteEnd = (ac.routeEdgeIndex ?? 0) >= (ac.assignedRoute?.length ?? 1) - 1;
+        
+        const isDeparting07R = targetNode === 'v3_line_16_p00' && (ac.status === 'departed' || (isAtRouteEnd && (ac.currentNodeId === 'v3_line_16_p00' || ac.currentNodeId === 'v3_line_16_p01')));
+        const isDeparting25L = targetNode === 'v3_line_17_p16' && (ac.status === 'departed' || (isAtRouteEnd && (ac.currentNodeId === 'v3_line_17_p16' || ac.currentNodeId === 'v3_line_05_p07')));
+        const isTakeoffTarget = isDeparting07R || isDeparting25L || (ac.status === 'departed' && ac.role === 'departing');
+
+        if (isTakeoffTarget) {
+          if (!departedAnimMap.current.has(ac.id)) {
+            let startX = 1136, startY = 176, heading = 247.5;
+            if (isDeparting07R || targetNode === 'v3_line_16_p00') {
+              startX = 67; startY = 704; heading = 67.5;
+            }
+            departedAnimMap.current.set(ac.id, { startTime: performance.now(), startX, startY, heading });
+          }
+          const anim = departedAnimMap.current.get(ac.id)!;
+          const elapsed = (nowMs - anim.startTime) / 1000;
+          if (elapsed >= 1.3) {
+            return false; // Hết 1.3 giây chạy đà và cất cánh nhanh thì biến mất hoàn toàn
+          }
+          return true; // Trong 1.3 giây này vẽ hiệu ứng chạy đà cất cánh nhanh
+        }
+
+        if (ac.status === 'departed') return false;
         return true;
       })
     : (state.manualFleet && state.manualFleet.length
@@ -449,12 +470,36 @@ function AirportMap({
 
         {/* ── Layer 7: Render All Active Aircraft with Custom Liveries ── */}
         {allActiveAircraft.map(ac => {
-          const pos = getPositionForAircraft(ac, activeGraph);
+          let pos = getPositionForAircraft(ac, activeGraph);
           if (!pos) return null;
+
+          let renderOpacity = 1.0;
+          let liftScaleFactor = 1.0;
+          const isTakingOff = departedAnimMap.current.has(ac.id);
+
+          if (isTakingOff) {
+            const anim = departedAnimMap.current.get(ac.id)!;
+            const elapsed = (nowMs - anim.startTime) / 1000;
+            const progress = Math.min(1.0, elapsed / 1.3);
+            const rollDist = Math.pow(progress, 2.0) * 180; // Chạy đà nhanh và dứt khoát trên đường băng
+            const rad = (anim.heading * Math.PI) / 180;
+            const dx = Math.sin(rad);
+            const dy = -Math.cos(rad);
+
+            pos = {
+              x: anim.startX + dx * rollDist,
+              y: anim.startY + dy * rollDist,
+              heading: anim.heading,
+            };
+            // Phóng to nhẹ (+40%) khi nhấc bánh và mờ dần vào không gian
+            liftScaleFactor = 1.0 + 0.40 * Math.pow(progress, 1.3);
+            renderOpacity = progress < 0.55 ? 1.0 : Math.max(0, 1.0 - (progress - 0.55) / 0.45);
+          }
+
           const isSelected = ac.id === (state.selectedAircraftId || state.aircraft?.id);
           const aDef = getAirlineDef(ac.airlineCode || ac.callsign);
           const labelColor = isSelected ? '#38bdf8' : (aDef.accentColor || '#fbbf24');
-          const planeScale = aircraftScale ?? (renderMode !== 'normal' ? 1.5 : 1.1);
+          const planeScale = (aircraftScale ?? (renderMode !== 'normal' ? 1.5 : 1.1)) * liftScaleFactor;
           const isFacingSouth = pos.heading > 135 && pos.heading < 225;
           const callsignOffset = 26 * planeScale;
           const callsignY = isFacingSouth ? pos.y + callsignOffset : pos.y - callsignOffset;
@@ -464,7 +509,7 @@ function AirportMap({
             <g
               key={`aircraft-${ac.id}`}
               onClick={() => onSelectAircraft?.(ac.id)}
-              style={{ cursor: 'pointer' }}
+              style={{ cursor: 'pointer', opacity: renderOpacity, transition: 'opacity 0.1s linear' }}
             >
               <AircraftIcon
                 x={pos.x}
@@ -491,6 +536,7 @@ function AirportMap({
 
               {/* Dấu X STOP & Đèn đỏ Stop Bar phát sáng trước mũi các tàu khi dừng chờ trên đường lăn hoặc cách ly */}
               {(() => {
+                if (isTakingOff) return false;
                 if (ac.hidden || ac.callsign === 'RESCUE01' || ac.aircraftAsset?.includes('xecuuhoa')) return false;
 
                 // Tàu đang đỗ trong bến (Stand) trước khi khởi hành -> KHÔNG HIỆN ĐÈN ĐỎ TRƯỚC MŨI
