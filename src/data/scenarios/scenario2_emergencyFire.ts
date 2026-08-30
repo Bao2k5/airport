@@ -7,14 +7,14 @@ import type { PresetScenarioDef, ScenarioAircraft, ScenarioObservation, Scenario
 export const scenario2EmergencyFire: PresetScenarioDef = {
   id: 'emergency_priority_engine_fire',
   title: 'Kịch bản 3 — Khẩn nguy BAV315 cháy động cơ thoát W4 dừng lại, HVN123 vào W5 về Stand 17',
-  teaser: 'BAV315 cháy động cơ thoát W4 dừng lại — HVN123 vào W5 về Stand 17, đồng thời BAV456 & THA101 cất cánh 25L.',
-  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Tuyến di chuyển: RW 25R -> W4.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W5 và vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456) đang ở vị trí E6/E4 tiếp tục đi đến RW 25L. Tuyến di chuyển: E6/E4 -> E6 -> RW 25L.\n• Cùng đồng thời, Tàu bay 4 (THA101) đang ở vị trí Stand 10 pushback ra, và đi ra RW 25L. Tuyến di chuyển: STAND 10 -> HS NS -> E6/E4 -> E6 -> RW 25L.',
+  teaser: 'BAV315 cháy động cơ thoát W4 dừng lại — HVN123 vào W5 về Stand 17, đồng thời BAV456 (Stand 21) & THA101 (Stand 10) cất cánh 25L.',
+  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Tuyến di chuyển: RW 25R -> W4.\n• Tàu bay 3 (BAV456 tại Stand 21) và Tàu bay 4 (THA101 tại Stand 10) đỗ sẵn tại bến chờ giải tỏa.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W5 và vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456 từ Stand 21) và Tàu bay 4 (THA101 từ Stand 10) cùng lăn song song ra RW 25L qua E6.',
   challenges: [
     'Giai đoạn 1: BAV315 cháy động cơ thoát nhanh ra đường lăn W4 và dừng cô lập an toàn.',
     'Giai đoạn 2: Tự động điều phối luồng giao thông song song:',
     '• HVN123 hạ cánh sau thoát qua W5, cắt qua 25L vào W11/W9B về Stand 17.',
-    '• BAV456 tại E6/E4 tiếp tục lăn ra đầu 25L cất cánh.',
-    '• THA101 từ Stand 10 pushback lăn theo sau ra RW 25L.'
+    '• BAV456 từ Stand 21 pushback lăn ra đầu 25L cất cánh.',
+    '• THA101 từ Stand 10 pushback lăn song song theo sau ra RW 25L.'
   ],
   watchFor: [
     'BAV315 cháy động cơ có lửa ở đuôi, xả đà vào W4 và dừng lại.',
@@ -69,12 +69,15 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
     ];
     const hvn123Edges = routeToEdges(hvn123Route, g.edges) ?? [];
 
-    // 3. BAV456: E6/E4 -> E6 -> RW 25L
+    // 3. BAV456: STAND 21 -> T38 -> E6/E4 -> E6 -> RW 25L
     const bav456Route = [
+      'v3_line_25_p01', // STAND 21
+      'v3_line_25_p00', // T38 (pushback)
+      'v3_line_17_p11',
       'v3_line_17_p12', // E6/E4
       'v3_line_17_p13', // E6
       'v3_line_17_p14',
-      'v3_line_17_p15',
+      'v3_line_17_p15', // L03_P18
       'v3_line_05_p07',
       'v3_line_17_p16', // STOP BAR 25L
     ];
@@ -179,13 +182,13 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         progressOnEdge: 0,
         speedKts: 0,
         speedLimitKts: 15,
-        status: 'queued',
-        hidden: true,
+        status: 'holding',
+        hidden: false,
         assignedRoute: bav456Route,
         routeEdgeIndex: 0,
         role: 'departing',
         priority: 2,
-        scenarioLabel: 'E6/E4 ➔ E6 ➔ RW 25L',
+        scenarioLabel: 'STAND 21: CHỜ BAV315 THOÁT LY',
         clearedRoute: bav456Route,
         routeVisible: true,
       },
@@ -202,13 +205,13 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         progressOnEdge: 0,
         speedKts: 0,
         speedLimitKts: 14,
-        status: 'queued',
-        hidden: true,
+        status: 'holding',
+        hidden: false,
         assignedRoute: thaRoute,
         routeEdgeIndex: 0,
         role: 'pushback',
         priority: 3,
-        scenarioLabel: 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
+        scenarioLabel: 'STAND 10: CHỜ BAV315 THOÁT LY',
         clearedRoute: thaRoute,
         routeVisible: true,
       },

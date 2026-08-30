@@ -847,25 +847,28 @@ export function scenarioTick(
         }
       }
 
-      // Tàu 3 (BAV456) và Tàu 4 (THA101) chỉ xuất hiện và lăn ở Giai đoạn 2 (cùng thời điểm HVN123 xuất hiện)
+      // Tàu 3 (BAV456 tại Stand 21) và Tàu 4 (THA101 tại Stand 10):
+      // Giai đoạn 1: Đứng yên tại bến đỗ (hidden: false, status: holding).
+      // Giai đoạn 2 (khi HVN123 xuất hiện/bav315Isolated): BAV456 và THA101 đồng thời lăn song song ra RW 25L.
       if (ac.callsign === 'BAV456' || ac.callsign === 'THA101') {
         if (!bav315Isolated) {
           updatedFleet[idx] = {
             ...ac,
-            hidden: true,
-            status: 'waiting',
+            hidden: false,
+            status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
+            scenarioLabel: ac.callsign === 'BAV456' ? 'STAND 21: CHỜ BAV315 THOÁT LY' : 'STAND 10: CHỜ BAV315 THOÁT LY',
           };
           continue;
-        } else if (ac.status === 'waiting' || ac.hidden || ac.status === 'queued') {
+        } else if (ac.status === 'holding' || ac.status === 'waiting' || ac.status === 'queued') {
           ac = {
             ...ac,
             hidden: false,
             status: 'taxiing',
             speedLimitKts: ac.callsign === 'BAV456' ? 16 : 14,
             speedKts: ac.callsign === 'BAV456' ? 16 : 14,
-            scenarioLabel: ac.callsign === 'BAV456' ? 'E6/E4 ➔ E6 ➔ RW 25L' : 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
+            scenarioLabel: ac.callsign === 'BAV456' ? 'STAND 21 ➔ E6 ➔ RW 25L' : 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
           };
         }
       }

@@ -224,7 +224,7 @@ function AirportMap({
         // BAV456, THA101, VJ302 cất cánh là biến mất hoàn toàn
         if (ac.status === 'departed' && ac.callsign !== 'BAV315' && ac.callsign !== 'RESCUE01' && ac.callsign !== 'HVN123' && ac.callsign !== 'HVN301') return false;
         // Nếu tàu khởi hành đã đến vạch STOP BAR 25L thì biến mất ngay lập tức
-        if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101' || ac.callsign === 'VJ302') && (
+        if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101' || ac.callsign === 'VJ302' || (ac.callsign === 'HVN216' && renderMode === 'ftg')) && (
           ac.status === 'departed' ||
           ac.currentNodeId === 'v3_line_17_p16' ||
           ac.currentNodeId === 'v3_line_05_p07' ||
@@ -1161,8 +1161,8 @@ function computeSegmentedGuidanceDots(
   }
 
   const DOT_STEP_PX = 14; // Khoảng cách cố định chuẩn giữa các bóng đèn tim đường (~40m)
-  const MAX_LOOKAHEAD_PX = 68; // Giới hạn đồng đều: chỉ chiếu sáng 4-5 bóng đèn phía trước mũi (~180-200m)
-  const MAX_BLOCK_EDGES = 2; // Tối đa 2 phân đoạn tiếp theo
+  const MAX_LOOKAHEAD_PX = 142; // Tầm nhìn chiếu sáng 10 bóng đèn phía trước mũi tàu (~400m)
+  const MAX_BLOCK_EDGES = 5; // Cho phép chiếu sáng xuyên qua tối đa 5 phân đoạn cạnh tiếp theo
 
   const activeDots: GuidanceDot[] = [];
   const prog = Math.max(0, Math.min(1, aircraft.progressOnEdge ?? 0));

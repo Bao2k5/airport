@@ -1,0 +1,32 @@
+# RULE TRACEABILITY MATRIX (SINGLE SOURCE OF TRUTH) — PHASE 3.5 NORMALIZED
+
+Ma trận truy xuất nguồn gốc quy chuẩn chuẩn hóa hoàn chỉnh, phân tách độc lập giữa **Bản chất thực thi (CATEGORY)**, **Nguồn gốc (SOURCE CLASS)** và **Mức độ hỗ trợ (SUPPORT LEVEL)**.
+
+---
+
+## Bảng ma trận đối soát chuẩn hóa (22 Unique Rules)
+
+| RULE ID | SIMULATOR BEHAVIOR | CODE LOCATION | CATEGORY | SOURCE CLASS | SOURCE ID | SECTION | SUPPORT LEVEL | MATCH | CONFIDENCE | ACTION REQUIRED |
+| :--- | :--- | :--- | :--- | :--- | :--- | :--- | :---: | :---: | :---: | :--- |
+| `SURFACE_STOPBAR_MANDATORY_STOP` | Stop Bar ĐỎ -> tàu bay dừng v=0 trước vạch dừng đường băng | `scenarioRunner.ts:494` | `VERIFIED_EXTERNAL_RULE` | `ICAO` | `EVD-ICAO-01` | Annex 14 §5.3.19; Doc 9870 §3.4.1 | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `SPEED_APRON_LOCAL_LIMIT` | Giới hạn tốc độ lăn khu vực sân đỗ Apron là 7 kts | `scenarioRunner.ts:30` | `VERIFIED_EXTERNAL_RULE` | `AIP_VIETNAM` | `EVD-AIP-01` | VVTS AD 2.22 §1.2 | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `LVP_TRIGGER_CRITERIA` | Kích hoạt phương thức LVP khi RVR < 550m | `simulator.ts:120` | `VERIFIED_EXTERNAL_RULE` | `AIP_VIETNAM` | `EVD-AIP-01` | VVTS AD 2.22 §2.1 | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `EMERGENCY_PRIORITY_PRINCIPLE` | Tàu bay khẩn nguy được hưởng quyền ưu tiên xử lý cao nhất | `ConflictEngine.ts:98` | `VERIFIED_EXTERNAL_RULE` | `ICAO` | `EVD-ICAO-02` | Doc 4444 §15.1.1 | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `FTG_FORWARD_GUIDANCE` | Bật đèn tâm xanh Follow-the-Green dọc theo lộ trình chỉ định | `scenarioRunner.ts:497` | `VERIFIED_EXTERNAL_RULE` | `EUROCONTROL` | `EVD-ICAO-04` | A-SMGCS Level 4 Spec; Doc 9830 | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `FTG_TRAILING_LIGHT_EXTINGUISH` | Tự động tắt đèn xanh tim đường lăn sau đuôi tàu khi đã lăn qua | `scenarioRunner.ts:489` | `VERIFIED_EXTERNAL_RULE` | `EUROCONTROL` | `EVD-ICAO-04` | A-SMGCS Level 4 Spec | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `FTG_STOPBAR_INTERLOCK` | Đèn Stop Bar ĐỎ liên động ghi đè và tắt đèn xanh dẫn đường | `scenarioRunner.ts:495` | `VERIFIED_EXTERNAL_RULE` | `ICAO` | `EVD-ICAO-01` | Annex 14 §5.3.20; Doc 9830 | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `RWY_PHYSICAL_GEOMETRY` | Định danh và cấu hình hình học đường băng 25L/25R và 07L/07R | `airportGraph.v3.ts:15` | `VERIFIED_EXTERNAL_RULE` | `AIP_VIETNAM` | `EVD-AIP-01` | VVTS AD 2.12 | **DIRECT** | `MATCH` | `HIGH` | Giữ nguyên |
+| `RWY_EXCLUSIVE_OCCUPANCY_SIMPLIFICATION` | Khóa độc quyền tài nguyên đường băng (1 tàu duy nhất) | `scenarioRunner.ts:563` | `DERIVED_IMPLEMENTATION_RULE` | `PROJECT` | `EVD-ICAO-02` | Doc 4444 §7.5.3 (Nguyên tắc chung) | **PARTIAL** | `PARTIAL_MATCH` | `HIGH` | Gắn nhãn PROJECT_SAFETY_SIMPLIFICATION |
+| `RES_BLOCK_EXCLUSIVE_LOCK` | Khóa độc quyền phân đoạn block đường lăn (Exclusive Block Locking) | `ReservationManager.ts:45` | `DERIVED_IMPLEMENTATION_RULE` | `PROJECT` | `EVD-ICAO-02` | Doc 4444 §7.5 (Separation enforcement) | **INDIRECT** | `NOT_APPLICABLE` | `HIGH` | Giữ nguyên phân loại |
+| `CONFLICT_HEADON_PROTECTION` | Phát hiện đối đầu trên cùng hành lang và dừng tàu nhường đường | `ConflictEngine.ts:50` | `DERIVED_IMPLEMENTATION_RULE` | `PROJECT` | `EVD-ICAO-04` | Doc 9830 Level 2 Conflict Alert | **PARTIAL** | `MATCH` | `HIGH` | Giữ nguyên |
+| `FOD_PAVEMENT_ISOLATION` | Khóa cạnh bị nhiễm FOD trong edgeBlockers, thu hồi reservation | `EventEffects.ts:45` | `DERIVED_IMPLEMENTATION_RULE` | `ICAO` | `EVD-ICAO-01` | Annex 14 §10.2.1 | **PARTIAL** | `MATCH` | `HIGH` | Giữ nguyên |
+| `DISABLED_AIRCRAFT_OBSTRUCTION` | Tàu bay chết máy v=0, biến vị trí thành vật cản bị khóa trong blockers | `EventEffects.ts:65` | `DERIVED_IMPLEMENTATION_RULE` | `ICAO` | `EVD-ICAO-01` | Annex 14 §9.3 | **PARTIAL** | `MATCH` | `HIGH` | Giữ nguyên |
+| `FTG_RESERVATION_INTEGRATION` | Chỉ bật đèn xanh dẫn đường cho các block đã được ReservationManager cấp | `scenarioRunner.ts:491` | `DERIVED_IMPLEMENTATION_RULE` | `PROJECT` | `NONE` | Internal Architecture | **NONE** | `NOT_APPLICABLE` | `HIGH` | Giữ nguyên |
+| `EMERGENCY_NUMERIC_PRIORITY_POLICY` | Gán thang điểm số học priority = 1..4 để phân xử cấp quyền khóa block | `ConflictEngine.ts:98` | `PROJECT_SIMULATION_POLICY` | `PROJECT` | `NONE` | Internal Priority Rule | **NONE** | `NOT_APPLICABLE` | `HIGH` | Ghi rõ PROJECT_SIMULATION_PRIORITY_POLICY |
+| `RADIO_FAILURE_FTG_FALLBACK` | Tàu bay mất liên lạc thoại dựa vào đèn FtG và Stop Bar để di chuyển | `EventEffects.ts:55` | `PROJECT_SIMULATION_POLICY` | `PROJECT` | `NONE` | Research Simulation Design | **NONE** | `NOT_APPLICABLE` | `HIGH` | Ghi rõ PROJECT_SIMULATION_BEHAVIOR |
+| `WRONG_TURN_PILOT_DEVIATION` | Mô hình hóa rẽ nhầm do sai lệch tổ lái (Pilot Deviation) tại nút giao | `EventEffects.ts:25` | `PROJECT_SIMULATION_POLICY` | `PROJECT` | `EVD-ICAO-03` | Doc 9870 Ch 3 (Human Factors) | **PARTIAL** | `MATCH` | `HIGH` | Ghi rõ PILOT_ROUTE_DEVIATION |
+| `RWY_ACTIVE_SELECTION_POLICY` | Lựa chọn khai thác 25 (Đông sang Tây) hoặc 07 (Tây sang Đông) | `RunwayOperatingConfig.ts:15` | `PROJECT_SIMULATION_POLICY` | `PROJECT` | `EVD-AIP-01` | VVTS AD 2.22 (Operational Wind Selection) | **PARTIAL** | `MATCH` | `HIGH` | Ghi rõ PROJECT_OPERATIONAL_CONFIGURATION |
+| `SURFACE_SEPARATION_TAXIWAY_BUFFER` | Duy trì dãn cách đệm an toàn đồ họa 28m giữa 2 tàu bay lăn dọc đường lăn | `scenarioRunner.ts:21` | `PROJECT_EXPERIMENTAL_PARAMETER` | `PROJECT` | `NONE` | Visual Safety Buffer | **NONE** | `MISMATCH` | `HIGH` | Sửa chú thích trong code từ Standard -> Project buffer |
+| `SURFACE_SEPARATION_APRON_BUFFER` | Duy trì dãn cách an toàn 36m trên vệt lăn sân đỗ và 34m bán kính bến đỗ | `scenarioRunner.ts:22, 25` | `PROJECT_EXPERIMENTAL_PARAMETER` | `PROJECT` | `NONE` | Visual Safety Buffer | **NONE** | `MISMATCH` | `HIGH` | Ghi rõ PROJECT_SIMULATION_PARAMETER |
+| `TRAFFIC_SPAWN_INTERVAL_TIMER` | Thời gian dãn cách sinh tàu 60s giữa các lượt cất/hạ cánh ngẫu nhiên | `ConstrainedTrafficGenerator.ts:20` | `PROJECT_EXPERIMENTAL_PARAMETER` | `PROJECT` | `NONE` | Simulation Pacing Timer | **NONE** | `NOT_APPLICABLE` | `HIGH` | Ghi rõ TRAFFIC_GENERATOR_PACING_TIMER |
+| `INCIDENT_RECOVERY_TIMERS` | Thời lượng giải tỏa sự cố (12s..35s) và cửa sổ FtG Lookahead (đoạn hiện tại + tối đa 2 đoạn phía trước) | `EventRegistry.ts:19-51; scenarioRunner.ts:490` | `PROJECT_EXPERIMENTAL_PARAMETER` | `PROJECT` | `NONE` | Interactive UI Timers | **NONE** | `NOT_APPLICABLE` | `HIGH` | Ghi rõ STRESS_PROFILE_EXPERIMENTAL_TIMER |

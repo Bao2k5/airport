@@ -133,7 +133,7 @@ export default function Scenario5ComparisonView({
     stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
       // ── GIAI ĐOẠN 1: KHI FTG CHƯA CHẠY TÀU 4 (!isStage2Traditional) ──
       if (!isStage2Traditional) {
-        // 1. INB01: Hạ cánh di chuyển đến HS NS (v3_line_17_p09 / index >= 20) thì DỪNG LẠI
+        // 1. INB01: Hạ cánh di chuyển nhanh đến HS NS (v3_line_17_p09 / index >= 20) để xung đột ngay khi OUT01/02 tới NS2
         if (ac.callsign === 'INB01') {
           const atHSNS = ac.currentNodeId === 'v3_line_17_p09' || ac.routeEdgeIndex >= 20;
           if (atHSNS) {
@@ -143,15 +143,17 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: 'stop-bar',
-              scenarioLabel: '🛑 DỪNG TẠI HS NS (CHỜ GIẢI TỎA)',
+              scenarioLabel: '🛑 DỪNG TẠI HS NS (XUNG ĐỘT LUỒNG VỚI NS2)',
             };
           }
+          const isRollout = ac.routeEdgeIndex <= 4;
+          const targetSpeed = isRollout ? 26 : 22;
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: 16,
-            speedLimitKts: 16,
-            scenarioLabel: 'RW 25R ➔ W4 ➔ CROSS 25L ➔ HS NS',
+            speedKts: targetSpeed,
+            speedLimitKts: targetSpeed,
+            scenarioLabel: isRollout ? 'HẠ CÁNH XẢ ĐÀ 25R ➔ THOÁT W4' : 'W4 ➔ CROSS 25L ➔ HS NS',
           };
         }
 
@@ -370,8 +372,6 @@ export default function Scenario5ComparisonView({
 
     // Kiểm tra xem Tàu 1 (INB01) đã hạ cánh lăn đến ngã ba W7A chưa
     const inb1 = stateToTick.scenarioAircraft?.find(a => a.callsign === 'INB01');
-    const inb1ReachedW7A = inb1 ? (inb1.routeEdgeIndex >= 12 || inb1.currentNodeId === 'v3_line_18_p03' || inb1.status === 'holding') : false;
-
     const out1 = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT01');
     const out2 = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT02');
 
@@ -400,41 +400,35 @@ export default function Scenario5ComparisonView({
           };
         }
 
-        // Tàu 1 dừng chờ tại ngã ba W7A cho đến khi Tàu 2 và Tàu 3 đi qua khỏi bến đỗ Stand 17
-        const out2PassedStand17 = out2 ? (out2.routeEdgeIndex >= 10 || out2.currentNodeId === 'v3_line_15_p01' || out2.currentNodeId === 'v3_line_23_p00' || out2.currentNodeId === 'v3_line_24_p00' || out2.currentNodeId === 'v3_line_25_p00' || out2.currentNodeId === 'v3_line_17_p11' || out2.currentNodeId === 'v3_line_17_p12' || out2.currentNodeId === 'v3_line_17_p13') : false;
+        // Tàu 1 dừng chờ tại nút W7A MID (v3_line_18_p02) cho đến khi CẢ TÀU 2 VÀ TÀU 3 ĐÃ RA ĐẦU RW 07R / CẤT CÁNH XONG
+        const bothOutDeparted = out1Finished && out2Finished;
 
-        if (!out2PassedStand17 && (ac.routeEdgeIndex >= 12 || ac.currentNodeId === 'v3_line_18_p03')) {
+        if (!bothOutDeparted && (ac.routeEdgeIndex >= 11 || ac.currentNodeId === 'v3_line_18_p02')) {
           return {
             ...ac,
+            currentNodeId: 'v3_line_18_p02',
             status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
-            scenarioLabel: 'W7A (DỪNG CHỜ TÀU 2 & 3 QUA STAND 17)',
+            scenarioLabel: '🛑 W7A MID (CHỜ TÀU 2 & 3 CẤT CÁNH 07R)',
           };
         }
 
+        const isRollout = ac.routeEdgeIndex <= 4;
+        const targetSpeed = isRollout ? 26 : 22;
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 20,
-          speedLimitKts: 20,
+          speedKts: targetSpeed,
+          speedLimitKts: targetSpeed,
           holdReason: undefined,
-          scenarioLabel: 'RW 25R ➔ W4 ➔ CROSS 25L ➔ HS NS ➔ STAND 17',
+          scenarioLabel: isRollout ? 'HẠ CÁNH XẢ ĐÀ 25R ➔ THOÁT W4' : 'RW 25R ➔ W4 ➔ CROSS 25L ➔ HS NS ➔ STAND 17',
         };
       }
 
-      // 2. OUT01: Đứng chờ tại Stand 9 cho đến khi Tàu 1 đến W7A và dừng lại mới được đi
+      // 2. OUT01: Bắt đầu lăn ngay từ đầu (t=0) từ Stand 9 -> HS NS -> E6 (Tốc độ 16 kts giống truyền thống)
       if (ac.callsign === 'OUT01') {
-        if (!inb1ReachedW7A) {
-          return {
-            ...ac,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
-            scenarioLabel: 'STAND 9 (CHỜ TÀU 1 ĐẾN W7A)',
-          };
-        }
         const at07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1;
         if (at07R) {
           return {
@@ -461,32 +455,22 @@ export default function Scenario5ComparisonView({
             clearedRoute: pOut1Full,
             targetNodeId: 'v3_line_16_p00',
             status: 'taxiing',
-            speedKts: 22,
-            speedLimitKts: 22,
+            speedKts: 16,
+            speedLimitKts: 16,
             scenarioLabel: '🔄 RUNWAY CHANGE 07R ➔ RA RW 07R',
           };
         }
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 22,
-          speedLimitKts: 22,
+          speedKts: 16,
+          speedLimitKts: 16,
           scenarioLabel: 'STAND 9 ➔ HS NS ➔ E6',
         };
       }
 
-      // 3. OUT02: Đứng chờ tại Stand 12 cho đến khi Tàu 1 đến W7A và Tàu 2 bắt đầu lăn thì mới xuất phát sau
+      // 3. OUT02: Bắt đầu lăn ngay từ đầu (t=0) từ Stand 12 nối đuôi Tàu 2 ra E6 (Tốc độ 14 kts giống truyền thống)
       if (ac.callsign === 'OUT02') {
-        const out1Started = out1 ? (out1.routeEdgeIndex >= 2 || out1.progressOnEdge >= 0.5 || out1.status === 'taxiing') : false;
-        if (!inb1ReachedW7A || !out1Started) {
-          return {
-            ...ac,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
-            scenarioLabel: 'STAND 12 (CHỜ TÀU 1 ĐẾN W7A)',
-          };
-        }
         const at07R = ac.currentNodeId === 'v3_line_16_p00' || ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1;
         if (at07R) {
           return {
@@ -505,16 +489,16 @@ export default function Scenario5ComparisonView({
             clearedRoute: pOut2Full,
             targetNodeId: 'v3_line_16_p00',
             status: 'taxiing',
-            speedKts: 18.5,
-            speedLimitKts: 18.5,
+            speedKts: 14,
+            speedLimitKts: 14,
             scenarioLabel: '🔄 RUNWAY CHANGE 07R ➔ NỐI ĐUÔI TÀU 2 RA 07R',
           };
         }
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 18.5,
-          speedLimitKts: 18.5,
+          speedKts: 14,
+          speedLimitKts: 14,
           scenarioLabel: 'STAND 12 ➔ NỐI ĐUÔI TÀU 2 ➔ E6',
         };
       }

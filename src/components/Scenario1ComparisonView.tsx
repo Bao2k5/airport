@@ -108,9 +108,15 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
         const next = scenarioTick(prev, dt, graph);
         const ac = next.scenarioAircraft?.[0];
         if (ac) {
-          if (ac.status === 'holding' || ac.currentNodeId === 'v3_line_17_p13') {
+          // Chỉ hoàn thành khi HVN216 đã lăn đến đúng điểm đích STOP BAR 25L
+          const atDestination = ac.status === 'arrived' ||
+            ac.currentNodeId === 'v3_line_17_p16' ||
+            (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1 && ac.progressOnEdge >= 0.95);
+          if (atDestination) {
             setRightDone(true);
             setRightFinalTime(next.elapsedSeconds);
+            ac.status = 'departed';
+            ac.speedKts = 0;
           }
         }
         return { ...next };

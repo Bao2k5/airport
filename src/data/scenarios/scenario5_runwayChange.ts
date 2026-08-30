@@ -93,7 +93,7 @@ export function setupScenario5Traditional(g: AirportGraph = airportGraphV3) {
     {
       id: 'S1', callsign: 'INB01', airlineCode: 'SQ', airlineName: sqDef.name, aircraftAsset: sqDef.asset, aircraftType: 'A350',
       currentNodeId: pInb1[0], targetNodeId: pInb1[pInb1.length - 1], currentEdgeId: routeToEdges(pInb1, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 16, speedLimitKts: 16, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
+      progressOnEdge: 0, speedKts: 26, speedLimitKts: 26, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
       role: 'arriving', priority: 1, scenarioLabel: 'HẠ CÁNH 25R ➔ W4 ➔ STAND 17', routeVisible: false, guidanceVisible: false,
     },
     {
@@ -210,20 +210,20 @@ export function setupScenario5FTG(g: AirportGraph = airportGraphV3) {
     {
       id: 'S1', callsign: 'INB01', airlineCode: 'SQ', airlineName: sqDef.name, aircraftAsset: sqDef.asset, aircraftType: 'A350',
       currentNodeId: pInb1[0], targetNodeId: pInb1[pInb1.length - 1], currentEdgeId: routeToEdges(pInb1, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 22, speedLimitKts: 22, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
+      progressOnEdge: 0, speedKts: 26, speedLimitKts: 26, status: 'taxiing', assignedRoute: pInb1, routeEdgeIndex: 0,
       role: 'arriving', priority: 1, scenarioLabel: 'HẠ CÁNH 25R ➔ W4 ➔ CROSS 25L ➔ W7A', routeVisible: true, guidanceVisible: true,
     },
     {
       id: 'S2', callsign: 'OUT01', airlineCode: 'VJ', airlineName: vjDef.name, aircraftAsset: vjDef.asset, aircraftType: 'A321',
       currentNodeId: pOut1[0], targetNodeId: pOut1[pOut1.length - 1], currentEdgeId: routeToEdges(pOut1, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 0, speedLimitKts: 22, status: 'holding', assignedRoute: pOut1, routeEdgeIndex: 0,
-      role: 'departing', priority: 2, scenarioLabel: 'STAND 9 (CHỜ TÀU 1 ĐẾN W7A)', routeVisible: true, guidanceVisible: true,
+      progressOnEdge: 0, speedKts: 16, speedLimitKts: 16, status: 'taxiing', assignedRoute: pOut1, routeEdgeIndex: 0,
+      role: 'departing', priority: 2, scenarioLabel: 'STAND 9 ➔ HS NS ➔ E6', routeVisible: true, guidanceVisible: true,
     },
     {
       id: 'S3', callsign: 'OUT02', airlineCode: 'QH', airlineName: qhDef.name, aircraftAsset: qhDef.asset, aircraftType: 'A321',
       currentNodeId: pOut2[0], targetNodeId: pOut2[pOut2.length - 1], currentEdgeId: routeToEdges(pOut2, g.edges)?.[0] ?? null,
-      progressOnEdge: 0, speedKts: 0, speedLimitKts: 20, status: 'holding', assignedRoute: pOut2, routeEdgeIndex: 0,
-      role: 'departing', priority: 2, scenarioLabel: 'STAND 12 (CHỜ TÀU 1 ĐẾN W7A)', routeVisible: true, guidanceVisible: true,
+      progressOnEdge: 0, speedKts: 14, speedLimitKts: 14, status: 'taxiing', assignedRoute: pOut2, routeEdgeIndex: 0,
+      role: 'departing', priority: 2, scenarioLabel: 'STAND 12 ➔ NỐI ĐUÔI TÀU 2 ➔ E6', routeVisible: true, guidanceVisible: true,
     },
     {
       id: 'S4', callsign: 'OUT03', airlineCode: 'VN', airlineName: vnDef.name, aircraftAsset: vnDef.asset, aircraftType: 'A321',
