@@ -11,20 +11,19 @@ import rawTracesManualData from './v3_raw_traces_manual.json';
 export const SVG_WIDTH = 1200;
 export const SVG_HEIGHT = 860;
 
-// Dynamic label lookup map by Stable Node ID and Coordinate Key from v3_raw_traces_manual.json
-const rawTraceLabelMapById = new Map<string, string>();
-const rawTraceLabelMapByCoord = new Map<string, string>();
+// Dynamic lookup map by Stable Node ID from v3_raw_traces_manual.json
+const rawTraceMapById = new Map<string, { x: number; y: number; label: string }>();
 
 (rawTracesManualData as any[]).forEach(line => {
   if (!line || !Array.isArray(line.points)) return;
   line.points.forEach((p: any, idx: number) => {
     const idKey = `v3_${line.id}_p${String(idx).padStart(2, '0')}`;
-    const coordKey = `${Math.round(p.x)}_${Math.round(p.y)}`;
     const label = typeof p.label === 'string' ? p.label.trim() : '';
-    rawTraceLabelMapById.set(idKey, label);
-    if (label) {
-      rawTraceLabelMapByCoord.set(coordKey, label);
-    }
+    rawTraceMapById.set(idKey, {
+      x: p.x,
+      y: p.y,
+      label,
+    });
   });
 });
 
@@ -880,14 +879,12 @@ const baseNodes: AirportNode[] = [
 
 export const airportGraphV3: AirportGraph = {
   nodes: baseNodes.map(n => {
-    const coordKey = `${Math.round(n.x)}_${Math.round(n.y)}`;
-    let dynamicLabel = rawTraceLabelMapById.get(n.id);
-    if (dynamicLabel === undefined) {
-      dynamicLabel = rawTraceLabelMapByCoord.get(coordKey) ?? n.label;
-    }
+    const fresh = rawTraceMapById.get(n.id);
     return {
       ...n,
-      label: dynamicLabel ?? '',
+      x: fresh !== undefined ? fresh.x : n.x,
+      y: fresh !== undefined ? fresh.y : n.y,
+      label: (fresh !== undefined && fresh.label !== '') ? fresh.label : (n.label ?? ''),
     };
   }),
   edges: [

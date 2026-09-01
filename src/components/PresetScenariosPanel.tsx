@@ -236,19 +236,42 @@ export default function PresetScenariosPanel({
             </div>
           )}
 
-          {/* Real-time alert banner */}
-          {latestEvent && (
-            <div className={`p-2.5 rounded-lg border text-xs leading-relaxed ${
-              latestEvent.severity === 'critical'
-                ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
-                : latestEvent.severity === 'warning'
-                ? 'bg-[#FFFBEB] border-[#FCD34D] text-[#92400E]'
-                : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1E40AF]'
-            }`}>
-              <span className="font-mono font-bold mr-1">[{formatTime(latestEvent.atSeconds)}]</span>
-              <span>{latestEvent.message}</span>
-            </div>
-          )}
+          {/* Real-time alert banner / ICAO Clearance Card */}
+          {latestEvent && (() => {
+            const isClearance = latestEvent.message.includes('ATC CLEARANCE');
+            const elapsed = state?.elapsedSeconds ?? (currentScenarioState as any)?.elapsedSeconds ?? 0;
+            const isClearanceActive = (elapsed - latestEvent.atSeconds) < 5.0 && (elapsed - latestEvent.atSeconds) >= 0;
+
+            if (isClearance && !isClearanceActive) return null;
+
+            return (
+              <div className={`p-2.5 rounded-lg border text-xs leading-relaxed ${
+                isClearance
+                  ? 'bg-[#0E1523] border-[#38BDF8] text-[#F1F5F9] shadow-md'
+                  : latestEvent.severity === 'critical'
+                  ? 'bg-[#FEF2F2] border-[#FCA5A5] text-[#991B1B]'
+                  : latestEvent.severity === 'warning'
+                  ? 'bg-[#FFFBEB] border-[#FCD34D] text-[#92400E]'
+                  : 'bg-[#EFF6FF] border-[#BFDBFE] text-[#1E40AF]'
+              }`}>
+                {isClearance ? (
+                  <div>
+                    <div className="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider mb-1 flex items-center gap-1.5">
+                      <span className="animate-pulse">🎙️</span> HUẤN LỆNH KSVKL (ATC CLEARANCE):
+                    </div>
+                    <div className="font-mono font-bold text-xs sm:text-sm text-white pl-2.5 border-l-2 border-[#38BDF8]">
+                      {latestEvent.message.replace(/📻\s*\[ATC CLEARANCE\]\s*/i, '')}
+                    </div>
+                  </div>
+                ) : (
+                  <>
+                    <span className="font-mono font-bold mr-1">[{formatTime(latestEvent.atSeconds)}]</span>
+                    <span>{latestEvent.message}</span>
+                  </>
+                )}
+              </div>
+            );
+          })()}
 
           {/* Event Log Timeline */}
           <div className="border-t border-[#E6ECF0] pt-2.5 flex flex-col gap-2">

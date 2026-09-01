@@ -61,8 +61,8 @@ export const scenario1WrongTurn: PresetScenarioDef = {
       targetNodeId: fullRoute[fullRoute.length - 1],
       currentEdgeId: fullEdges[0] ?? null,
       progressOnEdge: 0,
-      speedKts: 15,
-      speedLimitKts: 15,
+      speedKts: 20,
+      speedLimitKts: 20,
       status: 'taxiing',
       assignedRoute: fullRoute,
       routeEdgeIndex: 0,
@@ -126,12 +126,12 @@ export const scenario1WrongTurn: PresetScenarioDef = {
 
     const triggers: ScenarioTrigger[] = [
       {
-        atSeconds: 2,
+        atSeconds: 1,
         apply: (state: any) => {
           if (state.scenario) {
             state.scenario.events.push({
               atSeconds: state.elapsedSeconds,
-              message: '[PUSHBACK_APPROVED] HVN216 được phép đẩy lùi từ STAND_10 quẹo phải ra Line 12',
+              message: '📻 [ATC CLEARANCE] "HVN216 taxi to holding point runway 25L via NS and E6 taxiways"',
               severity: 'info',
             });
           }

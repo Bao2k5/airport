@@ -24,6 +24,7 @@ import { getAirlineDef } from './data/airlineTypes';
 import {
   saveStateToStorage,
   loadStateFromStorage,
+  clearPersistedState,
   checkReloadGuard,
 } from './utils/persistence';
 import type { SimulationConfig, SimulationState } from './types';
@@ -54,8 +55,8 @@ const DEFAULT_CONFIG: SimulationConfig = {
   autoReroute:       true,
 };
 
-// Số giây mô phỏng trên mỗi giây thực
-const TIME_SCALE = 10;
+// Số giây mô phỏng trên mỗi giây thực (Đồng bộ chuẩn 5.0 cho toàn bộ 5 kịch bản)
+const TIME_SCALE = 5.0;
 
 export default function App() {
   // Check reload guard on start
@@ -386,10 +387,14 @@ export default function App() {
   }, [autoIncidents, simState.isRunning, simState.isPaused, currentGraph]);
 
   const handleReset = useCallback(() => {
+    clearPersistedState();
     console.log(`GRAPH_SELECTED: ${selectedGraphId}`);
     console.log(`ROUTE_SOURCE: v3_coordinates_new.json`);
     console.log(`ROUTE_ACCEPTED: false`);
     setInspectingPathAircraftId(null);
+    lastTimeRef.current = null;
+    setSimSpeed(1);
+    simSpeedRef.current = 1;
 
     setSimState(prev => {
       if (prev.scenario) {
@@ -408,6 +413,10 @@ export default function App() {
   }, []);
 
   const handleExitScenario = useCallback(() => {
+    clearPersistedState();
+    lastTimeRef.current = null;
+    setSimSpeed(1);
+    simSpeedRef.current = 1;
     setSimState(prev => resetToManualMode(prev, currentGraph));
     setDesktopTab('control');
     setMobileTab('control');
@@ -429,6 +438,11 @@ export default function App() {
   }, []);
 
   const handleStartScenario = useCallback((scId: string) => {
+    clearPersistedState();
+    lastTimeRef.current = null;
+    setSimSpeed(1);
+    simSpeedRef.current = 1;
+
     if (scId === 'lvc_peak_runway_direction_change') {
       if (selectedGraphId !== 'v3') {
         setSelectedGraphId('v3');

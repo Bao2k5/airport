@@ -45,8 +45,8 @@ export const scenario4FodClosure: PresetScenarioDef = {
         targetNodeId: rInit[rInit.length - 1],
         currentEdgeId: rInitEdges[0] ?? null,
         progressOnEdge: 0,
-        speedKts: 30,
-        speedLimitKts: 30,
+        speedKts: 20,
+        speedLimitKts: 20,
         status: 'taxiing',
         assignedRoute: rInit,
         routeEdgeIndex: 0,
@@ -107,7 +107,20 @@ export const scenario4FodClosure: PresetScenarioDef = {
 
     const triggers: ScenarioTrigger[] = [
       {
-        atSeconds: 2,
+        atSeconds: 1,
+        apply: (state: any) => {
+          if (state.scenario) {
+            state.scenario.events.push({
+              atSeconds: state.elapsedSeconds,
+              message: '📻 [ATC CLEARANCE] "HVN401 taxi to stand 16"',
+              severity: 'info',
+            });
+          }
+          return state;
+        },
+      },
+      {
+        atSeconds: 3,
         apply: (state: any) => {
           if (state.scenario) {
             state.scenario.events.push({

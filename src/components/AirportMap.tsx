@@ -215,6 +215,13 @@ function AirportMap({
     }
   };
 
+  // Reset departed animation cache when scenario or simulation resets/restarts
+  useEffect(() => {
+    if (state.elapsedSeconds === 0 || !state.isRunning) {
+      departedAnimMap.current.clear();
+    }
+  }, [state.elapsedSeconds, state.isRunning, state.scenario?.id]);
+
   const zoomed = view.w < SVG_WIDTH - 0.5;
   const nowMs = performance.now();
   const allActiveAircraft: Aircraft[] = isScenario
@@ -223,10 +230,16 @@ function AirportMap({
         
         // Tàu đến và xe cứu hỏa giữ nguyên hiện trường
         const isInboundOrFixed = ac.callsign === 'BAV315' || ac.callsign === 'RESCUE01' || ac.callsign === 'HVN123' || ac.callsign === 'HVN301' || ac.callsign === 'INB01' || ac.callsign === 'HVN401';
-        if (isInboundOrFixed) return true;
+        if (isInboundOrFixed) {
+          departedAnimMap.current.delete(ac.id);
+          return true;
+        }
 
         // Tàu rẽ sai ở màn truyền thống thì dừng lại không cất cánh
-        if (ac.callsign === 'HVN216' && renderMode === 'traditional') return true;
+        if (ac.callsign === 'HVN216' && renderMode === 'traditional') {
+          departedAnimMap.current.delete(ac.id);
+          return true;
+        }
 
         const targetNode = ac.assignedRoute?.[ac.assignedRoute.length - 1] || ac.targetNodeId;
         const isAtRouteEnd = (ac.routeEdgeIndex ?? 0) >= (ac.assignedRoute?.length ?? 1) - 1;
@@ -249,13 +262,20 @@ function AirportMap({
             return false; // Hết 1.3 giây chạy đà và cất cánh nhanh thì biến mất hoàn toàn
           }
           return true; // Trong 1.3 giây này vẽ hiệu ứng chạy đà cất cánh nhanh
+        } else {
+          // Xóa khỏi danh sách departed nếu máy bay đang chạy chuyến mới / chạy lại / quay đầu
+          departedAnimMap.current.delete(ac.id);
         }
 
         if (ac.status === 'departed') return false;
         return true;
       })
     : (state.manualFleet && state.manualFleet.length
-        ? state.manualFleet.filter(ac => ac.status !== 'departed')
+        ? state.manualFleet.filter(ac => {
+            if (ac.status === 'departed') return false;
+            departedAnimMap.current.delete(ac.id);
+            return true;
+          })
         : (state.aircraft ? [state.aircraft] : []));
 
   return (
@@ -319,6 +339,31 @@ function AirportMap({
           </button>
         </div>
       )}
+
+      {/* ── Real-time ICAO ATC Clearance HUD ── */}
+      {(() => {
+        const events = state.scenario?.events || [];
+        const latestClearance = events
+          .filter((e: any) => typeof e?.message === 'string' && e.message.includes('ATC CLEARANCE'))
+          .slice(-1)[0];
+        const elapsed = state.scenario?.elapsedSeconds || 0;
+        const isRecentClearance = latestClearance && (elapsed - latestClearance.atSeconds) < 5.0 && (elapsed - latestClearance.atSeconds) >= 0;
+
+        if (!isRecentClearance) return null;
+        return (
+          <div className="absolute top-3 left-1/2 -translate-x-1/2 z-30 bg-[#0E1523]/95 border border-[#38BDF8] text-white px-4 py-2.5 rounded-xl shadow-2xl backdrop-blur-md flex items-center gap-3 animate-fadeIn pointer-events-none max-w-xl">
+            <span className="text-lg animate-pulse">🎙️</span>
+            <div>
+              <div className="text-[10px] font-bold text-[#38BDF8] uppercase tracking-wider">
+                HUẤN LỆNH KSVKL (ATC CLEARANCE):
+              </div>
+              <div className="font-mono font-bold text-xs sm:text-sm text-white">
+                {latestClearance.message.replace(/📻\s*\[ATC CLEARANCE\]\s*/i, '')}
+              </div>
+            </div>
+          </div>
+        );
+      })()}
 
       <svg
         ref={svgRef}
@@ -475,25 +520,30 @@ function AirportMap({
 
           let renderOpacity = 1.0;
           let liftScaleFactor = 1.0;
-          const isTakingOff = departedAnimMap.current.has(ac.id);
+          let isTakingOff = false;
 
-          if (isTakingOff) {
+          if (isScenario && departedAnimMap.current.has(ac.id)) {
             const anim = departedAnimMap.current.get(ac.id)!;
             const elapsed = (nowMs - anim.startTime) / 1000;
-            const progress = Math.min(1.0, elapsed / 1.3);
-            const rollDist = Math.pow(progress, 2.0) * 180; // Chạy đà nhanh và dứt khoát trên đường băng
-            const rad = (anim.heading * Math.PI) / 180;
-            const dx = Math.sin(rad);
-            const dy = -Math.cos(rad);
+            if (elapsed < 1.3) {
+              isTakingOff = true;
+              const progress = Math.min(1.0, elapsed / 1.3);
+              const rollDist = Math.pow(progress, 2.0) * 180; // Chạy đà nhanh và dứt khoát trên đường băng
+              const rad = (anim.heading * Math.PI) / 180;
+              const dx = Math.sin(rad);
+              const dy = -Math.cos(rad);
 
-            pos = {
-              x: anim.startX + dx * rollDist,
-              y: anim.startY + dy * rollDist,
-              heading: anim.heading,
-            };
-            // Phóng to nhẹ (+40%) khi nhấc bánh và mờ dần vào không gian
-            liftScaleFactor = 1.0 + 0.40 * Math.pow(progress, 1.3);
-            renderOpacity = progress < 0.55 ? 1.0 : Math.max(0, 1.0 - (progress - 0.55) / 0.45);
+              pos = {
+                x: anim.startX + dx * rollDist,
+                y: anim.startY + dy * rollDist,
+                heading: anim.heading,
+              };
+              // Phóng to nhẹ (+40%) khi nhấc bánh và mờ dần vào không gian
+              liftScaleFactor = 1.0 + 0.40 * Math.pow(progress, 1.3);
+              renderOpacity = progress < 0.55 ? 1.0 : Math.max(0, 1.0 - (progress - 0.55) / 0.45);
+            } else {
+              departedAnimMap.current.delete(ac.id);
+            }
           }
 
           const isSelected = ac.id === (state.selectedAircraftId || state.aircraft?.id);

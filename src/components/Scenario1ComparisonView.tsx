@@ -15,7 +15,7 @@ interface Props {
 }
 
 export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Props) {
-  const [speedMultiplier, setSpeedMultiplier] = useState<number>(2);
+  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
   const [isPaused, setIsPaused] = useState(false);
 
   // Tuyến đường Truyền thống — STAND 10 -> HS NS -> rẽ nhầm vào E4 (Dừng lại khi rẽ sai)
@@ -46,8 +46,8 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
       targetNodeId: traditionalRoute[traditionalRoute.length - 1],
       currentEdgeId: edges[0] ?? null,
       progressOnEdge: 0,
-      speedKts: 15,
-      speedLimitKts: 15,
+      speedKts: 20,
+      speedLimitKts: 20,
       status: 'taxiing',
       assignedRoute: traditionalRoute,
       routeEdgeIndex: 0,
@@ -70,19 +70,23 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
   const [leftFinalTime, setLeftFinalTime] = useState<number | null>(null);
   const [rightFinalTime, setRightFinalTime] = useState<number | null>(null);
 
-  const lastTimeRef = useRef<number>(performance.now());
+  const lastTimeRef = useRef<number | null>(null);
   const leftDoneRef = useRef(false);
   const rightDoneRef = useRef(false);
   leftDoneRef.current = leftDone;
   rightDoneRef.current = rightDone;
+  const rafRef = useRef<number | null>(null);
 
-  const tickBoth = useCallback(() => {
-    const now = performance.now();
+  const tickBoth = useCallback((now: number) => {
+    if (lastTimeRef.current === null) {
+      lastTimeRef.current = now;
+      return;
+    }
     const rawDt = Math.min((now - lastTimeRef.current) / 1000, 0.1);
     lastTimeRef.current = now;
 
     if (isPaused) return;
-    const dt = rawDt * speedMultiplier;
+    const dt = rawDt * (speedMultiplier * 5.0);
 
     // Cập nhật Màn Trái (Truyền thống)
     if (!leftDoneRef.current) {
@@ -132,12 +136,20 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
 
   useEffect(() => {
     lastTimeRef.current = performance.now();
-    const timer = setInterval(tickBoth, 33);
-    return () => clearInterval(timer);
+    const frame = (time: number) => {
+      tickBoth(time);
+      rafRef.current = requestAnimationFrame(frame);
+    };
+    rafRef.current = requestAnimationFrame(frame);
+    return () => {
+      if (rafRef.current) cancelAnimationFrame(rafRef.current);
+      rafRef.current = null;
+    };
   }, [tickBoth]);
 
   const handleRestart = () => {
     setLeftDone(false); setRightDone(false); setLeftFinalTime(null); setRightFinalTime(null);
+    setSpeedMultiplier(1);
     setLeftState(initLeftState()); setRightState(initRightState());
     lastTimeRef.current = performance.now();
   };
@@ -177,7 +189,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
         doneLabel="Dừng do cảnh báo sai lộ trình"
         ftgTag="FtG: OFF"
         clearanceContent={
-          leftState.elapsedSeconds < 6.5 ? (
+          leftState.elapsedSeconds < 5.0 ? (
             <SurfaceCard variant="active" className="absolute top-3 left-3 right-3 z-20 p-2.5 sm:p-3 backdrop-blur-md animate-fadeIn">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">
@@ -217,7 +229,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
                 <ShieldAlert className="w-4 h-4 text-[#F43F5E] flex-shrink-0" />
                 Giai đoạn 2: Tàu bay đi sai đường (rẽ nhầm E4) ➔ Stop Bar đỏ khóa dừng!
               </>
-            ) : leftState.elapsedSeconds < 6.5 ? (
+            ) : leftState.elapsedSeconds < 5.0 ? (
               'Giai đoạn 1: KSVKL cấp huấn lệnh thoại cho HVN216 tại Stand 10'
             ) : (
               'Giai đoạn 2: Lăn theo thoại VHF thủ công — Phi công tự quan sát trong sương mù'
@@ -238,7 +250,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
         doneLabel="Hoàn thành 100% đúng tuyến"
         ftgTag="FtG: ACTIVE"
         clearanceContent={
-          rightState.elapsedSeconds < 6.5 ? (
+          rightState.elapsedSeconds < 5.0 ? (
             <SurfaceCard variant="active" className="absolute top-3 left-3 right-3 z-20 p-2.5 sm:p-3 backdrop-blur-md animate-fadeIn">
               <div className="flex items-center justify-between gap-2">
                 <div className="flex items-center gap-2">

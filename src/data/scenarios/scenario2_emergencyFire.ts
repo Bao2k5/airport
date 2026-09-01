@@ -7,20 +7,19 @@ import type { PresetScenarioDef, ScenarioAircraft, ScenarioObservation, Scenario
 export const scenario2EmergencyFire: PresetScenarioDef = {
   id: 'emergency_priority_engine_fire',
   title: 'Kịch bản 3 — Khẩn nguy BAV315 cháy động cơ thoát W4 dừng lại, HVN123 vào W5 về Stand 17',
-  teaser: 'BAV315 cháy động cơ thoát W4 dừng lại — HVN123 vào W5 về Stand 17, đồng thời BAV456 (Stand 21) & THA101 (Stand 10) cất cánh 25L.',
-  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Tuyến di chuyển: RW 25R -> W4.\n• Tàu bay 3 (BAV456 tại Stand 21) và Tàu bay 4 (THA101 tại Stand 10) đỗ sẵn tại bến chờ giải tỏa.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W5 và vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456 từ Stand 21) và Tàu bay 4 (THA101 từ Stand 10) cùng lăn song song ra RW 25L qua E6.',
+  teaser: 'BAV315 cháy động cơ thoát W4 dừng lại — HVN123 vào W5 về Stand 17, đồng thời BAV456 (Stand 22) & THA101 (Stand 10) cất cánh 25L.',
+  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Tuyến di chuyển: RW 25R -> W4.\n• Tàu bay 3 (BAV456 tại Stand 22) và Tàu bay 4 (THA101 tại Stand 10) đỗ sẵn tại bến chờ giải tỏa.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W5 và vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456 từ Stand 22) và Tàu bay 4 (THA101 từ Stand 10) cùng lăn song song ra RW 25L qua E6.',
   challenges: [
     'Giai đoạn 1: BAV315 cháy động cơ thoát nhanh ra đường lăn W4 và dừng cô lập an toàn.',
     'Giai đoạn 2: Tự động điều phối luồng giao thông song song:',
     '• HVN123 hạ cánh sau thoát qua W5, cắt qua 25L vào W11/W9B về Stand 17.',
-    '• BAV456 từ Stand 21 pushback lăn ra đầu 25L cất cánh.',
+    '• BAV456 từ Stand 22 pushback lăn ra đầu 25L cất cánh.',
     '• THA101 từ Stand 10 pushback lăn song song theo sau ra RW 25L.'
   ],
   watchFor: [
     'BAV315 cháy động cơ có lửa ở đuôi, xả đà vào W4 và dừng lại.',
-    'Xe cứu hỏa RESCUE01 tiếp cận hiện trường W4 để xử lý sự cố.',
     'HVN123 hạ cánh thoát qua ngả W5 -> W11 -> W9B về Stand 17.',
-    'BAV456 và THA101 lăn thông suốt qua E6 ra vạch chờ cất cánh RW 25L.'
+    'BAV456 (Stand 22) và THA101 (Stand 10) lăn thông suốt qua E6 ra vạch chờ cất cánh RW 25L.'
   ],
   setup: (g: AirportGraph = airportGraphV3) => {
     // 1. BAV315: RW 25R -> W4 (dừng lại tại điểm giữa W4/25R và W4/25L)
@@ -69,11 +68,10 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
     ];
     const hvn123Edges = routeToEdges(hvn123Route, g.edges) ?? [];
 
-    // 3. BAV456: STAND 21 -> T38 -> E6/E4 -> E6 -> RW 25L
+    // 3. BAV456: Bắt đầu từ STAND 22 (v3_line_26_p04) -> pushback ra E6/E4 line (v3_line_26_p03) -> E6 -> RW 25L
     const bav456Route = [
-      'v3_line_25_p01', // STAND 21
-      'v3_line_25_p00', // T38 (pushback)
-      'v3_line_17_p11',
+      'v3_line_26_p04', // STAND 22 (Đỗ tại bến Stand 22)
+      'v3_line_26_p03', // E6/E4 line (Pushback ra tim đường)
       'v3_line_17_p12', // E6/E4
       'v3_line_17_p13', // E6
       'v3_line_17_p14',
@@ -112,12 +110,6 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
     ];
     const thaEdges = routeToEdges(thaRoute, g.edges) ?? [];
 
-    // 5. RESCUE01 (Xe cứu hỏa đứng đợi ở W4/25L -> khi BAV315 vào giữa thì chạy lên áp sát)
-    const rescueStart = 'v3_line_04_p03'; // W4/25L
-    const rescueTarget = 'v3_line_04_p02'; // Ở giữa W4/25R và W4/25L
-    const fullRescueRoute = [rescueStart, rescueTarget];
-    const fullRescueEdges = routeToEdges(fullRescueRoute, g.edges) ?? [];
-
     const qhDef = getAirlineDef('QH');
     const vnDef = getAirlineDef('VN');
     const tgDef = getAirlineDef('TG');
@@ -134,14 +126,14 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         targetNodeId: bav315Route[bav315Route.length - 1],
         currentEdgeId: bav315Edges[0] ?? null,
         progressOnEdge: 0,
-        speedKts: 13,
-        speedLimitKts: 13,
+        speedKts: 20,
+        speedLimitKts: 20,
         status: 'taxiing',
         assignedRoute: bav315Route,
         routeEdgeIndex: 0,
         role: 'emergency',
         priority: 0,
-        scenarioLabel: '🔥 KHẨN NGUY: CHÁY ĐỘNG CƠ THOÁT VÀO GIỮA W4',
+        scenarioLabel: '🔥 KHẨN NGUY: THOÁT VÀO W4 VÀ DỪNG LẠI',
         clearedRoute: bav315Route,
         routeVisible: true,
       },
@@ -157,9 +149,9 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         currentEdgeId: hvn123Edges[0] ?? null,
         progressOnEdge: 0,
         speedKts: 0,
-        speedLimitKts: 18,
+        speedLimitKts: 20,
         status: 'queued',
-        hidden: true,
+        hidden: false,
         assignedRoute: hvn123Route,
         routeEdgeIndex: 0,
         role: 'arriving',
@@ -180,15 +172,15 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         targetNodeId: bav456Route[bav456Route.length - 1],
         currentEdgeId: bav456Edges[0] ?? null,
         progressOnEdge: 0,
-        speedKts: 0,
-        speedLimitKts: 15,
-        status: 'holding',
+        speedKts: 20,
+        speedLimitKts: 20,
+        status: 'taxiing',
         hidden: false,
         assignedRoute: bav456Route,
         routeEdgeIndex: 0,
-        role: 'departing',
+        role: 'pushback',
         priority: 2,
-        scenarioLabel: 'STAND 21: CHỜ BAV315 THOÁT LY',
+        scenarioLabel: 'STAND 22 ➔ E6 ➔ RW 25L',
         clearedRoute: bav456Route,
         routeVisible: true,
       },
@@ -203,41 +195,17 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         targetNodeId: thaRoute[thaRoute.length - 1],
         currentEdgeId: thaEdges[0] ?? null,
         progressOnEdge: 0,
-        speedKts: 0,
-        speedLimitKts: 14,
-        status: 'holding',
+        speedKts: 20,
+        speedLimitKts: 20,
+        status: 'taxiing',
         hidden: false,
         assignedRoute: thaRoute,
         routeEdgeIndex: 0,
         role: 'pushback',
         priority: 3,
-        scenarioLabel: 'STAND 10: CHỜ BAV315 THOÁT LY',
+        scenarioLabel: 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
         clearedRoute: thaRoute,
         routeVisible: true,
-      },
-      {
-        id: 'S5',
-        callsign: 'RESCUE01',
-        airlineCode: 'VU',
-        airlineName: 'Xe Cứu Hỏa Khẩn Nguy',
-        aircraftAsset: '/xecuuhoa.png',
-        aircraftType: 'ATR72',
-        currentNodeId: rescueStart,
-        targetNodeId: rescueTarget,
-        currentEdgeId: fullRescueEdges[0] ?? null,
-        progressOnEdge: 0,
-        speedKts: 0,
-        speedLimitKts: 25,
-        status: 'holding',
-        holdReason: 'stop-bar',
-        assignedRoute: fullRescueRoute,
-        routeEdgeIndex: 0,
-        role: 'emergency',
-        priority: 0,
-        scenarioLabel: '🚒 CHỜ TẠI W4/25L ĐỢI BAV315 VÀO ĐIỂM DỪNG',
-        clearedRoute: fullRescueRoute,
-        routeVisible: true,
-        isMoving: false,
       },
     ];
 
@@ -252,7 +220,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         relatedAircraft: ['BAV315'],
         check: (s) => {
           const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'BAV315');
-          if (ac && (ac.status === 'holding' || ac.status === 'arrived' || ac.currentNodeId === 'v3_line_04_p01')) {
+          if (ac && (ac.status === 'holding' || ac.status === 'arrived' || ac.currentNodeId === 'v3_line_04_p01' || ac.currentNodeId === 'v3_line_04_p02')) {
             return { pass: true, evidence: `BAV315 đã thoát vào W4 và dừng an toàn` };
           }
           return { pass: false };
@@ -295,13 +263,32 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
 
     const triggers: ScenarioTrigger[] = [
       {
-        atSeconds: 2,
+        atSeconds: 1,
         apply: (state: any) => {
           if (state.scenario) {
             state.scenario.events.push({
               atSeconds: state.elapsedSeconds,
-              message: '🔥 [MAYDAY] BAV315 báo cháy động cơ sau hạ cánh 25R, giảm tốc thoát vào W4 và dừng lại',
+              message: '📻 [ATC CLEARANCE] "BAV315 holdshort runway 25L"',
               severity: 'critical',
+            });
+          }
+          return state;
+        },
+      },
+      {
+        atSeconds: 4,
+        apply: (state: any) => {
+          const hvn = state.scenarioAircraft?.find((a: any) => a.callsign === 'HVN123');
+          if (hvn) {
+            hvn.status = 'taxiing';
+            hvn.speedKts = 20;
+            hvn.hidden = false;
+          }
+          if (state.scenario) {
+            state.scenario.events.push({
+              atSeconds: state.elapsedSeconds,
+              message: '📻 [ATC CLEARANCE] "HVN123 taxi to stand 17"',
+              severity: 'info',
             });
           }
           return state;
@@ -310,44 +297,10 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
       {
         atSeconds: 6,
         apply: (state: any) => {
-          const r = state.scenarioAircraft?.find((a: any) => a.callsign === 'RESCUE01');
-          if (r) {
-            r.status = 'taxiing';
-            r.speedKts = 24;
-            r.isMoving = true;
-          }
-          const hvn = state.scenarioAircraft?.find((a: any) => a.callsign === 'HVN123');
-          if (hvn) {
-            hvn.status = 'taxiing';
-            hvn.speedKts = 18;
-            hvn.hidden = false;
-          }
           if (state.scenario) {
             state.scenario.events.push({
               atSeconds: state.elapsedSeconds,
-              message: '🚒 [RESCUE_DISPATCH] Xe cứu hỏa RESCUE01 xuất phát tiếp cận dập lửa BAV315 tại W4',
-              severity: 'info',
-            });
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '🛬 [HVN123_LANDED] HVN123 hạ cánh thoát qua W5 -> W11 -> W9B về Stand 17',
-              severity: 'info',
-            });
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 16,
-        apply: (state: any) => {
-          const b = state.scenarioAircraft?.find((a: any) => a.callsign === 'BAV315');
-          if (b) {
-            b.isFireExtinguished = true;
-          }
-          if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '✅ [FIRE_EXTINGUISHED] Đội cứu hỏa đã khống chế hoàn toàn đám cháy động cơ BAV315 tại W4',
+              message: '📻 [ATC CLEARANCE] "THA101 taxi to holding point runway 25L"',
               severity: 'info',
             });
           }

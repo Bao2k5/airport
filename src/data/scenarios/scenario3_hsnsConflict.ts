@@ -86,7 +86,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
     const aircraft: ScenarioAircraft[] = [
       {
         id: 'S1',
-        callsign: 'HVN301',
+        callsign: 'VN301',
         airlineCode: 'VN',
         airlineName: vnDef.name,
         aircraftAsset: vnDef.asset,
@@ -95,8 +95,8 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
         targetNodeId: tauARoute[tauARoute.length - 1],
         currentEdgeId: tauAEdges[0] ?? null,
         progressOnEdge: 0,
-        speedKts: 18,
-        speedLimitKts: 18,
+        speedKts: 20,
+        speedLimitKts: 20,
         status: 'taxiing',
         assignedRoute: tauARoute,
         routeEdgeIndex: 0,
@@ -118,13 +118,13 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
         currentEdgeId: tauBEdges[0] ?? null,
         progressOnEdge: 0,
         speedKts: 0,
-        speedLimitKts: 14,
+        speedLimitKts: 20,
         status: 'holding',
         assignedRoute: tauBRoute,
         routeEdgeIndex: 0,
         role: 'departing',
         priority: 2,
-        scenarioLabel: 'STAND 11: CHỜ HVN301 ĐẾN W7',
+        scenarioLabel: 'STAND 11: CHỜ VN301 ĐẾN W7',
         clearedRoute: tauBRoute,
         routeVisible: true,
       },
@@ -133,28 +133,28 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
     const observations: ScenarioObservation[] = [
       {
         id: 'obs_2_1',
-        text: '[STAGE1_INBOUND_W7] HVN301 hạ cánh 25R lăn qua W4/CROSS 25L đến W7 -> VJ302 bắt đầu pushback.',
+        text: '[STAGE1_INBOUND_W7] VN301 hạ cánh 25R lăn qua W4/CROSS 25L đến W7 -> VJ302 bắt đầu pushback.',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
         evidence: '',
-        relatedAircraft: ['HVN301'],
+        relatedAircraft: ['VN301'],
         check: (s) => {
-          const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'HVN301');
+          const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN301' || a.callsign === 'HVN301');
           if (ac && ac.routeEdgeIndex >= 12) {
-            return { pass: true, evidence: `HVN301 đã đến W7, VJ302 bắt đầu pushback` };
+            return { pass: true, evidence: `VN301 đã đến W7, VJ302 bắt đầu pushback` };
           }
           return { pass: false };
         },
       },
       {
         id: 'obs_2_2',
-        text: '[STAGE1_HSNS_HOLD] VJ302 lăn ra đến HS NS dừng trước Stop Bar đỏ, HVN301 về tới Stand 16 (Kết thúc GĐ 1).',
+        text: '[STAGE1_HSNS_HOLD] VJ302 lăn ra đến HS NS dừng trước Stop Bar đỏ, VN301 về tới Stand 16 (Kết thúc GĐ 1).',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
         evidence: '',
-        relatedAircraft: ['VJ302', 'HVN301'],
+        relatedAircraft: ['VJ302', 'VN301'],
         check: (s) => {
           const a2 = s.scenarioAircraft?.find((a: any) => a.callsign === 'VJ302');
           if (a2 && a2.routeEdgeIndex >= 6 && a2.status === 'holding') {
@@ -165,12 +165,12 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
       },
       {
         id: 'obs_2_3',
-        text: '[STAGE2_RELEASE_25L] Bắt đầu GĐ 2: HVN301 đã về Stand 16, VJ302 nhận đèn xanh FtG lăn tiếp qua E6 ra 25L.',
+        text: '[STAGE2_RELEASE_25L] Bắt đầu GĐ 2: VN301 đã qua Stand 16, VJ302 nhận đèn xanh FtG lăn tiếp qua E6 ra 25L.',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
         evidence: '',
-        relatedAircraft: ['HVN301', 'VJ302'],
+        relatedAircraft: ['VN301', 'VJ302'],
         check: (s) => {
           const a2 = s.scenarioAircraft?.find((a: any) => a.callsign === 'VJ302');
           if (a2 && a2.routeEdgeIndex >= 7 && a2.speedKts > 0) {
@@ -188,7 +188,20 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
           if (state.scenario) {
             state.scenario.events.push({
               atSeconds: state.elapsedSeconds,
-              message: '[GIAI ĐOẠN 1] HVN301 hạ cánh 25R lăn vào W4 về bến 17. VJ302 tại Stand 11 chờ HVN301 đến W7 mới pushback.',
+              message: '📻 [ATC CLEARANCE] "VN301, taxi to stand 17"',
+              severity: 'info',
+            });
+          }
+          return state;
+        },
+      },
+      {
+        atSeconds: 8,
+        apply: (state: any) => {
+          if (state.scenario) {
+            state.scenario.events.push({
+              atSeconds: state.elapsedSeconds,
+              message: '📻 [ATC CLEARANCE] "VJ302 taxi to holding point runway 25L"',
               severity: 'info',
             });
           }

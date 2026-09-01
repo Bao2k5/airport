@@ -17,10 +17,9 @@ export const SEPARATION_APRON_PX = SEPARATION_APRON_M * PIXELS_PER_METER;     //
 export const STAND_CLEARANCE_RADIUS_M = 34; // Stand clearance safety radius (34m)
 export const STAND_CLEARANCE_RADIUS_PX = STAND_CLEARANCE_RADIUS_M * PIXELS_PER_METER; // 11.333 px
 
-// Standard Educational Simulation Speeds (Educational demo parameters, not real-world aviation ops)
-export const SCENARIO_TAXI_SPEED_KTS = 15;     // Standard Taxiway speed baseline (15 kts)
-export const SCENARIO_APRON_SPEED_KTS = 7;      // Apron/Stand area speed limit (7 kts)
-export const SCENARIO_JUNCTION_SPEED_KTS = 5;   // Approaching junction / stop-bar speed (5 kts)
+export const SCENARIO_TAXI_SPEED_KTS = 20;     // Standard Taxiway speed baseline (20 kts)
+export const SCENARIO_APRON_SPEED_KTS = 8;      // Apron/Stand area speed limit (8 kts)
+export const SCENARIO_JUNCTION_SPEED_KTS = 15;  // Approaching junction / stop-bar speed (15 kts)
 export const SCENARIO_STOP_SPEED_KTS = 0;       // Holding / Stopped speed (0 kts)
 export const MAX_ACCEL_KTS_PER_S = 6.0;         // Smooth acceleration rate
 export const MAX_DECEL_KTS_PER_S = 10.0;        // Smooth deceleration rate
@@ -145,11 +144,11 @@ function getNodePos(nodeId: string, graph: AirportGraph = airportGraph) {
 function isStandNode(nodeId: string, graph: AirportGraph): boolean {
   const n = graph.nodes.find(node => node.id === nodeId);
   if (n?.type === 'stand') return true;
+  const label = (n?.label || nodeId).toUpperCase();
   return (
+    label.startsWith('STAND_') ||
+    label.startsWith('STAND ') ||
     nodeId.startsWith('DOM_S') ||
-    nodeId.startsWith('INTL_S') ||
-    /^P\d/.test(nodeId) ||
-    nodeId.startsWith('ST') ||
     nodeId === 'T49'
   );
 }
@@ -508,11 +507,22 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
   const { weather, aircraft, triggers } = setupRes;
   const observations: ScenarioObservation[] = setupRes.observations || def.observations || [];
 
-  const calibratedFleet = aircraft.map(ac => ({
-    ...ac,
-    speedKts: ac.speedKts !== undefined ? ac.speedKts : (ac.status === 'holding' || ac.status === 'queued' ? 0 : SCENARIO_TAXI_SPEED_KTS),
-    speedLimitKts: ac.speedLimitKts !== undefined ? ac.speedLimitKts : SCENARIO_TAXI_SPEED_KTS,
-  }));
+  const calibratedFleet = aircraft.map(ac => {
+    const isStand = ac.currentNodeId && isStandNode(ac.currentNodeId, graph);
+    const initialSpeed = (ac.status === 'holding' || ac.status === 'queued' || ac.status === 'parked')
+      ? 0
+      : (isStand || ac.role === 'pushback' ? SCENARIO_APRON_SPEED_KTS : SCENARIO_TAXI_SPEED_KTS);
+    const initialLimit = isStand || ac.role === 'pushback' ? SCENARIO_APRON_SPEED_KTS : SCENARIO_TAXI_SPEED_KTS;
+
+    return {
+      ...ac,
+      speedKts: ac.speedKts !== undefined ? ac.speedKts : initialSpeed,
+      speedLimitKts: ac.speedLimitKts !== undefined ? ac.speedLimitKts : initialLimit,
+      heldSeconds: 0,
+      progressOnEdge: ac.progressOnEdge || 0,
+      routeEdgeIndex: ac.routeEdgeIndex || 0,
+    };
+  });
 
   const scenarioState: ScenarioState = {
     id: scenarioId,
@@ -920,50 +930,52 @@ export function scenarioTick(
 
     // Kịch bản 2 (Xung đột HS NS):
     // Giai đoạn 1:
-    // - VJ302 chỉ bắt đầu pushback từ Stand 11 khi HVN301 đã lăn đến W7 (v3_line_18_p03).
+    // - VJ302 chỉ bắt đầu pushback từ Stand 11 khi VN301 đã lăn đến W7 (v3_line_18_p03).
     // - VJ302 lăn ra đến trước ngã tư HS NS (edge index >= 6) thì dừng lại trước Stop Bar đỏ.
-    // - HVN301 lăn qua HS NS về tới tận Bến 17 (Stand 17) -> Hoàn tất Giai đoạn 1.
+    // - VN301 lăn qua HS NS tiến tới ngang Stand 16 (v3_line_21_p00 / index >= 22).
     // Giai đoạn 2:
-    // - Khi HVN301 đã vào hẳn Bến 17, VJ302 mới được giải phóng (Stop Bar chuyển xanh FtG) lăn tiếp qua E6 ra RW 25L.
+    // - Khi VN301 đã qua ngang Stand 16, VJ302 được giải phóng (Stop Bar chuyển xanh FtG) lăn tiếp qua E6 ra RW 25L.
     if (state.scenario?.id === 'lvc_hsns_intersection_conflict' && ac.callsign === 'VJ302') {
-      const hvn = fleet.find(a => a.callsign === 'HVN301');
-      const hvnReachedW7 = hvn && (
-        hvn.currentNodeId === 'v3_line_18_p03' ||
-        hvn.routeEdgeIndex >= 12
+      const vn = fleet.find(a => a.callsign === 'VN301' || a.callsign === 'HVN301');
+      const vnReachedW7 = vn && (
+        vn.currentNodeId === 'v3_line_18_p03' ||
+        vn.routeEdgeIndex >= 12
       );
-      const hvnArrivedAtStand = hvn && (
-        hvn.status === 'arrived' ||
-        hvn.currentNodeId === 'v3_line_22_p01' ||
-        (hvn.routeEdgeIndex >= hvn.assignedRoute.length - 2 && hvn.progressOnEdge >= 0.6) ||
-        hvn.routeEdgeIndex >= 24
+      const vnPassedStand16 = vn && (
+        vn.status === 'arrived' ||
+        vn.currentNodeId === 'v3_line_21_p00' ||
+        vn.currentNodeId === 'v3_line_13_p03' ||
+        vn.currentNodeId === 'v3_line_22_p00' ||
+        vn.currentNodeId === 'v3_line_22_p01' ||
+        vn.routeEdgeIndex >= 22
       );
 
-      // 1. Khi HVN301 chưa đến W7: VJ302 ở Stand 11 chờ
-      if (!hvnReachedW7 && ac.routeEdgeIndex === 0 && ac.progressOnEdge === 0) {
+      // 1. Khi VN301 chưa đến W7: VJ302 ở Stand 11 chờ
+      if (!vnReachedW7 && ac.routeEdgeIndex === 0 && ac.progressOnEdge === 0) {
         steppedAc = {
           ...ac,
           status: 'holding',
           speedKts: 0,
           speedLimitKts: 0,
-          scenarioLabel: 'STAND 11: CHỜ HVN301 ĐẾN W7',
+          scenarioLabel: 'STAND 11: CHỜ VN301 ĐẾN W7',
         };
         updatedFleet[idx] = steppedAc;
         continue;
       }
 
-      // 2. Khi HVN301 đã đến W7 nhưng VJ302 chưa lăn ra: kích hoạt lăn
-      if (hvnReachedW7 && !hvnArrivedAtStand && ac.routeEdgeIndex < 6 && ac.status === 'holding' && ac.speedKts === 0) {
+      // 2. Khi VN301 đã đến W7 nhưng VJ302 chưa lăn ra: kích hoạt lăn
+      if (vnReachedW7 && !vnPassedStand16 && ac.routeEdgeIndex < 6 && ac.status === 'holding' && ac.speedKts === 0) {
         ac = {
           ...ac,
           status: 'taxiing',
-          speedKts: 14,
-          speedLimitKts: 14,
+          speedKts: 20,
+          speedLimitKts: 20,
           scenarioLabel: 'PUSHBACK STAND 11 ➔ LĂN RA HS NS',
         };
       }
 
-      // 3. Khi VJ302 lăn đến trước ngã tư HS NS (routeEdgeIndex >= 6) và HVN301 chưa vào Stand 17: DỪNG LẠI CHỜ
-      if (!hvnArrivedAtStand && ac.routeEdgeIndex >= 6) {
+      // 3. Khi VJ302 lăn đến trước ngã tư HS NS (routeEdgeIndex >= 6) và VN301 chưa qua Stand 16: DỪNG LẠI CHỜ
+      if (!vnPassedStand16 && ac.routeEdgeIndex >= 6) {
         steppedAc = {
           ...ac,
           status: 'holding',
@@ -971,22 +983,22 @@ export function scenarioTick(
           heldSeconds: (ac.heldSeconds ?? 0) + dt,
           speedKts: 0,
           speedLimitKts: 0,
-          speedReason: 'Dừng trước Stop Bar đỏ tại HS NS nhường HVN301 về Stand 17',
-          scenarioLabel: '🛑 DỪNG TẠI HS NS (NHƯỜNG HVN301 VỀ STAND 17)',
+          speedReason: 'Dừng trước Stop Bar đỏ tại HS NS nhường VN301 về Stand 17',
+          scenarioLabel: '🛑 DỪNG TẠI HS NS (NHƯỜNG VN301 VỀ STAND 17)',
         };
         updatedFleet[idx] = steppedAc;
         continue;
       }
 
-      // 4. Khi HVN301 đã vào hẳn Stand 17 (Hết Giai đoạn 1 -> Bắt đầu Giai đoạn 2): VJ302 tiếp tục di chuyển ra RW 25L
-      if (hvnArrivedAtStand && (ac.status === 'holding' || ac.holdReason === 'stop-bar')) {
+      // 4. Khi VN301 đã qua ngang Stand 16 (Giai đoạn 2): VJ302 tiếp tục di chuyển qua E6 ra RW 25L
+      if (vnPassedStand16 && (ac.status === 'holding' || ac.holdReason === 'stop-bar')) {
         ac = {
           ...ac,
           status: 'taxiing',
           holdReason: undefined,
           heldSeconds: 0,
-          speedKts: 16,
-          speedLimitKts: 16,
+          speedKts: 20,
+          speedLimitKts: 20,
           scenarioLabel: '🟢 GIAI ĐOẠN 2: QUA E6 ➔ STOP BAR 25L',
         };
       }
@@ -1053,26 +1065,19 @@ export function scenarioTick(
       continue;
     }
 
-    // 1. Determine zone speed limit
-    const isApronZone = (isStandNode(fromNode.id, graph) && ac.progressOnEdge < 0.25) || ac.role === 'pushback';
-    const isApproachingJunction = ac.progressOnEdge >= 0.85 && ac.routeEdgeIndex + 1 < routeEdges.length;
-    const isLandingRollout = (ac.callsign === 'BAV315' || ac.callsign === 'BAV456' || ac.callsign === 'HVN401' || ac.callsign.startsWith('INB')) && ac.routeEdgeIndex < 15;
+    // 1. Determine zone speed limit (Strictly unified across all 5 scenarios)
+    const isRescue = ac.callsign === 'RESCUE01' || ac.aircraftAsset?.includes('xecuuhoa') || ac.role === 'emergency';
+    const isApronZone = ac.routeEdgeIndex === 0 && (isStandNode(fromNode.id, graph) || ac.role === 'pushback');
 
-    let targetZoneSpeedKts = ac.speedLimitKts !== undefined && ac.speedLimitKts > 0 ? ac.speedLimitKts : SCENARIO_TAXI_SPEED_KTS;
-    let speedReason = 'Tốc độ tiêu chuẩn';
+    let targetZoneSpeedKts = SCENARIO_TAXI_SPEED_KTS; // Chuẩn 20 kts mượt mà
+    let speedReason = 'Tốc độ tiêu chuẩn (20 kts)';
 
-    if (isLandingRollout && ac.speedLimitKts) {
-      targetZoneSpeedKts = ac.speedLimitKts;
-      speedReason = 'Xả phanh & lăn';
-    } else if (isLandingRollout) {
-      targetZoneSpeedKts = 18;
-      speedReason = 'Xả phanh & lăn';
-    } else if (isApproachingJunction && !ac.speedLimitKts && ac.role !== 'emergency') {
-      targetZoneSpeedKts = 15;
-      speedReason = 'Giảm tốc: gần giao lộ';
-    } else if (isApronZone && !ac.speedLimitKts) {
-      targetZoneSpeedKts = SCENARIO_APRON_SPEED_KTS; // 7 kts
-      speedReason = 'Giảm tốc: khu vực sân đỗ';
+    if (isRescue) {
+      targetZoneSpeedKts = 25;
+      speedReason = 'Khẩn nguy ưu tiên (25 kts)';
+    } else if (isApronZone) {
+      targetZoneSpeedKts = SCENARIO_APRON_SPEED_KTS; // 8 kts
+      speedReason = 'Khu vực bến đỗ (8 kts)';
     }
 
     // Smooth speed change
@@ -1084,6 +1089,17 @@ export function scenarioTick(
     }
 
     const edgePixelLen = Math.hypot(toNode.x - fromNode.x, toNode.y - fromNode.y) || 1;
+    if (edgePixelLen < 2 && ac.routeEdgeIndex + 1 < routeEdges.length) {
+      steppedAc = {
+        ...ac,
+        routeEdgeIndex: ac.routeEdgeIndex + 1,
+        progressOnEdge: 0,
+        currentNodeId: toNode.id,
+        currentEdgeId: routeEdges[ac.routeEdgeIndex + 1],
+      };
+      updatedFleet[idx] = steppedAc;
+      continue;
+    }
     const stepProgress = (currentSpeedKts * 0.52 * dt) / edgePixelLen;
 
     // Check headway buffer along current edge
@@ -1099,7 +1115,7 @@ export function scenarioTick(
     }
 
     const isHoldingAtJunction = ac.status === 'holding' && ac.progressOnEdge >= 0.9;
-    const isApproachingJunctionStop = (targetProgress >= 0.90 || isHoldingAtJunction) && ac.routeEdgeIndex + 1 < routeEdges.length;
+    const isApproachingJunctionStop = (targetProgress >= 0.95 || isHoldingAtJunction) && ac.routeEdgeIndex + 1 < routeEdges.length;
 
     if (isApproachingJunctionStop) {
       const nextEdgeId = routeEdges[ac.routeEdgeIndex + 1];
@@ -1202,10 +1218,19 @@ export function scenarioTick(
             currentOccupancy[currentCorridor] = null;
           }
 
+          // Mượt mà bảo toàn phần delta quãng đường dư khi chuyển qua node tiếp theo
+          const excessPx = Math.max(0, (targetProgress - 1) * edgePixelLen);
+          const nextFromNode = toNode;
+          const nextToNode = graph.nodes.find(n => n.id === nextTargetNodeId);
+          const nextEdgePixelLen = (nextFromNode && nextToNode)
+            ? (Math.hypot(nextToNode.x - nextFromNode.x, nextToNode.y - nextFromNode.y) || 1)
+            : edgePixelLen;
+          const carriedProgress = Math.min(0.9, excessPx / nextEdgePixelLen);
+
           steppedAc = {
             ...ac,
             routeEdgeIndex: ac.routeEdgeIndex + 1,
-            progressOnEdge: 0,
+            progressOnEdge: carriedProgress,
             currentNodeId: toNode.id,
             currentEdgeId: nextEdgeId,
             status: 'taxiing',

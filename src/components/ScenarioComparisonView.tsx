@@ -50,8 +50,8 @@ export default function Scenario5ComparisonView({
   bgImage,
   onExit,
 }: Props) {
-  // Speed scale state: 1x, 2x (default), 4x
-  const [speedMultiplier, setSpeedMultiplier] = useState<number>(2);
+  // Speed scale state: 0.5x, 1x (default), 2x, 5x, 10x
+  const [speedMultiplier, setSpeedMultiplier] = useState<number>(1);
   const [isPaused, setIsPaused] = useState(false);
 
   // Two completely independent simulation states
@@ -147,12 +147,11 @@ export default function Scenario5ComparisonView({
             };
           }
           const isRollout = ac.routeEdgeIndex <= 4;
-          const targetSpeed = isRollout ? 26 : 22;
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: targetSpeed,
-            speedLimitKts: targetSpeed,
+            speedKts: 20,
+            speedLimitKts: 20,
             scenarioLabel: isRollout ? 'HẠ CÁNH XẢ ĐÀ 25R ➔ THOÁT W4' : 'W4 ➔ CROSS 25L ➔ HS NS',
           };
         }
@@ -173,8 +172,8 @@ export default function Scenario5ComparisonView({
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: 16,
-            speedLimitKts: 16,
+            speedKts: 20,
+            speedLimitKts: 20,
             scenarioLabel: 'STAND 9 ➔ E6 ➔ RW 25L ➔ NS2 ➔ E6/NS2',
           };
         }
@@ -195,8 +194,8 @@ export default function Scenario5ComparisonView({
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: 14,
-            speedLimitKts: 14,
+            speedKts: 20,
+            speedLimitKts: 20,
             scenarioLabel: 'STAND 12 ➔ E6 ➔ RW 25L ➔ NS2',
           };
         }
@@ -228,8 +227,8 @@ export default function Scenario5ComparisonView({
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: 16,
-            speedLimitKts: 16,
+            speedKts: 20,
+            speedLimitKts: 20,
             holdReason: undefined,
             scenarioLabel: 'HS NS ➔ VÀO BẾN ĐỖ STAND 17',
           };
@@ -250,8 +249,8 @@ export default function Scenario5ComparisonView({
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: 16,
-            speedLimitKts: 16,
+            speedKts: 20,
+            speedLimitKts: 20,
             holdReason: undefined,
             scenarioLabel: 'NS2 ➔ HS NS ➔ W7B ➔ W11 ➔ RW 07R',
           };
@@ -272,8 +271,8 @@ export default function Scenario5ComparisonView({
           return {
             ...ac,
             status: 'taxiing',
-            speedKts: 14,
-            speedLimitKts: 14,
+            speedKts: 20,
+            speedLimitKts: 20,
             holdReason: undefined,
             scenarioLabel: 'NS2 ➔ NỐI ĐUÔI TÀU 2 RA RW 07R',
           };
@@ -421,12 +420,11 @@ export default function Scenario5ComparisonView({
         }
 
         const isRollout = ac.routeEdgeIndex <= 4;
-        const targetSpeed = isRollout ? 26 : 22;
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: targetSpeed,
-          speedLimitKts: targetSpeed,
+          speedKts: 20,
+          speedLimitKts: 20,
           holdReason: undefined,
           scenarioLabel: isRollout ? 'HẠ CÁNH XẢ ĐÀ 25R ➔ THOÁT W4' : 'RW 25R ➔ W4 ➔ CROSS 25L ➔ HS NS ➔ STAND 17',
         };
@@ -460,16 +458,16 @@ export default function Scenario5ComparisonView({
             clearedRoute: pOut1Full,
             targetNodeId: 'v3_line_16_p00',
             status: 'taxiing',
-            speedKts: 16,
-            speedLimitKts: 16,
+            speedKts: 20,
+            speedLimitKts: 20,
             scenarioLabel: '🔄 RUNWAY CHANGE 07R ➔ RA RW 07R',
           };
         }
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 16,
-          speedLimitKts: 16,
+          speedKts: 20,
+          speedLimitKts: 20,
           scenarioLabel: 'STAND 9 ➔ HS NS ➔ E6',
         };
       }
@@ -507,16 +505,16 @@ export default function Scenario5ComparisonView({
             clearedRoute: pOut2Full,
             targetNodeId: 'v3_line_16_p00',
             status: 'taxiing',
-            speedKts: 14,
-            speedLimitKts: 14,
+            speedKts: 20,
+            speedLimitKts: 20,
             scenarioLabel: '🔄 RUNWAY CHANGE 07R ➔ NỐI ĐUÔI TÀU 2 RA 07R',
           };
         }
         return {
           ...ac,
           status: 'taxiing',
-          speedKts: 14,
-          speedLimitKts: 14,
+          speedKts: 20,
+          speedLimitKts: 20,
           scenarioLabel: 'STAND 12 ➔ NỐI ĐUÔI TÀU 2 ➔ E6',
         };
       }
@@ -691,7 +689,7 @@ export default function Scenario5ComparisonView({
     const frame = (now: number) => {
       if (lastTimeRef.current !== null) {
         const wallDt = Math.min((now - lastTimeRef.current) / 1000, 0.1);
-        const simDt = wallDt * (speedMultiplier * 3.0); // 1x=3.0, 2x=6.0, 4x=12.0
+        const simDt = wallDt * (speedMultiplier * 5.0); // 1x=5.0, 2x=10.0, 4x=20.0
 
         if (!leftDone) setLeftState(prev => leftTick(prev, simDt));
         if (!rightDone) setRightState(prev => rightTick(prev, simDt));
@@ -714,6 +712,7 @@ export default function Scenario5ComparisonView({
     setLeftFinalTime(null);
     setRightFinalTime(null);
     setShowRunwayChangeAlert(false);
+    setSpeedMultiplier(1);
     runwayChangeTriggeredRef.current = false;
     stage3StartSecRef.current = null;
     if (alertTimerRef.current) clearTimeout(alertTimerRef.current);
