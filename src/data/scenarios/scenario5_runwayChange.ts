@@ -112,19 +112,19 @@ export function setupScenario5Traditional(g: AirportGraph = airportGraphV3) {
       id: 'S4', callsign: 'OUT03', airlineCode: 'VN', airlineName: vnDef.name, aircraftAsset: vnDef.asset, aircraftType: 'A321',
       currentNodeId: pOut3[0], targetNodeId: pOut3[pOut3.length - 1], currentEdgeId: routeToEdges(pOut3, g.edges)?.[0] ?? null,
       progressOnEdge: 0, speedKts: 0, speedLimitKts: 20, status: 'holding', assignedRoute: pOut3, routeEdgeIndex: 0,
-      role: 'departing', priority: 2, scenarioLabel: 'STAND 8 (CHỜ LƯỢT)', routeVisible: false, guidanceVisible: false, hidden: true,
+      role: 'departing', priority: 2, scenarioLabel: 'STAND 8 (CHỜ HUẤN LỆNH)', routeVisible: false, guidanceVisible: false, hidden: false,
     },
     {
       id: 'S5', callsign: 'OUT04', airlineCode: 'VU', airlineName: vuDef.name, aircraftAsset: vuDef.asset, aircraftType: 'A321',
       currentNodeId: pOut4[0], targetNodeId: pOut4[pOut4.length - 1], currentEdgeId: routeToEdges(pOut4, g.edges)?.[0] ?? null,
       progressOnEdge: 0, speedKts: 0, speedLimitKts: 20, status: 'holding', assignedRoute: pOut4, routeEdgeIndex: 0,
-      role: 'departing', priority: 2, scenarioLabel: 'STAND 11 (CHỜ LƯỢT)', routeVisible: false, guidanceVisible: false, hidden: true,
+      role: 'departing', priority: 2, scenarioLabel: 'STAND 11 (CHỜ HUẤN LỆNH)', routeVisible: false, guidanceVisible: false, hidden: false,
     },
     {
       id: 'S6', callsign: 'OUT05', airlineCode: 'TG', airlineName: tgDef.name, aircraftAsset: tgDef.asset, aircraftType: 'A350',
       currentNodeId: pOut5[0], targetNodeId: pOut5[pOut5.length - 1], currentEdgeId: routeToEdges(pOut5, g.edges)?.[0] ?? null,
       progressOnEdge: 0, speedKts: 0, speedLimitKts: 20, status: 'holding', assignedRoute: pOut5, routeEdgeIndex: 0,
-      role: 'departing', priority: 2, scenarioLabel: 'STAND 4 (CHỜ LƯỢT)', routeVisible: false, guidanceVisible: false, hidden: true,
+      role: 'departing', priority: 2, scenarioLabel: 'STAND 4 (CHỜ HUẤN LỆNH)', routeVisible: false, guidanceVisible: false, hidden: false,
     },
   ];
 

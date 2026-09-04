@@ -5,13 +5,70 @@ import { routeToEdges } from '../simulation/pathfinding';
 import { getAirlineDef } from '../data/airlineTypes';
 import ScenarioRunPage from './ui/ScenarioRunPage';
 import ScenarioComparisonPanel from './ui/ScenarioComparisonPanel';
-import SurfaceCard from './ui/SurfaceCard';
 import { Radio, CheckCircle2, ShieldAlert } from 'lucide-react';
 
 interface Props {
   graph: AirportGraph;
   bgImage: string;
   onExit: () => void;
+}
+
+interface ToastMessage {
+  id: string;
+  text: string;
+}
+
+function ToastItem({
+  toast,
+  onDismiss,
+  variant,
+}: {
+  toast: ToastMessage;
+  onDismiss: (id: string) => void;
+  variant: 'traditional' | 'ftg';
+}) {
+  useEffect(() => {
+    const t = setTimeout(() => {
+      onDismiss(toast.id);
+    }, 8000);
+    return () => clearTimeout(t);
+  }, [toast.id, onDismiss]);
+
+  const isTrad = variant === 'traditional';
+
+  return (
+    <div
+      onClick={() => onDismiss(toast.id)}
+      className={`pointer-events-auto w-full max-w-[330px] bg-[#0E1523]/95 border ${
+        isTrad ? 'border-rose-500/40 hover:border-rose-500/70' : 'border-cyan-500/40 hover:border-cyan-500/70'
+      } shadow-2xl shadow-black/90 rounded-2xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none`}
+      title="Bấm để đóng tin nhắn này"
+    >
+      <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-white/10">
+        <div className={`flex items-center gap-1.5 ${isTrad ? 'text-rose-400' : 'text-cyan-400'} font-bold text-[10.5px] uppercase tracking-wider`}>
+          <span className={`w-2 h-2 rounded-full ${isTrad ? 'bg-rose-500' : 'bg-cyan-400'} animate-ping inline-block`} />
+          {isTrad ? <Radio className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+          <span>{isTrad ? 'KSVKL (VHF Ground)' : 'A-SMGCS / KSVKL'}</span>
+        </div>
+        <button
+          type="button"
+          onClick={(e) => {
+            e.stopPropagation();
+            onDismiss(toast.id);
+          }}
+          className="text-[#94A3B8] hover:text-white text-xs px-1 hover:bg-white/10 rounded transition-colors"
+          title="Đóng"
+        >
+          ✕
+        </button>
+      </div>
+      <div className={`text-[#F1F5F9] font-mono text-[11.5px] leading-relaxed pl-1.5 border-l-2 ${
+        isTrad ? 'border-rose-500/60 bg-rose-950/20' : 'border-cyan-500/60 bg-cyan-950/20'
+      } py-1 pr-1.5 rounded-r`}>
+        {toast.text}
+      </div>
+    </div>
+  );
 }
 
 export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Props) {
@@ -70,6 +127,61 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
   const [leftFinalTime, setLeftFinalTime] = useState<number | null>(null);
   const [rightFinalTime, setRightFinalTime] = useState<number | null>(null);
 
+
+  // Danh sách thông điệp thoại của KSVKL
+  const [traditionalEvents, setTraditionalEvents] = useState<Array<{ text: string }>>([]);
+  const [ftgEvents, setFtgEvents] = useState<Array<{ text: string }>>([]);
+
+  // Queue bong bóng tin nhắn pop-up khi đang thu gọn
+  const [leftToasts, setLeftToasts] = useState<ToastMessage[]>([]);
+  const [rightToasts, setRightToasts] = useState<ToastMessage[]>([]);
+
+  const handleDismissLeftToast = useCallback((id: string) => {
+    setLeftToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const handleDismissRightToast = useCallback((id: string) => {
+    setRightToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  const prevTradCountRef = useRef(0);
+  const prevFtgCountRef = useRef(0);
+
+  useEffect(() => {
+    if (traditionalEvents.length <= prevTradCountRef.current) {
+      prevTradCountRef.current = traditionalEvents.length;
+      return;
+    }
+    const newItems = traditionalEvents.slice(prevTradCountRef.current);
+    prevTradCountRef.current = traditionalEvents.length;
+
+    const newToasts: ToastMessage[] = newItems.map((ev, i) => ({
+      id: `${Date.now()}-${i}-${Math.random()}`,
+      text: ev.text,
+    }));
+    setLeftToasts(prev => [...prev.slice(-3), ...newToasts]);
+  }, [traditionalEvents, traditionalEvents.length]);
+
+  useEffect(() => {
+    if (ftgEvents.length <= prevFtgCountRef.current) {
+      prevFtgCountRef.current = ftgEvents.length;
+      return;
+    }
+    const newItems = ftgEvents.slice(prevFtgCountRef.current);
+    prevFtgCountRef.current = ftgEvents.length;
+
+    const newToasts: ToastMessage[] = newItems.map((ev, i) => ({
+      id: `${Date.now()}-${i}-${Math.random()}`,
+      text: ev.text,
+    }));
+    setRightToasts(prev => [...prev.slice(-3), ...newToasts]);
+  }, [ftgEvents, ftgEvents.length]);
+
+  const tradInitClearanceRef = useRef(false);
+  const ftgInitClearanceRef = useRef(false);
+  const tradWrongTurnAnnouncedRef = useRef(false);
+  const ftgArrivedAnnouncedRef = useRef(false);
+
   const lastTimeRef = useRef<number | null>(null);
   const leftDoneRef = useRef(false);
   const rightDoneRef = useRef(false);
@@ -92,6 +204,16 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
     if (!leftDoneRef.current) {
       setLeftState(prev => {
         const next = scenarioTick(prev, dt, graph);
+
+        // Phát huấn lệnh thoại ban đầu cho màn Truyền thống
+        if (next.elapsedSeconds >= 0.5 && !tradInitClearanceRef.current) {
+          tradInitClearanceRef.current = true;
+          setTraditionalEvents(e => [
+            ...e,
+            { text: '📻 KSVKL: "HVN216, taxi to holding point runway 25L via NS and E6 taxiways"' },
+          ]);
+        }
+
         const ac = next.scenarioAircraft?.[0];
         if (ac) {
           // Khi rẽ sai vào E4 (v3_line_26_p02 hoặc gần 25L) -> Stop Bar đỏ chặn lại
@@ -100,6 +222,14 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
             setLeftFinalTime(next.elapsedSeconds);
             ac.status = 'holding';
             ac.speedKts = 0;
+
+            if (!tradWrongTurnAnnouncedRef.current) {
+              tradWrongTurnAnnouncedRef.current = true;
+              setTraditionalEvents(e => [
+                ...e,
+                { text: '⚠️ KSVKL: "HVN216, STOP IMMEDIATELY! Wrong turn into taxiway E4!"' },
+              ]);
+            }
           }
         }
         return { ...next };
@@ -110,6 +240,16 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
     if (!rightDoneRef.current) {
       setRightState(prev => {
         const next = scenarioTick(prev, dt, graph);
+
+        // Phát huấn lệnh ban đầu cho màn FtG
+        if (next.elapsedSeconds >= 0.5 && !ftgInitClearanceRef.current) {
+          ftgInitClearanceRef.current = true;
+          setFtgEvents(e => [
+            ...e,
+            { text: '🟢 KSVKL: "HVN216, follow green lights to holding point runway 25L via NS and E6 taxiways"' },
+          ]);
+        }
+
         const ac = next.scenarioAircraft?.[0];
         if (ac) {
           // Chỉ hoàn thành khi HVN216 đã lăn đến đúng điểm đích STOP BAR 25L
@@ -120,6 +260,14 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
             if (ac.status !== 'departed') {
               ac.status = 'departed';
               ac.heldSeconds = 0;
+
+              if (!ftgArrivedAnnouncedRef.current) {
+                ftgArrivedAnnouncedRef.current = true;
+                setFtgEvents(e => [
+                  ...e,
+                  { text: '🟢 KSVKL: "HVN216, hold short of runway 25L"' },
+                ]);
+              }
             } else {
               ac.heldSeconds = (ac.heldSeconds ?? 0) + dt;
               if (ac.heldSeconds >= 1.3) {
@@ -148,9 +296,23 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
   }, [tickBoth]);
 
   const handleRestart = () => {
-    setLeftDone(false); setRightDone(false); setLeftFinalTime(null); setRightFinalTime(null);
+    setLeftDone(false);
+    setRightDone(false);
+    setLeftFinalTime(null);
+    setRightFinalTime(null);
     setSpeedMultiplier(1);
-    setLeftState(initLeftState()); setRightState(initRightState());
+    tradInitClearanceRef.current = false;
+    ftgInitClearanceRef.current = false;
+    tradWrongTurnAnnouncedRef.current = false;
+    ftgArrivedAnnouncedRef.current = false;
+    prevTradCountRef.current = 0;
+    prevFtgCountRef.current = 0;
+    setTraditionalEvents([]);
+    setFtgEvents([]);
+    setLeftToasts([]);
+    setRightToasts([]);
+    setLeftState(initLeftState());
+    setRightState(initRightState());
     lastTimeRef.current = performance.now();
   };
 
@@ -186,41 +348,20 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
         graph={graph}
         bgImage={bgImage}
         isDone={leftDone}
-        doneLabel="Dừng do cảnh báo sai lộ trình"
         ftgTag="FtG: OFF"
-        clearanceContent={
-          leftState.elapsedSeconds < 5.0 ? (
-            <SurfaceCard variant="active" className="absolute top-3 left-3 right-3 z-20 p-2.5 sm:p-3 backdrop-blur-md animate-fadeIn">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Radio className="w-4 h-4 text-[#06B6D4] animate-pulse" />
-                  <span className="text-xs font-bold text-[#06B6D4] uppercase tracking-wide">
-                    Giai đoạn 1: Huấn lệnh KSVKL (ATC Clearance)
-                  </span>
-                </div>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-[6px] bg-[#0E1523] text-[#93C5FD] border border-[rgba(56,189,248,0.3)]">
-                  TWR 118.1 MHz
-                </span>
-              </div>
-              <div className="mt-1.5 text-xs font-mono font-bold text-[#F1F5F9] pl-3 border-l-2 border-[#06B6D4]">
-                “HVN216 taxi to holding point runway 25L via NS and E6 taxiways”
-              </div>
-            </SurfaceCard>
-          ) : null
-        }
         hudContent={
-          <SurfaceCard className="relative lg:absolute lg:top-3 lg:left-3 z-10 p-2 sm:p-2.5 text-xs flex flex-col gap-1 backdrop-blur-sm w-full lg:max-w-xs">
-            <div className="text-[#94A3B8] font-bold flex items-center gap-1.5">
-              <Radio className="w-3.5 h-3.5 text-[#F43F5E]" />
-              Thoại VHF thủ công · Không có đèn
+          leftToasts.length > 0 ? (
+            <div className="relative lg:absolute lg:top-3 lg:left-3 z-10 flex flex-col gap-2 w-full lg:max-w-xs pointer-events-none">
+              {leftToasts.map(toast => (
+                <ToastItem
+                  key={toast.id}
+                  toast={toast}
+                  onDismiss={handleDismissLeftToast}
+                  variant="traditional"
+                />
+              ))}
             </div>
-            <div className="text-[#94A3B8]">
-              Vị trí: <span className="text-[#F1F5F9] font-mono font-bold">{leftState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span>
-            </div>
-            <div className="text-[#94A3B8]">
-              Tốc độ: <span className="text-[#F1F5F9] font-mono font-bold">{leftState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span>
-            </div>
-          </SurfaceCard>
+          ) : null
         }
         statusBanner={
           <span className={leftDone ? 'text-[#F43F5E] font-bold flex items-center gap-1.5' : 'flex items-center gap-1.5'}>
@@ -229,10 +370,8 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
                 <ShieldAlert className="w-4 h-4 text-[#F43F5E] flex-shrink-0" />
                 Giai đoạn 2: Tàu bay đi sai đường (rẽ nhầm E4) ➔ Stop Bar đỏ khóa dừng!
               </>
-            ) : leftState.elapsedSeconds < 5.0 ? (
-              'Giai đoạn 1: KSVKL cấp huấn lệnh thoại cho HVN216 tại Stand 10'
             ) : (
-              'Giai đoạn 2: Lăn theo thoại VHF thủ công — Phi công tự quan sát trong sương mù'
+              'Giai đoạn 1 & 2: HVN216 lăn theo huấn lệnh thoại VHF thủ công'
             )}
           </span>
         }
@@ -247,41 +386,20 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
         graph={graph}
         bgImage={bgImage}
         isDone={rightDone}
-        doneLabel="Hoàn thành 100% đúng tuyến"
         ftgTag="FtG: ACTIVE"
-        clearanceContent={
-          rightState.elapsedSeconds < 5.0 ? (
-            <SurfaceCard variant="active" className="absolute top-3 left-3 right-3 z-20 p-2.5 sm:p-3 backdrop-blur-md animate-fadeIn">
-              <div className="flex items-center justify-between gap-2">
-                <div className="flex items-center gap-2">
-                  <Radio className="w-4 h-4 text-[#06B6D4] animate-pulse" />
-                  <span className="text-xs font-bold text-[#06B6D4] uppercase tracking-wide">
-                    Giai đoạn 1: Huấn lệnh KSVKL (ATC Clearance)
-                  </span>
-                </div>
-                <span className="text-xs font-mono font-bold px-2 py-0.5 rounded-[6px] bg-[#0E1523] text-[#93C5FD] border border-[rgba(56,189,248,0.3)]">
-                  TWR 118.1 MHz
-                </span>
-              </div>
-              <div className="mt-1.5 text-xs font-mono font-bold text-[#F1F5F9] pl-3 border-l-2 border-[#06B6D4]">
-                “HVN216 taxi to holding point runway 25L via NS and E6 taxiways”
-              </div>
-            </SurfaceCard>
-          ) : null
-        }
         hudContent={
-          <SurfaceCard className="relative lg:absolute lg:top-3 lg:left-3 z-10 p-2 sm:p-2.5 text-xs flex flex-col gap-1 backdrop-blur-sm w-full lg:max-w-xs">
-            <div className="text-[#22C55E] font-bold flex items-center gap-1.5">
-              <CheckCircle2 className="w-3.5 h-3.5 text-[#22C55E]" />
-              Đèn xanh FtG dẫn hướng thông minh
+          rightToasts.length > 0 ? (
+            <div className="relative lg:absolute lg:top-3 lg:left-3 z-10 flex flex-col gap-2 w-full lg:max-w-xs pointer-events-none">
+              {rightToasts.map(toast => (
+                <ToastItem
+                  key={toast.id}
+                  toast={toast}
+                  onDismiss={handleDismissRightToast}
+                  variant="ftg"
+                />
+              ))}
             </div>
-            <div className="text-[#94A3B8]">
-              Vị trí: <span className="text-[#F1F5F9] font-mono font-bold">{rightState.scenarioAircraft?.[0]?.currentNodeId || '—'}</span>
-            </div>
-            <div className="text-[#94A3B8]">
-              Tốc độ: <span className="text-[#F1F5F9] font-mono font-bold">{rightState.scenarioAircraft?.[0]?.speedKts?.toFixed(1) || '0'} kts</span>
-            </div>
-          </SurfaceCard>
+          ) : null
         }
         statusBanner={
           <span className={rightDone ? 'text-[#22C55E] font-bold flex items-center gap-1.5' : 'flex items-center gap-1.5'}>
@@ -290,10 +408,8 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
                 <CheckCircle2 className="w-4 h-4 text-[#22C55E] flex-shrink-0" />
                 Giai đoạn 2: Follow-the-Green dẫn đúng STAND 10 ➔ E6 ➔ 25L an toàn 100%!
               </>
-            ) : rightState.elapsedSeconds < 6.5 ? (
-              'Giai đoạn 1: KSVKL cấp huấn lệnh cho HVN216 tại Stand 10'
             ) : (
-              'Giai đoạn 2: Đèn FtG xanh lá dẫn trước mũi tàu qua HS NS → E6/E4 → E6'
+              'Giai đoạn 1 & 2: Đèn FtG xanh lá dẫn trước mũi tàu qua HS NS → E6/E4 → E6'
             )}
           </span>
         }

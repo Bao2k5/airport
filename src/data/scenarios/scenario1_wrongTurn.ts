@@ -129,11 +129,14 @@ export const scenario1WrongTurn: PresetScenarioDef = {
         atSeconds: 1,
         apply: (state: any) => {
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '📻 [ATC CLEARANCE] "HVN216 taxi to holding point runway 25L via NS and E6 taxiways"',
-              severity: 'info',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '📻 [ATC CLEARANCE] "HVN216 taxi to holding point runway 25L via NS and E6 taxiways"',
+                severity: 'info',
+              },
+            ];
           }
           return state;
         },
@@ -142,11 +145,14 @@ export const scenario1WrongTurn: PresetScenarioDef = {
         atSeconds: 15,
         apply: (state: any) => {
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '[FTG_GUIDANCE] Đèn xanh dẫn hướng HVN216 qua HS NS và quẹo phải ra E6/E4',
-              severity: 'info',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '[FTG_GUIDANCE] Đèn xanh dẫn hướng HVN216 qua HS NS và quẹo phải ra E6/E4',
+                severity: 'info',
+              },
+            ];
           }
           return state;
         },
@@ -155,11 +161,14 @@ export const scenario1WrongTurn: PresetScenarioDef = {
         atSeconds: 30,
         apply: (state: any) => {
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '[CLEARANCE_25L] HVN216 tiếp tục qua E6 đến vạch chờ cất cánh STOP BAR 25L',
-              severity: 'info',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '[CLEARANCE_25L] HVN216 tiếp tục qua E6 đến vạch chờ cất cánh STOP BAR 25L',
+                severity: 'info',
+              },
+            ];
           }
           return state;
         },

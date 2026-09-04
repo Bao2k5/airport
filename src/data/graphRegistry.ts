@@ -19,7 +19,7 @@ export const GRAPH_REGISTRY: Record<GraphId, GraphRegistryEntry> = {
     shortName: 'Sân bay TSN (v3)',
     description: 'Sân bay Tân Sơn Nhất - Mô hình V3 (Nền /anhchinh.png, 45 operational nodes).',
     graph: airportGraphV3,
-    bgImage: '/anhchinh.png',
+    bgImage: '/anhchinh.png?v=3',
   },
 };
 

@@ -110,11 +110,14 @@ export const scenario4FodClosure: PresetScenarioDef = {
         atSeconds: 1,
         apply: (state: any) => {
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '📻 [ATC CLEARANCE] "HVN401 taxi to stand 16"',
-              severity: 'info',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '📻 [ATC CLEARANCE] "HVN401 taxi to stand 16"',
+                severity: 'info',
+              },
+            ];
           }
           return state;
         },
@@ -123,11 +126,14 @@ export const scenario4FodClosure: PresetScenarioDef = {
         atSeconds: 3,
         apply: (state: any) => {
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '[LVC_WEATHER] Sương mù RVR < 550m — Kích hoạt Follow-the-Greens cho HVN401',
-              severity: 'info',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '[LVC_WEATHER] Sương mù RVR < 550m — Kích hoạt Follow-the-Greens cho HVN401',
+                severity: 'info',
+              },
+            ];
           }
           return state;
         },

@@ -14,6 +14,7 @@ import AirportLighting from './AirportLighting';
 import { getAirlineDef } from '../data/airlineTypes';
 import { loadImageWithRetry, type AssetLoadState } from '../utils/assetLoader';
 import type { AirportGraph, AirportNode, Aircraft, SimulationState } from '../types';
+import { Radio } from 'lucide-react';
 
 interface Props {
   state: SimulationState;
@@ -34,7 +35,7 @@ const BG_OUTER = '#0c0f12';
 function AirportMap({
   state,
   graph = airportGraphV3,
-  bgImage = '/anhchinh.png',
+  bgImage = '/anhchinh.png?v=3',
   renderMode = 'normal',
   aircraftScale,
   onSelectAircraft,
@@ -244,8 +245,8 @@ function AirportMap({
         const targetNode = ac.assignedRoute?.[ac.assignedRoute.length - 1] || ac.targetNodeId;
         const isAtRouteEnd = (ac.routeEdgeIndex ?? 0) >= (ac.assignedRoute?.length ?? 1) - 1;
         
-        const isDeparting07R = targetNode === 'v3_line_16_p00' && (ac.status === 'departed' || (isAtRouteEnd && (ac.currentNodeId === 'v3_line_16_p00' || ac.currentNodeId === 'v3_line_16_p01')));
-        const isDeparting25L = targetNode === 'v3_line_17_p16' && (ac.status === 'departed' || (isAtRouteEnd && (ac.currentNodeId === 'v3_line_17_p16' || ac.currentNodeId === 'v3_line_05_p07')));
+        const isDeparting07R = targetNode === 'v3_line_16_p00' && (ac.status === 'departed' || (isAtRouteEnd && ac.currentNodeId === 'v3_line_16_p00'));
+        const isDeparting25L = targetNode === 'v3_line_17_p16' && (ac.status === 'departed' || (isAtRouteEnd && ac.currentNodeId === 'v3_line_17_p16'));
         const isTakeoffTarget = isDeparting07R || isDeparting25L || (ac.status === 'departed' && ac.role === 'departing');
 
         if (isTakeoffTarget) {
@@ -405,6 +406,13 @@ function AirportMap({
             <stop offset="30%" stopColor="#39ff88" stopOpacity="1" />
             <stop offset="65%" stopColor="#00ff66" stopOpacity="0.95" />
             <stop offset="100%" stopColor="#00cc44" stopOpacity="0" />
+          </radialGradient>
+
+          <radialGradient id="neon-lead-red">
+            <stop offset="0%" stopColor="#ffffff" stopOpacity="1" />
+            <stop offset="30%" stopColor="#ff6b6b" stopOpacity="1" />
+            <stop offset="65%" stopColor="#ef4444" stopOpacity="0.95" />
+            <stop offset="100%" stopColor="#b91c1c" stopOpacity="0" />
           </radialGradient>
         </defs>
 
@@ -589,6 +597,14 @@ function AirportMap({
                 if (isTakingOff) return false;
                 if (ac.hidden || ac.callsign === 'RESCUE01' || ac.aircraftAsset?.includes('xecuuhoa')) return false;
 
+                // Trong chế độ FTG, truyền thống, kịch bản 5 và kịch bản 2, không dùng dấu X đỏ che bản đồ (tàu dùng dải đèn dẫn hướng đỏ dừng trước vạch)
+                if (
+                  renderMode === 'ftg' ||
+                  renderMode === 'traditional' ||
+                  state.scenario?.id === 'lvc_peak_runway_direction_change' ||
+                  state.scenario?.id === 'lvc_hsns_intersection_conflict'
+                ) return false;
+
                 // Tàu đang đỗ trong bến (Stand) trước khi khởi hành -> KHÔNG HIỆN ĐÈN ĐỎ TRƯỚC MŨI
                 const isAtInitialStand = (ac.routeEdgeIndex === 0 || ac.routeEdgeIndex === undefined) &&
                   (ac.role === 'pushback' || ac.role === 'departing' || ac.status === 'queued' || (ac.scenarioLabel && ac.scenarioLabel.toUpperCase().includes('STAND')));
@@ -663,20 +679,7 @@ function AirportMap({
           </g>
         )}
 
-        {/* ── Stop indicator / Arrow at HS_NS in Scenario 5 Traditional mode (Chỉ hiển thị cho màn TRUYỀN THỐNG khi INB01 đến nơi, màn FTG tuyệt đối KHÔNG có) ── */}
-        {renderMode === 'traditional' && state.scenarioAircraft?.some(a => a.callsign === 'INB01' && (a.routeEdgeIndex >= 15 || a.currentNodeId === 'v3_line_17_p09' || (a.status === 'holding' && a.routeEdgeIndex >= 14))) && (
-          <g transform="translate(809, 476)">
-            {/* Pulsing red warning aura */}
-            <circle cx={0} cy={0} r={16} fill="rgba(239, 68, 68, 0.25)" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3,2" className="animate-ping" />
-            <circle cx={0} cy={0} r={10} fill="#7f1d1d" stroke="#ef4444" strokeWidth={1.8} />
-            
-            {/* Stop Bar Line */}
-            <line x1={-10} y1={0} x2={10} y2={0} stroke="#ffffff" strokeWidth={2.2} strokeLinecap="round" />
-            
-            {/* Red Arrow pointing directly to HS NS */}
-            <polygon points="0,7 -4,1 4,1" fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
-          </g>
-        )}
+
       </svg>
 
       {/* ── ATC Radio Transmission Panel (Chỉ hiển thị cho Kịch bản 4 sự cố FOD) ── */}
@@ -751,6 +754,11 @@ function AirportMap({
         </div>
       )}
 
+      {/* ── Floating ATC Dialogue & Event Log HUD Overlay cho Kịch bản 2, 3, 4 ── */}
+      {renderMode === 'normal' && state.scenario && (
+        <ScenarioAtcHudOverlay state={state} />
+      )}
+
       {/* ── Zoom controls (Touch-friendly min 44x44px) ───────────────── */}
       <div className="absolute bottom-3 right-3 z-20 flex flex-col gap-1.5 select-none">
         <button
@@ -780,6 +788,140 @@ function AirportMap({
           >⤢</button>
         )}
       </div>
+    </div>
+  );
+}
+
+// ── HUD NHẬT KÝ THOẠI & HUẤN LỆNH KSVKL NỔI TRÊN BẢN ĐỒ (CHO KỊCH BẢN 2, 3, 4) ───
+interface AtcToastMessage {
+  id: string;
+  text: string;
+  time: number;
+  severity?: string;
+  createdAt: number;
+}
+
+function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
+  const [toasts, setToasts] = useState<AtcToastMessage[]>([]);
+  const prevEventsLengthRef = useRef(0);
+
+  const scenario = state.scenario;
+  const events = scenario?.events ?? [];
+
+  // Reset khi đổi kịch bản hoặc khi kịch bản chạy lại từ đầu
+  useEffect(() => {
+    setToasts([]);
+    prevEventsLengthRef.current = 0;
+  }, [scenario?.id, state.elapsedSeconds === 0]);
+
+  // Mỗi câu thoại tự động biến mất sau đúng 8s kể từ khi xuất hiện
+  useEffect(() => {
+    if (toasts.length === 0) return;
+    const interval = setInterval(() => {
+      const now = Date.now();
+      setToasts(prev => prev.filter(t => now - t.createdAt < 8000));
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [toasts.length]);
+
+  // Khi có huấn lệnh mới: lập tức bung câu thoại nổi tại đúng thời điểm phát lệnh
+  useEffect(() => {
+    if (!scenario) return;
+
+    // Nếu kịch bản vừa được restart lại từ đầu (số lượng event giảm đi)
+    if (events.length < prevEventsLengthRef.current) {
+      prevEventsLengthRef.current = 0;
+      setToasts([]);
+    }
+
+    if (events.length <= prevEventsLengthRef.current) {
+      return;
+    }
+
+    const newEvents = events.slice(prevEventsLengthRef.current);
+    prevEventsLengthRef.current = events.length;
+
+    // Lọc bỏ thông báo ban đầu của hệ thống "Kịch bản bắt đầu."
+    const actionableEvents = newEvents.filter((ev: any) => ev.message && !ev.message.includes('Kịch bản bắt đầu'));
+    if (actionableEvents.length === 0) return;
+
+    const now = Date.now();
+    const newToasts: AtcToastMessage[] = actionableEvents.map((ev: any, i: number) => ({
+      id: `${now}-${i}-${Math.random()}`,
+      text: ev.message,
+      time: ev.atSeconds,
+      severity: ev.severity,
+      createdAt: now,
+    }));
+
+    // Giữ tối đa 2 tin nhắn mới nhất đồng thời để tránh che màn hình
+    setToasts(prev => [...prev.slice(-1), ...newToasts]);
+  }, [events, events.length, scenario?.id]);
+
+  const handleDismissToast = useCallback((id: string) => {
+    setToasts(prev => prev.filter(t => t.id !== id));
+  }, []);
+
+  // Nếu không có kịch bản hoặc không có câu thoại nào cần hiển thị thì màn hình hoàn toàn sạch
+  if (!scenario || toasts.length === 0) return null;
+
+  return (
+    <div className="absolute top-3 left-3 z-30 flex flex-col gap-2 w-full max-w-[340px] sm:max-w-[380px] pointer-events-none select-none font-mono">
+      {toasts.map(toast => {
+        const isWarning = toast.severity === 'warning' || toast.severity === 'critical' || toast.text?.includes('🛑') || toast.text?.includes('⚠️');
+        const isSuccess = toast.severity === 'info' && (toast.text?.includes('🟢') || toast.text?.includes('CLEARANCE'));
+
+        return (
+          <div
+            key={toast.id}
+            onClick={() => handleDismissToast(toast.id)}
+            className={`pointer-events-auto w-full bg-[#0b1320]/95 border shadow-2xl shadow-black/90 rounded-xl p-2.5 text-xs text-slate-100 backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none ${
+              isWarning
+                ? 'border-amber-500/60 shadow-amber-950/40 ring-1 ring-amber-500/30'
+                : isSuccess
+                ? 'border-emerald-500/60 shadow-emerald-950/40 ring-1 ring-emerald-500/30'
+                : 'border-cyan-500/50 shadow-cyan-950/40 ring-1 ring-cyan-500/30'
+            }`}
+            title="Bấm để đóng tin nhắn này"
+          >
+            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-white/10">
+              <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider">
+                <span className={`w-2 h-2 rounded-full animate-ping inline-block ${
+                  isWarning ? 'bg-amber-400' : isSuccess ? 'bg-emerald-400' : 'bg-cyan-400'
+                }`} />
+                <Radio className={`w-3.5 h-3.5 ${
+                  isWarning ? 'text-amber-400' : isSuccess ? 'text-emerald-400' : 'text-cyan-400'
+                }`} />
+                <span className={
+                  isWarning ? 'text-amber-300' : isSuccess ? 'text-emerald-300' : 'text-cyan-300'
+                }>
+                  KSVKL / Huấn lệnh ATC
+                </span>
+              </div>
+              <button
+                type="button"
+                onClick={(e) => {
+                  e.stopPropagation();
+                  handleDismissToast(toast.id);
+                }}
+                className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 hover:bg-white/10 rounded transition-colors"
+                title="Đóng"
+              >
+                ✕
+              </button>
+            </div>
+            <div className={`font-mono text-[12px] leading-relaxed pl-2 border-l-2 py-1.5 pr-2 rounded-r ${
+              isWarning
+                ? 'border-amber-400 bg-amber-950/30 text-amber-100'
+                : isSuccess
+                ? 'border-emerald-400 bg-emerald-950/30 text-emerald-100'
+                : 'border-cyan-400 bg-cyan-950/30 text-cyan-50'
+            }`}>
+              {toast.text}
+            </div>
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -1342,41 +1484,92 @@ function FollowTheGreenRenderer({
   isSelected?: boolean;
   blockedEdgeIds?: Set<string>;
 }) {
-  // STRICT RULE: Do not show guidance when aircraft is parked, arrived, departed, waiting, holding at a stop bar, or guidanceVisible is false
-  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed' || aircraft.status === 'waiting' || aircraft.status === 'holding' || aircraft.guidanceVisible === false) {
+  // STRICT RULE: Do not show guidance when aircraft is parked, arrived, departed, waiting, or guidanceVisible is false
+  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed' || aircraft.status === 'waiting' || aircraft.guidanceVisible === false) {
     return null;
   }
-  if (!isScenario && !aircraft.routeVisible && aircraft.status !== 'taxiing') {
+  // Tàu đang đỗ ở bến ban đầu chưa pushback thì không hiện đèn FTG
+  const isAtInitialStand = (aircraft.routeEdgeIndex === 0 || aircraft.routeEdgeIndex === undefined) &&
+    (aircraft.role === 'pushback' || aircraft.role === 'departing' || aircraft.status === 'queued' || (aircraft.scenarioLabel && aircraft.scenarioLabel.toUpperCase().includes('STAND')));
+  if (isAtInitialStand && aircraft.status === 'holding') {
     return null;
   }
+
+  if (!isScenario && !aircraft.routeVisible && aircraft.status !== 'taxiing' && aircraft.status !== 'holding') {
+    return null;
+  }
+
+  const isHolding = aircraft.status === 'holding' || aircraft.holdReason === 'stop-bar';
 
   const guidance = computeSegmentedGuidanceDots(aircraft, graph, blockedEdgeIds);
   if (!guidance || (guidance.activeDots.length === 0 && guidance.previewDots.length === 0)) return null;
 
+  const haloUrl = isHolding ? 'url(#neon-lead-red)' : 'url(#neon-lead-green)';
+  const bodyColor = isHolding ? '#ef4444' : '#22c55e';
+  const glowDrop = isHolding
+    ? (isSelected ? 'drop-shadow(0 0 6px #ef4444) drop-shadow(0 0 14px #dc2626)' : 'drop-shadow(0 0 4px #ef4444) drop-shadow(0 0 8px #dc2626)')
+    : (isSelected ? 'drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 14px #16a34a)' : 'drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 8px #16a34a)');
+
   return (
     <g
-      className={`guidance-green guidance-active-edge ftg-guidance-group-${aircraft.id}`}
-      style={{
-        filter: isSelected
-          ? 'drop-shadow(0 0 6px #22c55e) drop-shadow(0 0 14px #16a34a)'
-          : 'drop-shadow(0 0 4px #22c55e) drop-shadow(0 0 8px #16a34a)',
-      }}
+      className={`guidance-active-edge ftg-guidance-group-${aircraft.id} ${isHolding ? 'guidance-red-stop' : 'guidance-green'}`}
+      style={{ filter: glowDrop }}
     >
-      {/* Active Uniform Distance-based Guidance Dots (In front of aircraft nose) */}
+      {/* Guidance Dots (Màu ĐỎ khi dừng chờ Stop Bar, màu XANH LÁ khi được giải phóng lăn) */}
       {guidance.activeDots.map((dot, idx) => {
         const phase = animPhase * 3 + idx * 0.45;
         const pulse = 0.86 + 0.18 * Math.sin(phase);
         return (
           <g key={`ftg-act-${aircraft.id}-${idx}`} className="guidance-dot">
             {/* Outer radial halo circle */}
-            <circle cx={dot.x} cy={dot.y} r={6.5 * pulse} fill="url(#neon-lead-green)" opacity={0.92} />
-            {/* Main green body */}
-            <circle cx={dot.x} cy={dot.y} r={3.0 * pulse} fill="#22c55e" />
+            <circle cx={dot.x} cy={dot.y} r={6.5 * pulse} fill={haloUrl} opacity={0.92} />
+            {/* Main body */}
+            <circle cx={dot.x} cy={dot.y} r={3.0 * pulse} fill={bodyColor} />
             {/* Bright core center */}
-            <circle cx={dot.x} cy={dot.y} r={1.3} fill="#f0fff6" />
+            <circle cx={dot.x} cy={dot.y} r={1.3} fill="#ffffff" />
           </g>
         );
       })}
+
+      {/* Khi dừng chờ trong chế độ FTG: Vẽ vạch đèn Stop Bar đỏ ngang đường lăn báo hiệu điểm cần dừng */}
+      {isHolding && guidance.activeDots.length > 0 && (() => {
+        const stopDot = guidance.activeDots[0];
+        const nextDot = guidance.activeDots[1] || stopDot;
+        const dx = nextDot.x - stopDot.x;
+        const dy = nextDot.y - stopDot.y;
+        const len = Math.hypot(dx, dy) || 1;
+        const px = (-dy / len) * 14;
+        const py = (dx / len) * 14;
+
+        return (
+          <g className="ftg-stop-bar-active">
+            {/* Đèn vạch dừng Stop Bar ngang qua đường lăn */}
+            <line
+              x1={stopDot.x - px}
+              y1={stopDot.y - py}
+              x2={stopDot.x + px}
+              y2={stopDot.y + py}
+              stroke="#ef4444"
+              strokeWidth={4.5}
+              strokeLinecap="round"
+              opacity={0.95}
+            />
+            <line
+              x1={stopDot.x - px}
+              y1={stopDot.y - py}
+              x2={stopDot.x + px}
+              y2={stopDot.y + py}
+              stroke="#ffffff"
+              strokeWidth={1.5}
+              strokeLinecap="round"
+            />
+            {/* 3 bóng đèn LED Stop Bar đỏ báo hiệu điểm dừng */}
+            <circle cx={stopDot.x - px * 0.75} cy={stopDot.y - py * 0.75} r={3.0} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
+            <circle cx={stopDot.x} cy={stopDot.y} r={3.6} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
+            <circle cx={stopDot.x + px * 0.75} cy={stopDot.y + py * 0.75} r={3.0} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
+          </g>
+        );
+      })()}
     </g>
   );
 }

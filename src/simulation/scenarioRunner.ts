@@ -7,6 +7,7 @@ import {
 } from '../data/presetScenarios';
 import { airportGraphV3 as airportGraph } from '../data/airportGraph.v3';
 import { findPath, routeToEdges } from './pathfinding';
+export { findPath, routeToEdges };
 import { getRunwayCorridor } from './simulator';
 
 export const PIXELS_PER_METER = 1 / 3; // 1 pixel = 3.0 meters (Graph V2 SVG 1200x860)
@@ -803,10 +804,10 @@ export function scenarioTick(
 
     // Runway corridor protection for entry edge
     const isEmergencyAc = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-    const isScenario5 = state.scenario?.id === 'lvc_peak_runway_direction_change';
+    const isControlledScenario = state.scenario?.id === 'lvc_peak_runway_direction_change' || state.scenario?.id === 'lvc_hsns_intersection_conflict';
     const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
     const isCorridorOccupiedByOther = currentCorridor && currentOccupancy[currentCorridor] && currentOccupancy[currentCorridor] !== ac.id;
-    if (!isEmergencyAc && !isScenario5 && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
+    if (!isEmergencyAc && !isControlledScenario && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
       steppedAc = {
         ...ac,
         status: 'holding',
@@ -931,23 +932,23 @@ export function scenarioTick(
     // Kịch bản 2 (Xung đột HS NS):
     // Giai đoạn 1:
     // - VJ302 chỉ bắt đầu pushback từ Stand 11 khi VN301 đã lăn đến W7 (v3_line_18_p03).
-    // - VJ302 lăn ra đến trước ngã tư HS NS (edge index >= 6) thì dừng lại trước Stop Bar đỏ.
-    // - VN301 lăn qua HS NS tiến tới ngang Stand 16 (v3_line_21_p00 / index >= 22).
+    // - VJ302 lăn ra đến trước ngã tư HS NS (edge index 6) thì dừng lại trước vạch dừng, đèn FtG chuyển sang MÀU ĐỎ.
+    // - VN301 lăn qua HS NS tiến thẳng về bến đỗ Stand 17 (v3_line_22_p01).
     // Giai đoạn 2:
-    // - Khi VN301 đã qua ngang Stand 16, VJ302 được giải phóng (Stop Bar chuyển xanh FtG) lăn tiếp qua E6 ra RW 25L.
+    // - Khi VN301 đã về hẳn bến đỗ 17 an toàn, đèn FtG của VJ302 chuyển sang MÀU XANH LÁ và VJ302 lăn tiếp qua E6 ra RW 25L.
     if (state.scenario?.id === 'lvc_hsns_intersection_conflict' && ac.callsign === 'VJ302') {
       const vn = fleet.find(a => a.callsign === 'VN301' || a.callsign === 'HVN301');
       const vnReachedW7 = vn && (
         vn.currentNodeId === 'v3_line_18_p03' ||
         vn.routeEdgeIndex >= 12
       );
-      const vnPassedStand16 = vn && (
-        vn.status === 'arrived' ||
+      const vnReachedStand16 = vn && (
         vn.currentNodeId === 'v3_line_21_p00' ||
         vn.currentNodeId === 'v3_line_13_p03' ||
         vn.currentNodeId === 'v3_line_22_p00' ||
         vn.currentNodeId === 'v3_line_22_p01' ||
-        vn.routeEdgeIndex >= 22
+        vn.routeEdgeIndex >= 22 ||
+        vn.status === 'arrived'
       );
 
       // 1. Khi VN301 chưa đến W7: VJ302 ở Stand 11 chờ
@@ -964,34 +965,49 @@ export function scenarioTick(
       }
 
       // 2. Khi VN301 đã đến W7 nhưng VJ302 chưa lăn ra: kích hoạt lăn
-      if (vnReachedW7 && !vnPassedStand16 && ac.routeEdgeIndex < 6 && ac.status === 'holding' && ac.speedKts === 0) {
+      if (vnReachedW7 && !vnReachedStand16 && ac.routeEdgeIndex < 4 && ac.status === 'holding' && ac.speedKts === 0) {
         ac = {
           ...ac,
           status: 'taxiing',
           speedKts: 20,
           speedLimitKts: 20,
-          scenarioLabel: 'PUSHBACK STAND 11 ➔ LĂN RA HS NS',
+          scenarioLabel: 'PUSHBACK STAND 11 ➔ LĂN ĐẾN L28_ENT',
         };
+        // Cấp huấn lệnh KSVKL cho VJ302 đúng khoảnh khắc tàu bay 2 bắt đầu khởi hành!
+        if (state.scenario && !state.scenario.events.some((e: any) => e.message?.includes('VJ302 taxi to holding point'))) {
+          state.scenario.events = [
+            ...state.scenario.events,
+            {
+              atSeconds: state.elapsedSeconds,
+              message: '📻 [ATC CLEARANCE] "VJ302 taxi to holding point runway 25L"',
+              severity: 'info',
+            },
+          ];
+        }
       }
 
-      // 3. Khi VJ302 lăn đến trước ngã tư HS NS (routeEdgeIndex >= 6) và VN301 chưa qua Stand 16: DỪNG LẠI CHỜ
-      if (!vnPassedStand16 && ac.routeEdgeIndex >= 6) {
+      // 3. Khi VJ302 lăn đến chỗ L28_ENT (v3_line_30_p01, routeEdgeIndex 4) và VN301 chưa đến Stand 16: DỪNG LẠI CHỜ (ĐÈN FtG CHUYỂN ĐỎ DUY NHẤT TẠI ĐÂY)
+      const atL28Ent = ac.currentNodeId === 'v3_line_30_p01' || ac.routeEdgeIndex > 4 || (ac.routeEdgeIndex === 4 && ac.progressOnEdge >= 0) || (ac.routeEdgeIndex === 3 && ac.progressOnEdge >= 0.85);
+      if (!vnReachedStand16 && atL28Ent) {
         steppedAc = {
           ...ac,
+          currentNodeId: 'v3_line_30_p01',
+          routeEdgeIndex: 4,
+          progressOnEdge: 0,
           status: 'holding',
           holdReason: 'stop-bar',
           heldSeconds: (ac.heldSeconds ?? 0) + dt,
           speedKts: 0,
           speedLimitKts: 0,
-          speedReason: 'Dừng trước Stop Bar đỏ tại HS NS nhường VN301 về Stand 17',
-          scenarioLabel: '🛑 DỪNG TẠI HS NS (NHƯỜNG VN301 VỀ STAND 17)',
+          speedReason: 'Dừng trước đèn đỏ FtG tại L28_ENT nhường VN301 qua ngã tư tới Stand 16',
+          scenarioLabel: '🛑 DỪNG TẠI L28_ENT (NHƯỜNG VN301 TỚI STAND 16)',
         };
         updatedFleet[idx] = steppedAc;
         continue;
       }
 
-      // 4. Khi VN301 đã qua ngang Stand 16 (Giai đoạn 2): VJ302 tiếp tục di chuyển qua E6 ra RW 25L
-      if (vnPassedStand16 && (ac.status === 'holding' || ac.holdReason === 'stop-bar')) {
+      // 4. Khi VN301 đã đến Stand 16: VJ302 chuyển sang đèn XANH FtG và tiếp tục di chuyển từ L28_ENT theo sau ra RW 25L
+      if (vnReachedStand16 && (ac.status === 'holding' || ac.holdReason === 'stop-bar')) {
         ac = {
           ...ac,
           status: 'taxiing',
@@ -999,8 +1015,18 @@ export function scenarioTick(
           heldSeconds: 0,
           speedKts: 20,
           speedLimitKts: 20,
-          scenarioLabel: '🟢 GIAI ĐOẠN 2: QUA E6 ➔ STOP BAR 25L',
+          scenarioLabel: '🟢 TỪ L28_ENT ➔ E6 ➔ STOP BAR 25L',
         };
+        if (state.scenario && !state.scenario.events.some((e: any) => e.message?.includes('continue taxi to runway 25L') || e.message?.includes('follow green lights to holding point'))) {
+          state.scenario.events = [
+            ...state.scenario.events,
+            {
+              atSeconds: state.elapsedSeconds,
+              message: '🟢 KSVKL: "VJ302, follow green lights to holding point runway 25L via E6 taxiway"',
+              severity: 'info',
+            },
+          ];
+        }
       }
     }
 
@@ -1042,11 +1068,14 @@ export function scenarioTick(
           };
           updatedFleet[idx] = ac;
           if (state.scenario && !state.scenario.events.some((e: any) => e.message.includes('[FOD_ALERT]'))) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '[FOD_ALERT] Phát hiện vật thể lạ FOD tại W7A MID — Đóng đường lăn W7A, thu hồi đèn FtG và tự động tái định tuyến',
-              severity: 'critical',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '[FOD_ALERT] Phát hiện vật thể lạ FOD tại W7A MID — Đóng đường lăn W7A, thu hồi đèn FtG và tự động tái định tuyến',
+                severity: 'critical',
+              },
+            ];
           }
           continue;
         }
@@ -1107,7 +1136,7 @@ export function scenarioTick(
     let targetProgress = ac.progressOnEdge + stepProgress;
 
     if (headwayPx !== Infinity && ac.callsign !== 'RESCUE01' && (!ac.callsign?.startsWith('INB') || ac.routeEdgeIndex > 0)) {
-      const safeBufferPx = 15;
+      const safeBufferPx = 25;
       if (headwayPx < safeBufferPx) {
         const speedFactor = Math.max(0.25, (headwayPx - 4) / (safeBufferPx - 4));
         targetProgress = ac.progressOnEdge + stepProgress * speedFactor;
@@ -1123,7 +1152,7 @@ export function scenarioTick(
       const isBlocked = blockedEdgeIds.has(nextEdgeId);
       const targetCorridor = getRunwayCorridor(nextEdgeId, nextTargetNodeId);
       const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
-      const isRunwayBlocked = !isScenario5 && targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
+      const isRunwayBlocked = !isControlledScenario && targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
       const isLeaderInSameDirection = activeCtx.occupants.some(
         occ => occ.id !== ac.id && (
           (occ.edgeId === nextEdgeId && occ.from === toNode.id) ||
@@ -1136,7 +1165,7 @@ export function scenarioTick(
       const forceJunction = heldSec >= JUNCTION_FORCE_WAIT_S;
 
       const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-      const canProceed = isEmergency || isScenario5 || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
+      const canProceed = isEmergency || isControlledScenario || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
       if (!canProceed) {
         steppedAc = {
@@ -1197,7 +1226,7 @@ export function scenarioTick(
         // Runway corridor protection check
         const targetCorridor = getRunwayCorridor(nextEdgeId, nextTargetNodeId);
         const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
-        const isRunwayBlocked = !isScenario5 && targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
+        const isRunwayBlocked = !isControlledScenario && targetCorridor && targetCorridor !== currentCorridor && currentOccupancy[targetCorridor] && currentOccupancy[targetCorridor] !== ac.id;
 
         const isLeaderInSameDirection = activeCtx.occupants.some(
           occ => occ.id !== ac.id && (
@@ -1209,7 +1238,7 @@ export function scenarioTick(
         const isEdgeReserved = !isLeaderInSameDirection && activeCtx.reserved.has(nextEdgeId);
 
         const isEmergency = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-        const canProceed = isEmergency || isScenario5 || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
+        const canProceed = isEmergency || isControlledScenario || isLeaderInSameDirection || (!isBlocked && !isRunwayBlocked && !isNodeReserved && !isEdgeReserved && isJunctionClear(nextEdgeId, toNode.id, nextTargetNodeId, ac.id, rank, activeCtx, forceJunction, graph));
 
         if (canProceed) {
           activeCtx.claimed.set(nextEdgeId, toNode.id);
@@ -1267,14 +1296,32 @@ export function scenarioTick(
 
       for (const occ of activeCtx.occupants) {
         if (occ.id === steppedAc.id) continue;
-        const otherRank = getAircraftPriority(fleet.find(f => f.id === occ.id) || ac, graph);
+        const otherAc = fleet.find(f => f.id === occ.id) || ac;
+
+        // Tàu đã đến đích (arrived), đã rời đi (departed), hoặc đang đỗ (parked) thì không cản trở tàu đang lăn trên đường lăn
+        if (otherAc.status === 'arrived' || otherAc.status === 'parked' || otherAc.status === 'departed') continue;
+
+        // Tàu đỗ hoặc vào bến (stand) không cản trở tàu đang lăn trên trục đường lăn chính
+        if (isStandNode(otherAc.currentNodeId, graph) || isStandNode(otherAc.targetNodeId, graph) || isStandNode(occ.from, graph) || isStandNode(occ.to, graph)) {
+          if (!isStandNode(steppedAc.currentNodeId, graph)) continue;
+        }
+
+        // Trong kịch bản 2: VJ302 sau khi được giải phóng từ L28_ENT thì lăn thông suốt qua E6 ra RW 25L với đèn xanh FtG
+        if (state.scenario?.id === 'lvc_hsns_intersection_conflict' && steppedAc.callsign === 'VJ302' && steppedAc.routeEdgeIndex >= 4) {
+          continue;
+        }
+
+        const otherRank = getAircraftPriority(otherAc, graph);
         if (rank < otherRank) continue; // Higher priority does not yield to lower priority
         if (steppedAc.callsign === 'RESCUE01' || steppedAc.aircraftAsset?.includes('xecuuhoa')) continue; // Xe cứu hỏa tiếp cận hiện trường
         if (steppedAc.callsign?.startsWith('INB') && steppedAc.routeEdgeIndex <= 2) continue; // Initial runway exit divergence
 
+        // Không chặn nhầm tàu bay đang lăn trên đường lăn với tàu bay đang đỗ trong bến
+        if (isStandNode(occ.from, graph) && !isStandNode(steppedAc.currentNodeId, graph)) continue;
+
         const dist = Math.hypot(mx - occ.x, my - occ.y);
         const isApron = isStandNode(steppedAc.currentNodeId, graph);
-        const minDist = isApron ? 38 : 34;
+        const minDist = isApron ? 48 : 44;
 
         if (dist < minDist) {
           steppedAc = {

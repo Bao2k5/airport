@@ -266,11 +266,14 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         atSeconds: 1,
         apply: (state: any) => {
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '📻 [ATC CLEARANCE] "BAV315 holdshort runway 25L"',
-              severity: 'critical',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '📻 [ATC CLEARANCE] "BAV315 holdshort runway 25L"',
+                severity: 'critical',
+              },
+            ];
           }
           return state;
         },
@@ -285,11 +288,14 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
             hvn.hidden = false;
           }
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '📻 [ATC CLEARANCE] "HVN123 taxi to stand 17"',
-              severity: 'info',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '📻 [ATC CLEARANCE] "HVN123 taxi to stand 17"',
+                severity: 'info',
+              },
+            ];
           }
           return state;
         },
@@ -298,11 +304,14 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         atSeconds: 6,
         apply: (state: any) => {
           if (state.scenario) {
-            state.scenario.events.push({
-              atSeconds: state.elapsedSeconds,
-              message: '📻 [ATC CLEARANCE] "THA101 taxi to holding point runway 25L"',
-              severity: 'info',
-            });
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '📻 [ATC CLEARANCE] "THA101 taxi to holding point runway 25L"',
+                severity: 'info',
+              },
+            ];
           }
           return state;
         },
