@@ -8,7 +8,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
   id: 'emergency_priority_engine_fire',
   title: 'Kịch bản 3 — Khẩn nguy BAV315 cháy động cơ thoát W4 dừng lại, HVN123 vào W5 về Stand 17',
   teaser: 'BAV315 cháy động cơ thoát W4 dừng lại — HVN123 vào W5 về Stand 17, đồng thời BAV456 (Stand 22) & THA101 (Stand 10) cất cánh 25L.',
-  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Tuyến di chuyển: RW 25R -> W4.\n• Tàu bay 3 (BAV456 tại Stand 22) và Tàu bay 4 (THA101 tại Stand 10) đỗ sẵn tại bến chờ giải tỏa.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W5 và vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456 từ Stand 22) và Tàu bay 4 (THA101 từ Stand 10) cùng lăn song song ra RW 25L qua E6.',
+  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Huấn lệnh: "BAV315 holdshort runway 25L". Tuyến di chuyển: RW 25R -> W4.\n• Tàu bay 3 (BAV456 tại Stand 22) và Tàu bay 4 (THA101 tại Stand 10) đỗ sẵn tại bến chờ giải tỏa.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W5 và vào bến đỗ 17. Huấn lệnh: "HVN123, vacate left via W5 and cross runway 25L, taxi to stand 17 via W11 and W7 taxiway". Tuyến di chuyển: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456 từ Stand 22): "BAV456, taxi to holding point runway 25L via E6 taxiway" và Tàu bay 4 (THA101 từ Stand 10): "THA101, taxi to holding point runway 25L via NS and E6 taxiway" cùng lăn song song ra RW 25L qua E6.',
   challenges: [
     'Giai đoạn 1: BAV315 cháy động cơ thoát nhanh ra đường lăn W4 và dừng cô lập an toàn.',
     'Giai đoạn 2: Tự động điều phối luồng giao thông song song:',
@@ -292,7 +292,23 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
               ...state.scenario.events,
               {
                 atSeconds: state.elapsedSeconds,
-                message: '📻 [ATC CLEARANCE] "HVN123 taxi to stand 17"',
+                message: '📻 [ATC CLEARANCE] "HVN123, vacate left via W5 and cross runway 25L, taxi to stand 17 via W11 and W7 taxiway"',
+                severity: 'info',
+              },
+            ];
+          }
+          return state;
+        },
+      },
+      {
+        atSeconds: 5,
+        apply: (state: any) => {
+          if (state.scenario) {
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '📻 [ATC CLEARANCE] "BAV456, taxi to holding point runway 25L via E6 taxiway"',
                 severity: 'info',
               },
             ];
@@ -308,7 +324,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
               ...state.scenario.events,
               {
                 atSeconds: state.elapsedSeconds,
-                message: '📻 [ATC CLEARANCE] "THA101 taxi to holding point runway 25L"',
+                message: '📻 [ATC CLEARANCE] "THA101, taxi to holding point runway 25L via NS and E6 taxiway"',
                 severity: 'info',
               },
             ];

@@ -197,6 +197,10 @@ export default function Scenario5ComparisonView({
   const tradStage2AnnouncedRef = useRef(false);
   const tradOutClearanceIssuedRef = useRef(false);
   const tradOut2ClearanceIssuedRef = useRef(false);
+  const tradOut3ClearanceIssuedRef = useRef(false);
+  const tradOut4ClearanceIssuedRef = useRef(false);
+  const tradOut5ClearanceIssuedRef = useRef(false);
+  const tradStage3StartSecRef = useRef<number | null>(null);
   const tradOut1Stage2StartSecRef = useRef<number | null>(null);
   const ftgStage3AnnouncedRef = useRef(false);
   const takeoffStartWallRef = useRef<Map<string, number>>(new Map());
@@ -300,6 +304,45 @@ export default function Scenario5ComparisonView({
       return t !== undefined && (performance.now() - t) >= 2800;
     };
     const tradOut1Finished = isTradDisappeared('OUT01');
+    const tradOut2Finished = isTradDisappeared('OUT02');
+    const tradOut3Finished = isTradDisappeared('OUT03');
+    const tradOut4Finished = isTradDisappeared('OUT04');
+
+    const out2Ac = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT02');
+    const out3Ac = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT03');
+    const out4Ac = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT04');
+
+    if (tradOut1Finished && tradOut2Finished && tradStage3StartSecRef.current === null) {
+      tradStage3StartSecRef.current = currentSec;
+    }
+
+    const tradStage3Elapsed = (tradStage3StartSecRef.current !== null)
+      ? (currentSec - tradStage3StartSecRef.current)
+      : 0;
+
+    if (tradStage3StartSecRef.current !== null) {
+      if (tradStage3Elapsed >= 1.0 && !tradOut3ClearanceIssuedRef.current) {
+        tradOut3ClearanceIssuedRef.current = true;
+        setTraditionalEvents(e => [
+          ...e,
+          { time: Math.round(currentSec), text: '📻 KSVKL: "OUTB03, taxi to holding point runway 07R via NS and W11 taxiway"' },
+        ]);
+      }
+      if (tradStage3Elapsed >= 6.0 && !tradOut4ClearanceIssuedRef.current) {
+        tradOut4ClearanceIssuedRef.current = true;
+        setTraditionalEvents(e => [
+          ...e,
+          { time: Math.round(currentSec), text: '📻 KSVKL: "OUTB04, taxi to holding point runway 07R via NS and W11 taxiway"' },
+        ]);
+      }
+      if (tradStage3Elapsed >= 11.0 && !tradOut5ClearanceIssuedRef.current) {
+        tradOut5ClearanceIssuedRef.current = true;
+        setTraditionalEvents(e => [
+          ...e,
+          { time: Math.round(currentSec), text: '📻 KSVKL: "OUTB05, taxi to holding point runway 07R via NS and W11 taxiway"' },
+        ]);
+      }
+    }
 
     stateToTick.scenarioAircraft = stateToTick.scenarioAircraft?.map(ac => {
       // ── GIAI ĐOẠN 1: KHI FTG CHƯA CHẠY TÀU 4 (!isStage2Traditional) ──
@@ -566,17 +609,214 @@ export default function Scenario5ComparisonView({
           };
         }
 
-        // 4, 5, 6: Ở stand lần lượt 8, 11, 4 và KHÔNG PUSHBACK RA VÌ CHƯA ĐẾN LƯỢT
-        if (ac.callsign === 'OUT03' || ac.callsign === 'OUT04' || ac.callsign === 'OUT05') {
-          const standName = ac.callsign === 'OUT03' ? 'STAND 8' : ac.callsign === 'OUT04' ? 'STAND 11' : 'STAND 4';
+        // 4. OUT03: Stand 8 -> Pushback ra RW 07R khi có huấn lệnh KSVKL
+        if (ac.callsign === 'OUT03') {
+          if (!tradOut3ClearanceIssuedRef.current) {
+            return {
+              ...ac,
+              hidden: false,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: undefined,
+              scenarioLabel: 'STAND 8 (CHỜ HUẤN LỆNH KSVKL)',
+            };
+          }
+
+          // Dừng chờ tại W11/07R nếu Tàu 3 (OUT02) chưa cất cánh xong
+          const at07R_Hold = !tradOut2Finished && (
+            ac.currentNodeId === 'v3_line_16_p02' ||
+            ac.currentNodeId === 'v3_line_16_p01' ||
+            ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 3
+          );
+          if (at07R_Hold) {
+            return {
+              ...ac,
+              currentNodeId: 'v3_line_16_p02',
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: 'stop-bar',
+              scenarioLabel: '🛑 W11/07R (CHỜ TÀU 3 CẤT CÁNH BIẾN MẤT)',
+            };
+          }
+
+          const at07R = ac.currentNodeId === 'v3_line_16_p00' || (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1 && ac.progressOnEdge >= 0.8);
+          if (at07R) {
+            if (!tradTakeoffStartRef.current.has('OUT03')) {
+              tradTakeoffStartRef.current.set('OUT03', performance.now());
+            }
+            const finished = isTradDisappeared('OUT03');
+            return {
+              ...ac,
+              currentNodeId: 'v3_line_16_p00',
+              status: 'departed',
+              hidden: finished,
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            };
+          }
+
           return {
             ...ac,
-            hidden: false,
-            status: 'holding',
-            speedKts: 0,
-            speedLimitKts: 0,
+            status: 'taxiing',
+            speedKts: 20,
+            speedLimitKts: 20,
             holdReason: undefined,
-            scenarioLabel: `${standName} (CHƯA ĐẾN LƯỢT PUSHBACK)`,
+            scenarioLabel: 'STAND 8 ➔ NS ➔ W11 ➔ RW 07R',
+          };
+        }
+
+        // 5. OUT04: Stand 11 -> Pushback ra RW 07R khi có huấn lệnh KSVKL
+        if (ac.callsign === 'OUT04') {
+          if (!tradOut4ClearanceIssuedRef.current) {
+            return {
+              ...ac,
+              hidden: false,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: undefined,
+              scenarioLabel: 'STAND 11 (CHỜ HUẤN LỆNH KSVKL)',
+            };
+          }
+
+          const posOut3 = getAcPos(out3Ac);
+          const posOut4 = getAcPos(ac);
+          const distToOut3 = (posOut3 && posOut4) ? Math.hypot(posOut3.x - posOut4.x, posOut3.y - posOut4.y) : Infinity;
+
+          // Dừng chờ tại W11/07R nếu Tàu 4 (OUT03) chưa cất cánh xong
+          const at07R_Hold = !tradOut3Finished && (
+            ac.currentNodeId === 'v3_line_16_p02' ||
+            ac.currentNodeId === 'v3_line_16_p01' ||
+            ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 3 ||
+            distToOut3 < 75
+          );
+          if (at07R_Hold) {
+            return {
+              ...ac,
+              currentNodeId: 'v3_line_16_p02',
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: 'stop-bar',
+              scenarioLabel: '🛑 W11/07R (CHỜ TÀU 4 CẤT CÁNH BIẾN MẤT)',
+            };
+          }
+
+          // Giãn cách an toàn trên đường lăn sau Tàu 4
+          if (!tradOut3Finished && distToOut3 < 70) {
+            return {
+              ...ac,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: '🛑 GIÃN CÁCH AN TOÀN SAU TÀU 4 (< 70m)',
+            };
+          }
+
+          const at07R = ac.currentNodeId === 'v3_line_16_p00' || (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1 && ac.progressOnEdge >= 0.8);
+          if (at07R) {
+            if (!tradTakeoffStartRef.current.has('OUT04')) {
+              tradTakeoffStartRef.current.set('OUT04', performance.now());
+            }
+            const finished = isTradDisappeared('OUT04');
+            return {
+              ...ac,
+              currentNodeId: 'v3_line_16_p00',
+              status: 'departed',
+              hidden: finished,
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            };
+          }
+
+          const targetSpeed = (!tradOut3Finished && distToOut3 < 95) ? 12 : 18;
+          return {
+            ...ac,
+            status: 'taxiing',
+            speedKts: targetSpeed,
+            speedLimitKts: targetSpeed,
+            holdReason: undefined,
+            scenarioLabel: 'STAND 11 ➔ NỐI ĐUÔI TÀU 4 RA RW 07R',
+          };
+        }
+
+        // 6. OUT05: Stand 4 -> Pushback ra RW 07R khi có huấn lệnh KSVKL
+        if (ac.callsign === 'OUT05') {
+          if (!tradOut5ClearanceIssuedRef.current) {
+            return {
+              ...ac,
+              hidden: false,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: undefined,
+              scenarioLabel: 'STAND 4 (CHỜ HUẤN LỆNH KSVKL)',
+            };
+          }
+
+          const posOut4 = getAcPos(out4Ac);
+          const posOut5 = getAcPos(ac);
+          const distToOut4 = (posOut4 && posOut5) ? Math.hypot(posOut4.x - posOut5.x, posOut4.y - posOut5.y) : Infinity;
+
+          // Dừng chờ tại W11/07R nếu Tàu 5 (OUT04) chưa cất cánh xong
+          const at07R_Hold = !tradOut4Finished && (
+            ac.currentNodeId === 'v3_line_16_p02' ||
+            ac.currentNodeId === 'v3_line_16_p01' ||
+            ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 3 ||
+            distToOut4 < 75
+          );
+          if (at07R_Hold) {
+            return {
+              ...ac,
+              currentNodeId: 'v3_line_16_p02',
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              holdReason: 'stop-bar',
+              scenarioLabel: '🛑 W11/07R (CHỜ TÀU 5 CẤT CÁNH BIẾN MẤT)',
+            };
+          }
+
+          // Giãn cách an toàn trên đường lăn sau Tàu 5
+          if (!tradOut4Finished && distToOut4 < 70) {
+            return {
+              ...ac,
+              status: 'holding',
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: '🛑 GIÃN CÁCH AN TOÀN SAU TÀU 5 (< 70m)',
+            };
+          }
+
+          const at07R = ac.currentNodeId === 'v3_line_16_p00' || (ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 1 && ac.progressOnEdge >= 0.8);
+          if (at07R) {
+            if (!tradTakeoffStartRef.current.has('OUT05')) {
+              tradTakeoffStartRef.current.set('OUT05', performance.now());
+            }
+            const finished = isTradDisappeared('OUT05');
+            return {
+              ...ac,
+              currentNodeId: 'v3_line_16_p00',
+              status: 'departed',
+              hidden: finished,
+              speedKts: 0,
+              speedLimitKts: 0,
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            };
+          }
+
+          const targetSpeed = (!tradOut4Finished && distToOut4 < 95) ? 12 : 16;
+          return {
+            ...ac,
+            status: 'taxiing',
+            speedKts: targetSpeed,
+            speedLimitKts: targetSpeed,
+            holdReason: undefined,
+            scenarioLabel: 'STAND 4 ➔ NỐI ĐUÔI TÀU 5 RA RW 07R',
           };
         }
       }
@@ -606,11 +846,13 @@ export default function Scenario5ComparisonView({
       }));
     }
 
-    // Check completion for Left Panel (3 active aircraft finished)
+    // Check completion for Left Panel (6 aircraft finished)
     const finished = countCompleted(next.scenarioAircraft);
-    if (finished >= 3 && !leftDone && next.elapsedSeconds > 35) {
-      setLeftDone(true);
-      setLeftFinalTime(Math.round(next.elapsedSeconds * 10) / 10);
+    if (finished === 6 && !leftDone) {
+      setTimeout(() => {
+        setLeftDone(true);
+        setLeftFinalTime(Math.round(next.elapsedSeconds * 10) / 10);
+      }, 2500);
     }
 
     return next;
@@ -938,7 +1180,7 @@ export default function Scenario5ComparisonView({
             scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
           };
         }
-        if (stage3StartSecRef.current !== null && stage3Elapsed >= 6.5) {
+        if (stage3StartSecRef.current !== null && stage3Elapsed >= 3.0) {
           return {
             ...ac,
             hidden: false,
@@ -963,7 +1205,7 @@ export default function Scenario5ComparisonView({
         };
       }
 
-      // 6. OUT05: Stand 4 -> Pushback ra RW 07R (Cách Tàu 5 thêm một khoảng an toàn)
+      // 6. OUT05: Stand 4 -> Pushback ra RW 07R (Cách Tàu 5 thêm 2 giây)
       if (ac.callsign === 'OUT05') {
         // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 5 (OUT04) CHƯA BIẾN MẤT HOÀN TOÀN
         const at07R_Hold = !out4Finished && (
@@ -1001,7 +1243,7 @@ export default function Scenario5ComparisonView({
             scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
           };
         }
-        if (stage3StartSecRef.current !== null && stage3Elapsed >= 12.0) {
+        if (stage3StartSecRef.current !== null && stage3Elapsed >= 5.0) {
           return {
             ...ac,
             hidden: false,
@@ -1086,6 +1328,10 @@ export default function Scenario5ComparisonView({
     tradStage2AnnouncedRef.current = false;
     tradOutClearanceIssuedRef.current = false;
     tradOut2ClearanceIssuedRef.current = false;
+    tradOut3ClearanceIssuedRef.current = false;
+    tradOut4ClearanceIssuedRef.current = false;
+    tradOut5ClearanceIssuedRef.current = false;
+    tradStage3StartSecRef.current = null;
     tradOut1Stage2StartSecRef.current = null;
     ftgStage3AnnouncedRef.current = false;
     takeoffStartWallRef.current.clear();

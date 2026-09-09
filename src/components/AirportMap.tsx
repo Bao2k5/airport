@@ -597,13 +597,8 @@ function AirportMap({
                 if (isTakingOff) return false;
                 if (ac.hidden || ac.callsign === 'RESCUE01' || ac.aircraftAsset?.includes('xecuuhoa')) return false;
 
-                // Trong chế độ FTG, truyền thống, kịch bản 5 và kịch bản 2, không dùng dấu X đỏ che bản đồ (tàu dùng dải đèn dẫn hướng đỏ dừng trước vạch)
-                if (
-                  renderMode === 'ftg' ||
-                  renderMode === 'traditional' ||
-                  state.scenario?.id === 'lvc_peak_runway_direction_change' ||
-                  state.scenario?.id === 'lvc_hsns_intersection_conflict'
-                ) return false;
+                // Điểm dừng dùng dải đèn tim đường màu đỏ (Follow-the-Green), không dùng dấu X hay stopbar barrier che bản đồ
+                return false;
 
                 // Tàu đang đỗ trong bến (Stand) trước khi khởi hành -> KHÔNG HIỆN ĐÈN ĐỎ TRƯỚC MŨI
                 const isAtInitialStand = (ac.routeEdgeIndex === 0 || ac.routeEdgeIndex === undefined) &&
@@ -1531,45 +1526,7 @@ function FollowTheGreenRenderer({
         );
       })}
 
-      {/* Khi dừng chờ trong chế độ FTG: Vẽ vạch đèn Stop Bar đỏ ngang đường lăn báo hiệu điểm cần dừng */}
-      {isHolding && guidance.activeDots.length > 0 && (() => {
-        const stopDot = guidance.activeDots[0];
-        const nextDot = guidance.activeDots[1] || stopDot;
-        const dx = nextDot.x - stopDot.x;
-        const dy = nextDot.y - stopDot.y;
-        const len = Math.hypot(dx, dy) || 1;
-        const px = (-dy / len) * 14;
-        const py = (dx / len) * 14;
 
-        return (
-          <g className="ftg-stop-bar-active">
-            {/* Đèn vạch dừng Stop Bar ngang qua đường lăn */}
-            <line
-              x1={stopDot.x - px}
-              y1={stopDot.y - py}
-              x2={stopDot.x + px}
-              y2={stopDot.y + py}
-              stroke="#ef4444"
-              strokeWidth={4.5}
-              strokeLinecap="round"
-              opacity={0.95}
-            />
-            <line
-              x1={stopDot.x - px}
-              y1={stopDot.y - py}
-              x2={stopDot.x + px}
-              y2={stopDot.y + py}
-              stroke="#ffffff"
-              strokeWidth={1.5}
-              strokeLinecap="round"
-            />
-            {/* 3 bóng đèn LED Stop Bar đỏ báo hiệu điểm dừng */}
-            <circle cx={stopDot.x - px * 0.75} cy={stopDot.y - py * 0.75} r={3.0} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
-            <circle cx={stopDot.x} cy={stopDot.y} r={3.6} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
-            <circle cx={stopDot.x + px * 0.75} cy={stopDot.y + py * 0.75} r={3.0} fill="#ef4444" stroke="#ffffff" strokeWidth={0.8} />
-          </g>
-        );
-      })()}
     </g>
   );
 }

@@ -8,7 +8,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
   id: 'lvc_hsns_intersection_conflict',
   title: 'Kịch bản 2 — Xung đột ngã tư HS NS',
   teaser: 'VN301 hạ cánh 25R qua W4 về Stand 17 — VJ302 pushback Stand 11 dừng chờ đèn đỏ FtG tại L28_ENT, sau khi VN301 về bến đỗ 17 thì đèn chuyển xanh lăn ra RW 25L.',
-  situation: 'Giai đoạn 1:\n• Tàu bay 1 (VN301) vừa hạ cánh đang lăn vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W4 -> CROSS 25L -> W7 -> HS NS -> STAND 17.\n• Tàu bay 2 (VJ302) pushback tại vị trí Stand 11, di chuyển ra đường cất hạ cánh 25L. Khi tàu bay 1 taxi đến W7 thì tàu bay 2 mới bắt đầu pushback ra. Sau khi taxi ra đến vị trí L28_ENT thì dừng lại trước vạch dừng, dải đèn FtG chuyển sang màu đỏ nhường đường cho tàu bay 1. Tuyến di chuyển: STAND 11 -> L28_ENT (DỪNG ĐÈN ĐỎ FtG) -> HS NS -> E6 -> RW 25L.\n\nGiai đoạn 2:\n• Khi tàu bay 1 lăn về hẳn bến đỗ 17 an toàn, dải đèn FtG của tàu bay 2 chuyển sang màu xanh lá và tàu tiếp tục di chuyển qua E6 ra RW 25L an toàn.',
+  situation: 'Giai đoạn 1:\n• Tàu bay 1 (VN301) vừa hạ cánh đang lăn vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W4 -> CROSS 25L -> W7 -> HS NS -> STAND 17. Huấn lệnh: "VN301, vacate left via W4 and cross runway 25L, taxi to stand 17 via W7 and NS taxiway".\n• Tàu bay 2 (VJ302) pushback tại vị trí Stand 11, di chuyển ra đường cất hạ cánh 25L. Khi tàu bay 1 taxi đến W7 thì tàu bay 2 mới bắt đầu pushback ra. Sau khi taxi ra đến vị trí L28_ENT thì dừng lại trước vạch dừng, dải đèn FtG chuyển sang màu đỏ nhường đường cho tàu bay 1. Tuyến di chuyển: STAND 11 -> L28_ENT (DỪNG ĐÈN ĐỎ FtG) -> HS NS -> E6 -> RW 25L. Huấn lệnh: "VJ302, taxi to holding point runway 25L via NS and E6 taxiway, follow the greens".\n\nGiai đoạn 2:\n• Khi tàu bay 1 lăn ngang qua Stand 16 về bến đỗ 17 an toàn, dải đèn FtG của tàu bay 2 chuyển sang màu xanh lá và tàu tiếp tục di chuyển qua E6 ra RW 25L an toàn.',
   challenges: [
     'Giai đoạn 1: A-SMGCS phát hiện nguy cơ xung đột tại nút giao giữa VN301 (Inbound) và VJ302 (Outbound).',
     'Tự động chuyển dải đèn dẫn hướng Follow-the-Green sang màu đỏ và kích hoạt Stop Bar đỏ giữ VJ302 dừng an toàn tại L28_ENT.',
@@ -192,7 +192,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
               ...state.scenario.events,
               {
                 atSeconds: state.elapsedSeconds,
-                message: '📻 [ATC CLEARANCE] "VN301, taxi to stand 17"',
+                message: '📻 [ATC CLEARANCE] "VN301, vacate left via W4 and cross runway 25L, taxi to stand 17 via W7 and NS taxiway"',
                 severity: 'info',
               },
             ];
