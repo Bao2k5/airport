@@ -528,13 +528,11 @@ function AirportMap({
 
           let renderOpacity = 1.0;
           let liftScaleFactor = 1.0;
-          let isTakingOff = false;
 
           if (isScenario && departedAnimMap.current.has(ac.id)) {
             const anim = departedAnimMap.current.get(ac.id)!;
             const elapsed = (nowMs - anim.startTime) / 1000;
             if (elapsed < 1.3) {
-              isTakingOff = true;
               const progress = Math.min(1.0, elapsed / 1.3);
               const rollDist = Math.pow(progress, 2.0) * 180; // Chạy đà nhanh và dứt khoát trên đường băng
               const rad = (anim.heading * Math.PI) / 180;
@@ -591,70 +589,6 @@ function AirportMap({
               >
                 {ac.callsign}
               </text>
-
-              {/* Dấu X STOP & Đèn đỏ Stop Bar phát sáng trước mũi các tàu khi dừng chờ trên đường lăn hoặc cách ly */}
-              {(() => {
-                if (isTakingOff) return false;
-                if (ac.hidden || ac.callsign === 'RESCUE01' || ac.aircraftAsset?.includes('xecuuhoa')) return false;
-
-                // Điểm dừng dùng dải đèn tim đường màu đỏ (Follow-the-Green), không dùng dấu X hay stopbar barrier che bản đồ
-                return false;
-
-                // Tàu đang đỗ trong bến (Stand) trước khi khởi hành -> KHÔNG HIỆN ĐÈN ĐỎ TRƯỚC MŨI
-                const isAtInitialStand = (ac.routeEdgeIndex === 0 || ac.routeEdgeIndex === undefined) &&
-                  (ac.role === 'pushback' || ac.role === 'departing' || ac.status === 'queued' || (ac.scenarioLabel && ac.scenarioLabel.toUpperCase().includes('STAND')));
-                if (isAtInitialStand) return false;
-
-                // Tàu đã về bến an toàn hoặc đã cất cánh
-                if (ac.status === 'arrived' || ac.status === 'departed' || ac.status === 'parked') {
-                  // Riêng BAV315 cháy động cơ dừng cô lập ở giữa W4 thì hiện đèn đỏ cảnh báo cách ly
-                  if (ac.callsign === 'BAV315' && (ac.currentNodeId === 'v3_line_04_p02' || ac.currentNodeId === 'v3_line_04_p01')) {
-                    return true;
-                  }
-                  return false;
-                }
-
-                // Khi tàu đã ra đường lăn và cần dừng chờ nhường đường hoặc giữ vị trí:
-                const isHoldingOnTaxiway = (ac.status === 'holding' || ac.status === 'waiting' || ac.holdReason === 'stop-bar' || ac.holdReason === 'deviation');
-                if (isHoldingOnTaxiway && (ac.routeEdgeIndex ?? 0) > 0) {
-                  return true;
-                }
-
-                // Tàu BAV315 dừng tại W4 sau khi thoát khỏi đường băng
-                if (ac.callsign === 'BAV315' && ac.speedKts === 0 && (ac.routeEdgeIndex ?? 0) >= 3) {
-                  return true;
-                }
-
-                return false;
-              })() && (
-                <g transform={`translate(${pos.x}, ${pos.y})`}>
-                  {/* Position X marker in front of aircraft along its heading */}
-                  <g transform={`rotate(${pos.heading}) translate(0, -22)`}>
-                    {/* Glowing Red Stop Light Bar across path */}
-                    <line x1={-16} y1={0} x2={16} y2={0} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" opacity={0.95} />
-                    <line x1={-16} y1={0} x2={16} y2={0} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
-
-                    {/* Glowing Red X Barrier */}
-                    <g className="animate-pulse">
-                      {/* Glow backdrop circle */}
-                      <circle cx={0} cy={0} r={12} fill="rgba(239, 68, 68, 0.40)" stroke="#ef4444" strokeWidth={1.5} strokeDasharray="3,2" />
-                      {/* Outer red glow */}
-                      <line x1={-8} y1={-8} x2={8} y2={8} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" />
-                      <line x1={-8} y1={8} x2={8} y2={-8} stroke="#ff0000" strokeWidth={4} strokeLinecap="round" />
-                      {/* Bright white core */}
-                      <line x1={-8} y1={-8} x2={8} y2={8} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
-                      <line x1={-8} y1={8} x2={8} y2={-8} stroke="#ffffff" strokeWidth={1.8} strokeLinecap="round" />
-                    </g>
-                    {/* Stop Bar Badge Text */}
-                    <g transform={`rotate(${-pos.heading}) translate(0, 16)`}>
-                      <rect x={-32} y={-6} width={64} height={12} rx={3} fill="#180404" stroke="#ef4444" strokeWidth={1} />
-                      <text x={0} y={2.5} textAnchor="middle" fontSize={5.5} fontWeight={900} fill="#fca5a5" fontFamily="monospace">
-                        {ac.callsign === 'BAV315' ? '⛔ ISOLATED STOP' : ac.callsign === 'BAV456' || ac.callsign === 'THA101' ? '⛔ HOLD POSITION' : ac.callsign === 'OUT01' || ac.callsign === 'INB01' ? '⛔ STOP BAR' : '⛔ STOP'}
-                      </text>
-                    </g>
-                  </g>
-                </g>
-              )}
             </g>
           );
         })}

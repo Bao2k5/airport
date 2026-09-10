@@ -308,7 +308,6 @@ export default function Scenario5ComparisonView({
     const tradOut3Finished = isTradDisappeared('OUT03');
     const tradOut4Finished = isTradDisappeared('OUT04');
 
-    const out2Ac = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT02');
     const out3Ac = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT03');
     const out4Ac = stateToTick.scenarioAircraft?.find(a => a.callsign === 'OUT04');
 
@@ -1409,7 +1408,9 @@ export default function Scenario5ComparisonView({
             {leftElapsed < 18 ? (
               'Giai đoạn 1: INB01 dừng tại HS W7; OUT01 & OUT02 dừng tại E6/NS2 do xung đột luồng.'
             ) : leftDone ? (
-              'Giai đoạn 2: INB01 về bến 17; OUT01 & 02 ra 07R. Tàu 4, 5, 6 tiếp tục chờ trong bến do nghẽn luồng VHF.'
+              `Toàn bộ 6 tàu bay hoàn tất qua điều hành truyền thống VHF lúc ${formatMMSS(leftElapsed)}.`
+            ) : tradStage3StartSecRef.current !== null ? (
+              'Giai đoạn 3: KSVKL phát lệnh VHF cho Tàu 4, 5, 6 lần lượt pushback ra RW 07R.'
             ) : (
               'Giai đoạn 2: KSVKL phát lệnh giải tỏa thủ công từng tàu. Tàu 4, 5, 6 chờ trong bến.'
             )}
