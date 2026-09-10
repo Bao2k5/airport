@@ -614,9 +614,9 @@ function AirportMap({
       {/* ── ATC Radio Transmission Panel (Chỉ hiển thị cho Kịch bản 4 sự cố FOD) ── */}
       {state.scenario?.id === 'lvc_w7a_sudden_closure' && state.comicBubble?.active && (
         <div className="absolute top-14 left-6 z-30 max-w-md animate-in fade-in slide-in-from-top-3 duration-300 select-none pointer-events-auto font-mono">
-          <div className="relative bg-[#0b1320]/95 text-slate-100 border border-amber-500/40 rounded-xl p-3.5 shadow-2xl backdrop-blur-md ring-1 ring-white/10">
+          <div className="relative bg-black/30 text-slate-100 border border-amber-500/50 rounded-xl p-3.5 shadow-xl backdrop-blur-md ring-1 ring-white/10">
             {/* Header bar */}
-            <div className="flex items-center justify-between border-b border-slate-800 pb-2 mb-2.5">
+            <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
               <div className="flex items-center gap-2">
                 <span className="flex h-2.5 w-2.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
@@ -626,7 +626,7 @@ function AirportMap({
                   🎙️ TWR 118.1 MHz | ATC TRANSMISSION
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-slate-400 bg-slate-800/80 px-2 py-0.5 rounded border border-slate-700">
+              <span className="text-[10px] font-semibold text-slate-300 bg-white/10 px-2 py-0.5 rounded border border-white/20">
                 A-SMGCS ALERT
               </span>
             </div>
@@ -634,15 +634,15 @@ function AirportMap({
             {/* Body */}
             <div className="flex items-center gap-3">
               <div className="relative shrink-0">
-                <img src="/FOD.png" alt="FOD" className="w-12 h-12 rounded-lg border border-red-500/50 object-contain bg-slate-900/80 p-1" />
+                <img src="/FOD.png" alt="FOD" className="w-12 h-12 rounded-lg border border-red-500/50 object-contain bg-black/30 p-1" />
                 <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-red-600 text-white px-1 rounded">FOD</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-xs md:text-[13px] leading-snug text-amber-200">
+                <p className="font-bold text-xs md:text-[13px] leading-snug text-amber-200 drop-shadow-sm">
                   {state.comicBubble.text}
                 </p>
                 {state.comicBubble.subText && (
-                  <p className="mt-1 text-[11px] font-medium text-emerald-400 bg-emerald-950/40 border border-emerald-800/40 rounded px-2 py-1 leading-relaxed">
+                  <p className="mt-1 text-[11px] font-medium text-emerald-300 bg-emerald-950/20 border border-emerald-500/30 rounded px-2 py-1 leading-relaxed drop-shadow-sm">
                     {state.comicBubble.subText}
                   </p>
                 )}
