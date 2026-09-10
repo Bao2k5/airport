@@ -71,15 +71,13 @@ function ToastItem({
   return (
     <div
       onClick={() => onDismiss(toast.id)}
-      className={`pointer-events-auto w-full max-w-[330px] bg-transparent border-2 ${
-        isTrad ? 'border-rose-500 hover:border-rose-400' : 'border-cyan-400 hover:border-cyan-300'
-      } shadow-lg shadow-black/40 rounded-2xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none`}
+      className="pointer-events-auto w-full max-w-[330px] bg-transparent border-2 border-cyan-400 hover:border-cyan-300 shadow-lg shadow-black/40 rounded-2xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none"
       title="Bấm để đóng tin nhắn này"
     >
-      <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-white/20">
-        <div className={`flex items-center gap-1.5 ${isTrad ? 'text-rose-400' : 'text-cyan-400'} font-bold text-[10.5px] uppercase tracking-wider drop-shadow-md`}>
-          <span className={`w-2 h-2 rounded-full ${isTrad ? 'bg-rose-500' : 'bg-cyan-400'} animate-ping inline-block`} />
-          {isTrad ? <Radio className="w-3.5 h-3.5" /> : <CheckCircle2 className="w-3.5 h-3.5" />}
+      <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-cyan-500/30">
+        <div className="flex items-center gap-1.5 text-cyan-400 font-bold text-[10.5px] uppercase tracking-wider drop-shadow-md">
+          <span className="w-2 h-2 rounded-full bg-cyan-400 animate-ping inline-block" />
+          {isTrad ? <Radio className="w-3.5 h-3.5 text-cyan-400" /> : <CheckCircle2 className="w-3.5 h-3.5 text-cyan-400" />}
           <span>{isTrad ? 'KSVKL (VHF Ground)' : 'A-SMGCS / KSVKL'}</span>
         </div>
         <button
@@ -94,9 +92,7 @@ function ToastItem({
           ✕
         </button>
       </div>
-      <div className={`text-[#F1F5F9] font-mono text-[11.5px] leading-relaxed pl-1.5 border-l-2 ${
-        isTrad ? 'border-rose-500 bg-transparent' : 'border-cyan-400 bg-transparent'
-      } py-1 pr-1.5 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium`}>
+      <div className="text-[#F1F5F9] font-mono text-[11.5px] leading-relaxed pl-1.5 border-l-2 border-cyan-400 bg-transparent py-1 pr-1.5 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
         {toast.text}
       </div>
     </div>
