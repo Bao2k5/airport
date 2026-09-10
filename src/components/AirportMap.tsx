@@ -614,19 +614,19 @@ function AirportMap({
       {/* ── ATC Radio Transmission Panel (Chỉ hiển thị cho Kịch bản 4 sự cố FOD) ── */}
       {state.scenario?.id === 'lvc_w7a_sudden_closure' && state.comicBubble?.active && (
         <div className="absolute top-14 left-6 z-30 max-w-md animate-in fade-in slide-in-from-top-3 duration-300 select-none pointer-events-auto font-mono">
-          <div className="relative bg-black/30 text-slate-100 border border-amber-500/50 rounded-xl p-3.5 shadow-xl backdrop-blur-md ring-1 ring-white/10">
+          <div className="relative bg-transparent text-slate-100 border-2 border-amber-500 rounded-xl p-3.5 shadow-xl shadow-black/40">
             {/* Header bar */}
-            <div className="flex items-center justify-between border-b border-white/10 pb-2 mb-2.5">
+            <div className="flex items-center justify-between border-b border-white/20 pb-2 mb-2.5">
               <div className="flex items-center gap-2">
                 <span className="flex h-2.5 w-2.5 relative">
                   <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
                   <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-red-500"></span>
                 </span>
-                <span className="text-xs font-bold tracking-wider text-amber-400 uppercase">
+                <span className="text-xs font-bold tracking-wider text-amber-400 uppercase drop-shadow-sm">
                   🎙️ TWR 118.1 MHz | ATC TRANSMISSION
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-slate-300 bg-white/10 px-2 py-0.5 rounded border border-white/20">
+              <span className="text-[10px] font-semibold text-slate-200 border border-white/30 px-2 py-0.5 rounded">
                 A-SMGCS ALERT
               </span>
             </div>
@@ -634,15 +634,15 @@ function AirportMap({
             {/* Body */}
             <div className="flex items-center gap-3">
               <div className="relative shrink-0">
-                <img src="/FOD.png" alt="FOD" className="w-12 h-12 rounded-lg border border-red-500/50 object-contain bg-black/30 p-1" />
+                <img src="/FOD.png" alt="FOD" className="w-12 h-12 rounded-lg border border-red-500/60 object-contain p-1" />
                 <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-red-600 text-white px-1 rounded">FOD</span>
               </div>
               <div className="flex-1 min-w-0">
-                <p className="font-bold text-xs md:text-[13px] leading-snug text-amber-200 drop-shadow-sm">
+                <p className="font-bold text-xs md:text-[13px] leading-snug text-amber-200 drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)]">
                   {state.comicBubble.text}
                 </p>
                 {state.comicBubble.subText && (
-                  <p className="mt-1 text-[11px] font-medium text-emerald-300 bg-emerald-950/20 border border-emerald-500/30 rounded px-2 py-1 leading-relaxed drop-shadow-sm">
+                  <p className="mt-1 text-[11px] font-medium text-emerald-300 border border-emerald-500/50 rounded px-2 py-1 leading-relaxed drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)]">
                     {state.comicBubble.subText}
                   </p>
                 )}
@@ -804,17 +804,17 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
           <div
             key={toast.id}
             onClick={() => handleDismissToast(toast.id)}
-            className={`pointer-events-auto w-full bg-black/25 hover:bg-black/35 border shadow-xl shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none ${
+            className={`pointer-events-auto w-full bg-transparent border-2 shadow-lg shadow-black/40 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none ${
               isWarning
-                ? 'border-amber-500/60 shadow-amber-950/40 ring-1 ring-amber-500/30'
+                ? 'border-amber-500 hover:border-amber-400'
                 : isSuccess
-                ? 'border-emerald-500/60 shadow-emerald-950/40 ring-1 ring-emerald-500/30'
-                : 'border-cyan-500/50 shadow-cyan-950/40 ring-1 ring-cyan-500/30'
+                ? 'border-emerald-500 hover:border-emerald-400'
+                : 'border-cyan-400 hover:border-cyan-300'
             }`}
             title="Bấm để đóng tin nhắn này"
           >
-            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-white/10">
-              <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider">
+            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-white/20">
+              <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider drop-shadow-sm">
                 <span className={`w-2 h-2 rounded-full animate-ping inline-block ${
                   isWarning ? 'bg-amber-400' : isSuccess ? 'bg-emerald-400' : 'bg-cyan-400'
                 }`} />
@@ -839,12 +839,12 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
                 ✕
               </button>
             </div>
-            <div className={`font-mono text-[12px] leading-relaxed pl-2 border-l-2 py-1.5 pr-2 rounded-r ${
+            <div className={`font-mono text-[12px] leading-relaxed pl-2 border-l-2 py-1.5 pr-2 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium ${
               isWarning
-                ? 'border-amber-400 bg-amber-950/30 text-amber-100'
+                ? 'border-amber-400 bg-transparent text-amber-100'
                 : isSuccess
-                ? 'border-emerald-400 bg-emerald-950/30 text-emerald-100'
-                : 'border-cyan-400 bg-cyan-950/30 text-cyan-50'
+                ? 'border-emerald-400 bg-transparent text-emerald-100'
+                : 'border-cyan-400 bg-transparent text-cyan-50'
             }`}>
               {toast.text}
             </div>
