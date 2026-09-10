@@ -39,7 +39,7 @@ function ToastItem({
   return (
     <div
       onClick={() => onDismiss(toast.id)}
-      className="pointer-events-auto w-full max-w-[330px] bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none"
+      className="canva-toast-enter pointer-events-auto w-full max-w-[330px] bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
       title="Bấm để đóng tin nhắn này"
     >
       <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-[rgba(148,163,184,0.2)]">

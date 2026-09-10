@@ -613,7 +613,7 @@ function AirportMap({
 
       {/* ── ATC Radio Transmission Panel (Chỉ hiển thị cho Kịch bản 4 sự cố FOD) ── */}
       {state.scenario?.id === 'lvc_w7a_sudden_closure' && state.comicBubble?.active && (
-        <div className="absolute top-14 left-6 z-30 max-w-md animate-in fade-in slide-in-from-top-3 duration-300 select-none pointer-events-auto font-mono">
+        <div className="absolute top-14 left-6 z-30 max-w-md select-none pointer-events-auto font-mono canva-toast-enter">
           <div className="relative bg-transparent text-slate-100 border border-slate-500/70 rounded-xl p-3.5 shadow-xl shadow-black/60">
             {/* Header bar */}
             <div className="flex items-center justify-between border-b border-[rgba(148,163,184,0.2)] pb-2 mb-2.5">
@@ -801,7 +801,7 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
           <div
             key={toast.id}
             onClick={() => handleDismissToast(toast.id)}
-            className="pointer-events-auto w-full bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none"
+            className="canva-toast-enter pointer-events-auto w-full bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
             title="Bấm để đóng tin nhắn này"
           >
             <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-[rgba(148,163,184,0.2)]">
