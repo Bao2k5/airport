@@ -804,7 +804,7 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
           <div
             key={toast.id}
             onClick={() => handleDismissToast(toast.id)}
-            className={`pointer-events-auto w-full bg-[#0b1320]/95 border shadow-2xl shadow-black/90 rounded-xl p-2.5 text-xs text-slate-100 backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none ${
+            className={`pointer-events-auto w-full bg-black/25 hover:bg-black/35 border shadow-xl shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none ${
               isWarning
                 ? 'border-amber-500/60 shadow-amber-950/40 ring-1 ring-amber-500/30'
                 : isSuccess

@@ -39,9 +39,9 @@ function ToastItem({
   return (
     <div
       onClick={() => onDismiss(toast.id)}
-      className={`pointer-events-auto w-full max-w-[330px] bg-[#0E1523]/95 border ${
-        isTrad ? 'border-rose-500/40 hover:border-rose-500/70' : 'border-cyan-500/40 hover:border-cyan-500/70'
-      } shadow-2xl shadow-black/90 rounded-2xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none`}
+      className={`pointer-events-auto w-full max-w-[330px] bg-black/25 hover:bg-black/35 border ${
+        isTrad ? 'border-rose-500/50 hover:border-rose-500/80' : 'border-cyan-400/50 hover:border-cyan-400/80'
+      } shadow-xl shadow-black/60 rounded-2xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] backdrop-blur-md transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none`}
       title="Bấm để đóng tin nhắn này"
     >
       <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-white/10">
@@ -63,8 +63,8 @@ function ToastItem({
         </button>
       </div>
       <div className={`text-[#F1F5F9] font-mono text-[11.5px] leading-relaxed pl-1.5 border-l-2 ${
-        isTrad ? 'border-rose-500/60 bg-rose-950/20' : 'border-cyan-500/60 bg-cyan-950/20'
-      } py-1 pr-1.5 rounded-r`}>
+        isTrad ? 'border-rose-500/60 bg-transparent' : 'border-cyan-500/60 bg-transparent'
+      } py-1 pr-1.5 rounded-r drop-shadow-sm`}>
         {toast.text}
       </div>
     </div>
