@@ -614,19 +614,19 @@ function AirportMap({
       {/* ── ATC Radio Transmission Panel (Chỉ hiển thị cho Kịch bản 4 sự cố FOD) ── */}
       {state.scenario?.id === 'lvc_w7a_sudden_closure' && state.comicBubble?.active && (
         <div className="absolute top-14 left-6 z-30 max-w-md animate-in fade-in slide-in-from-top-3 duration-300 select-none pointer-events-auto font-mono">
-          <div className="relative bg-transparent text-slate-100 border-2 border-cyan-400 rounded-xl p-3.5 shadow-xl shadow-black/40">
+          <div className="relative bg-transparent text-slate-100 border border-slate-500/70 rounded-xl p-3.5 shadow-xl shadow-black/60">
             {/* Header bar */}
-            <div className="flex items-center justify-between border-b border-cyan-500/30 pb-2 mb-2.5">
+            <div className="flex items-center justify-between border-b border-[rgba(148,163,184,0.2)] pb-2 mb-2.5">
               <div className="flex items-center gap-2">
                 <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-cyan-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-cyan-400"></span>
+                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
+                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-400"></span>
                 </span>
-                <span className="text-xs font-bold tracking-wider text-cyan-400 uppercase drop-shadow-sm">
+                <span className="text-xs font-bold tracking-wider text-sky-400 uppercase drop-shadow-sm">
                   🎙️ TWR 118.1 MHz | ATC TRANSMISSION
                 </span>
               </div>
-              <span className="text-[10px] font-semibold text-cyan-300 border border-cyan-400/40 px-2 py-0.5 rounded">
+              <span className="text-[10px] font-semibold text-slate-300 border border-slate-500/40 px-2 py-0.5 rounded">
                 A-SMGCS ALERT
               </span>
             </div>
@@ -801,14 +801,14 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
           <div
             key={toast.id}
             onClick={() => handleDismissToast(toast.id)}
-            className="pointer-events-auto w-full bg-transparent border-2 border-cyan-400 hover:border-cyan-300 shadow-lg shadow-black/40 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none"
+            className="pointer-events-auto w-full bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 animate-in fade-in slide-in-from-top-2 cursor-pointer select-none"
             title="Bấm để đóng tin nhắn này"
           >
-            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-cyan-500/30">
-              <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider drop-shadow-sm text-cyan-400">
-                <span className="w-2 h-2 rounded-full animate-ping inline-block bg-cyan-400" />
-                <Radio className="w-3.5 h-3.5 text-cyan-400" />
-                <span className="text-cyan-300">
+            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-[rgba(148,163,184,0.2)]">
+              <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider drop-shadow-sm text-sky-400">
+                <span className="w-2 h-2 rounded-full animate-ping inline-block bg-sky-400" />
+                <Radio className="w-3.5 h-3.5 text-sky-400" />
+                <span className="text-slate-200">
                   KSVKL / Huấn lệnh ATC
                 </span>
               </div>
@@ -824,7 +824,7 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
                 ✕
               </button>
             </div>
-            <div className="font-mono text-[12px] leading-relaxed pl-2 border-l-2 border-cyan-400 bg-transparent text-slate-100 py-1.5 pr-2 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
+            <div className="font-mono text-[12px] leading-relaxed pl-2 border-l-2 border-slate-500/70 bg-transparent text-slate-100 py-1.5 pr-2 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
               {toast.text}
             </div>
           </div>
