@@ -836,17 +836,50 @@ export function scenarioTick(
         (bav315.status === 'holding' && bav315.currentNodeId === 'v3_line_04_p02')
       );
 
+      // Khi BAV315 vừa vào W4 dừng an toàn: tự động phát đồng thời 3 huấn lệnh Giai đoạn 2 của KSVKL
+      if (bav315Isolated && state.scenario) {
+        if (state.scenario.isolatedAtSeconds === undefined) {
+          state.scenario.isolatedAtSeconds = state.elapsedSeconds;
+        }
+        if (!state.scenario.events.some((e: any) => e.message?.includes('HVN123, vacate left via W5'))) {
+          state.scenario.events = [
+            ...state.scenario.events,
+            {
+              atSeconds: state.elapsedSeconds,
+              message: '📻 [ATC CLEARANCE] "HVN123, vacate left via W5 and cross runway 25L, taxi to stand 17 via W11 and W7 taxiway"',
+              severity: 'info',
+            },
+            {
+              atSeconds: state.elapsedSeconds,
+              message: '📻 [ATC CLEARANCE] "BAV456, taxi to holding point runway 25L via E6 taxiway"',
+              severity: 'info',
+            },
+            {
+              atSeconds: state.elapsedSeconds,
+              message: '📻 [ATC CLEARANCE] "THA101, taxi to holding point runway 25L via NS and E6 taxiway"',
+              severity: 'info',
+            },
+          ];
+        }
+      }
+
+      // Thời gian trôi qua kể từ khi BAV315 dừng an toàn (để tàu bay nghe huấn lệnh 2.5s rồi mới lăn bánh)
+      const isolatedElapsed = state.scenario?.isolatedAtSeconds !== undefined
+        ? (state.elapsedSeconds - state.scenario.isolatedAtSeconds)
+        : 0;
+
       if (ac.callsign === 'HVN123') {
-        if (!bav315Isolated) {
+        if (!bav315Isolated || isolatedElapsed < 2.5) {
           updatedFleet[idx] = {
             ...ac,
-            hidden: true,
-            status: 'waiting',
+            hidden: !bav315Isolated,
+            status: bav315Isolated ? 'holding' : 'waiting',
             speedKts: 0,
             speedLimitKts: 0,
+            scenarioLabel: bav315Isolated ? '25R: ĐÃ NHẬN LỆNH KSVKL (CHUẨN BỊ LĂN)' : 'CHỜ BAV315 THOÁT LY VÀO W4',
           };
           continue;
-        } else if (ac.status === 'waiting' || ac.hidden || ac.status === 'queued') {
+        } else if (ac.status === 'waiting' || ac.hidden || ac.status === 'queued' || ac.status === 'holding') {
           ac = {
             ...ac,
             hidden: false,
@@ -858,18 +891,20 @@ export function scenarioTick(
         }
       }
 
-      // Tàu 3 (BAV456 tại Stand 21) và Tàu 4 (THA101 tại Stand 10):
+      // Tàu 3 (BAV456 tại Stand 22) và Tàu 4 (THA101 tại Stand 10):
       // Giai đoạn 1: Đứng yên tại bến đỗ (hidden: false, status: holding).
-      // Giai đoạn 2 (khi HVN123 xuất hiện/bav315Isolated): BAV456 và THA101 đồng thời lăn song song ra RW 25L.
+      // Giai đoạn 2 (khi bav315Isolated và sau 2.5s nhận lệnh): BAV456 và THA101 đồng thời lăn song song ra RW 25L.
       if (ac.callsign === 'BAV456' || ac.callsign === 'THA101') {
-        if (!bav315Isolated) {
+        if (!bav315Isolated || isolatedElapsed < 2.5) {
           updatedFleet[idx] = {
             ...ac,
             hidden: false,
             status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: ac.callsign === 'BAV456' ? 'STAND 21: CHỜ BAV315 THOÁT LY' : 'STAND 10: CHỜ BAV315 THOÁT LY',
+            scenarioLabel: bav315Isolated
+              ? (ac.callsign === 'BAV456' ? 'STAND 22: ĐÃ NHẬN LỆNH KSVKL (CHUẨN BỊ PUSHBACK)' : 'STAND 10: ĐÃ NHẬN LỆNH KSVKL (CHUẨN BỊ PUSHBACK)')
+              : (ac.callsign === 'BAV456' ? 'STAND 22: CHỜ BAV315 THOÁT LY' : 'STAND 10: CHỜ BAV315 THOÁT LY'),
           };
           continue;
         } else if (ac.status === 'holding' || ac.status === 'waiting' || ac.status === 'queued') {
@@ -879,7 +914,7 @@ export function scenarioTick(
             status: 'taxiing',
             speedLimitKts: ac.callsign === 'BAV456' ? 16 : 14,
             speedKts: ac.callsign === 'BAV456' ? 16 : 14,
-            scenarioLabel: ac.callsign === 'BAV456' ? 'STAND 21 ➔ E6 ➔ RW 25L' : 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
+            scenarioLabel: ac.callsign === 'BAV456' ? 'STAND 22 ➔ E6 ➔ RW 25L' : 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
           };
         }
       }

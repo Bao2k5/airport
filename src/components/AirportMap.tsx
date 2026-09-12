@@ -743,12 +743,12 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
     prevEventsLengthRef.current = 0;
   }, [scenario?.id, state.elapsedSeconds === 0]);
 
-  // Mỗi câu thoại tự động biến mất sau đúng 8s kể từ khi xuất hiện
+  // Mỗi câu thoại tự động biến mất sau 12s kể từ khi xuất hiện (rộng rãi để người xem đọc kịp)
   useEffect(() => {
     if (toasts.length === 0) return;
     const interval = setInterval(() => {
       const now = Date.now();
-      setToasts(prev => prev.filter(t => now - t.createdAt < 8000));
+      setToasts(prev => prev.filter(t => now - t.createdAt < 12000));
     }, 1000);
     return () => clearInterval(interval);
   }, [toasts.length]);
@@ -783,8 +783,8 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
       createdAt: now,
     }));
 
-    // Giữ tối đa 2 tin nhắn mới nhất đồng thời để tránh che màn hình
-    setToasts(prev => [...prev.slice(-1), ...newToasts]);
+    // Giữ tối đa 3 tin nhắn đồng thời xếp dọc để xem đầy đủ các huấn lệnh
+    setToasts(prev => [...prev.slice(-3), ...newToasts]);
   }, [events, events.length, scenario?.id]);
 
   const handleDismissToast = useCallback((id: string) => {

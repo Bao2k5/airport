@@ -126,8 +126,8 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         targetNodeId: bav315Route[bav315Route.length - 1],
         currentEdgeId: bav315Edges[0] ?? null,
         progressOnEdge: 0,
-        speedKts: 20,
-        speedLimitKts: 20,
+        speedKts: 12,
+        speedLimitKts: 12,
         status: 'taxiing',
         assignedRoute: bav315Route,
         routeEdgeIndex: 0,
@@ -159,7 +159,6 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         scenarioLabel: '25R ➔ W5 ➔ W11 ➔ W9B ➔ STAND 17',
         clearedRoute: hvn123Route,
         routeVisible: true,
-        releaseAtSeconds: 4,
       },
       {
         id: 'S3',
@@ -272,60 +271,6 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
                 atSeconds: state.elapsedSeconds,
                 message: '📻 [ATC CLEARANCE] "BAV315 holdshort runway 25L"',
                 severity: 'critical',
-              },
-            ];
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 4,
-        apply: (state: any) => {
-          const hvn = state.scenarioAircraft?.find((a: any) => a.callsign === 'HVN123');
-          if (hvn) {
-            hvn.status = 'taxiing';
-            hvn.speedKts = 20;
-            hvn.hidden = false;
-          }
-          if (state.scenario) {
-            state.scenario.events = [
-              ...state.scenario.events,
-              {
-                atSeconds: state.elapsedSeconds,
-                message: '📻 [ATC CLEARANCE] "HVN123, vacate left via W5 and cross runway 25L, taxi to stand 17 via W11 and W7 taxiway"',
-                severity: 'info',
-              },
-            ];
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 5,
-        apply: (state: any) => {
-          if (state.scenario) {
-            state.scenario.events = [
-              ...state.scenario.events,
-              {
-                atSeconds: state.elapsedSeconds,
-                message: '📻 [ATC CLEARANCE] "BAV456, taxi to holding point runway 25L via E6 taxiway"',
-                severity: 'info',
-              },
-            ];
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 6,
-        apply: (state: any) => {
-          if (state.scenario) {
-            state.scenario.events = [
-              ...state.scenario.events,
-              {
-                atSeconds: state.elapsedSeconds,
-                message: '📻 [ATC CLEARANCE] "THA101, taxi to holding point runway 25L via NS and E6 taxiway"',
-                severity: 'info',
               },
             ];
           }

@@ -62,7 +62,7 @@ function ToastItem({
   useEffect(() => {
     const t = setTimeout(() => {
       onDismiss(toast.id);
-    }, 8000); // 8s: thời gian rộng rãi để đọc thoải mái cả 3 huấn lệnh cùng xuất hiện
+    }, 12000); // 12s: thời gian rộng rãi để đọc thoải mái các huấn lệnh
     return () => clearTimeout(t);
   }, [toast.id, onDismiss]);
 

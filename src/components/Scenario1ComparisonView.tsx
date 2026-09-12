@@ -30,7 +30,7 @@ function ToastItem({
   useEffect(() => {
     const t = setTimeout(() => {
       onDismiss(toast.id);
-    }, 8000);
+    }, 12000);
     return () => clearTimeout(t);
   }, [toast.id, onDismiss]);
 
