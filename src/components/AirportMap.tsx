@@ -611,46 +611,6 @@ function AirportMap({
 
       </svg>
 
-      {/* ── ATC Radio Transmission Panel (Chỉ hiển thị cho Kịch bản 4 sự cố FOD) ── */}
-      {state.scenario?.id === 'lvc_w7a_sudden_closure' && state.comicBubble?.active && (
-        <div className="absolute top-14 left-6 z-30 max-w-md select-none pointer-events-auto font-mono canva-toast-enter">
-          <div className="relative bg-transparent text-slate-100 border border-slate-500/70 rounded-xl p-3.5 shadow-xl shadow-black/60">
-            {/* Header bar */}
-            <div className="flex items-center justify-between border-b border-[rgba(148,163,184,0.2)] pb-2 mb-2.5">
-              <div className="flex items-center gap-2">
-                <span className="flex h-2.5 w-2.5 relative">
-                  <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-sky-400 opacity-75"></span>
-                  <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-sky-400"></span>
-                </span>
-                <span className="text-xs font-bold tracking-wider text-sky-400 uppercase drop-shadow-sm">
-                  🎙️ TWR 118.1 MHz | ATC TRANSMISSION
-                </span>
-              </div>
-              <span className="text-[10px] font-semibold text-slate-300 border border-slate-500/40 px-2 py-0.5 rounded">
-                A-SMGCS ALERT
-              </span>
-            </div>
-            
-            {/* Body */}
-            <div className="flex items-center gap-3">
-              <div className="relative shrink-0">
-                <img src="/FOD.png" alt="FOD" className="w-12 h-12 rounded-lg border border-red-500/60 object-contain p-1" />
-                <span className="absolute -bottom-1 -right-1 text-[8px] font-bold bg-red-600 text-white px-1 rounded">FOD</span>
-              </div>
-              <div className="flex-1 min-w-0">
-                <p className="font-bold text-xs md:text-[13px] leading-snug text-amber-200 drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)]">
-                  {state.comicBubble.text}
-                </p>
-                {state.comicBubble.subText && (
-                  <p className="mt-1 text-[11px] font-medium text-emerald-300 border border-emerald-500/50 rounded px-2 py-1 leading-relaxed drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)]">
-                    {state.comicBubble.subText}
-                  </p>
-                )}
-              </div>
-            </div>
-          </div>
-        </div>
-      )}
 
       {/* ── Comic Speech Bubble cho lệnh KSKL "Runway Change 07R" trên màn FTG ── */}
       {renderMode === 'ftg' && state.comicBubble?.active && (
@@ -743,13 +703,13 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
     prevEventsLengthRef.current = 0;
   }, [scenario?.id, state.elapsedSeconds === 0]);
 
-  // Mỗi câu thoại tự động biến mất sau 12s kể từ khi xuất hiện (rộng rãi để người xem đọc kịp)
+  // Mỗi câu thoại tự động biến mất sau 7s kể từ khi xuất hiện (đủ thời gian đọc đầy đủ các huấn lệnh đồng thời)
   useEffect(() => {
     if (toasts.length === 0) return;
     const interval = setInterval(() => {
       const now = Date.now();
-      setToasts(prev => prev.filter(t => now - t.createdAt < 12000));
-    }, 1000);
+      setToasts(prev => prev.filter(t => now - t.createdAt < 7000));
+    }, 500);
     return () => clearInterval(interval);
   }, [toasts.length]);
 
@@ -783,8 +743,8 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
       createdAt: now,
     }));
 
-    // Giữ tối đa 3 tin nhắn đồng thời xếp dọc để xem đầy đủ các huấn lệnh
-    setToasts(prev => [...prev.slice(-3), ...newToasts]);
+    // Giữ tối đa 4 tin nhắn đồng thời xếp dọc để hiển thị đầy đủ các huấn lệnh (kể cả khi 3 tàu bay nhận lệnh cùng lúc)
+    setToasts(prev => [...prev, ...newToasts].slice(-4));
   }, [events, events.length, scenario?.id]);
 
   const handleDismissToast = useCallback((id: string) => {
@@ -801,10 +761,10 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
           <div
             key={toast.id}
             onClick={() => handleDismissToast(toast.id)}
-            className="canva-toast-enter pointer-events-auto w-full bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
+            className="canva-toast-enter pointer-events-auto w-full bg-slate-900/95 backdrop-blur-md border border-slate-700/80 hover:border-slate-500 shadow-2xl shadow-black/80 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
             title="Bấm để đóng tin nhắn này"
           >
-            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-[rgba(148,163,184,0.2)]">
+            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-slate-700/60">
               <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider drop-shadow-sm text-sky-400">
                 <span className="w-2 h-2 rounded-full animate-ping inline-block bg-sky-400" />
                 <Radio className="w-3.5 h-3.5 text-sky-400" />
@@ -824,7 +784,7 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
                 ✕
               </button>
             </div>
-            <div className="font-mono text-[12px] leading-relaxed pl-2 border-l-2 border-slate-500/70 bg-transparent text-slate-100 py-1.5 pr-2 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
+            <div className="font-mono text-[12px] leading-relaxed pl-2.5 border-l-2 border-sky-400 bg-slate-950/70 text-slate-100 py-1.5 pr-2 rounded-r drop-shadow-md font-medium">
               {toast.text}
             </div>
           </div>

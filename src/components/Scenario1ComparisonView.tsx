@@ -30,7 +30,7 @@ function ToastItem({
   useEffect(() => {
     const t = setTimeout(() => {
       onDismiss(toast.id);
-    }, 12000);
+    }, 5000); // 5s: tự động tắt gọn gàng, không bị chồng đè
     return () => clearTimeout(t);
   }, [toast.id, onDismiss]);
 
@@ -39,10 +39,10 @@ function ToastItem({
   return (
     <div
       onClick={() => onDismiss(toast.id)}
-      className="canva-toast-enter pointer-events-auto w-full max-w-[330px] bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
+      className="canva-toast-enter pointer-events-auto w-full max-w-[330px] bg-slate-900/95 backdrop-blur-md border border-slate-700/80 hover:border-slate-500 shadow-2xl shadow-black/80 rounded-xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
       title="Bấm để đóng tin nhắn này"
     >
-      <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-[rgba(148,163,184,0.2)]">
+      <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-slate-700/60">
         <div className="flex items-center gap-1.5 text-sky-400 font-bold text-[10.5px] uppercase tracking-wider drop-shadow-md">
           <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping inline-block" />
           {isTrad ? <Radio className="w-3.5 h-3.5 text-sky-400" /> : <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />}
@@ -60,7 +60,7 @@ function ToastItem({
           ✕
         </button>
       </div>
-      <div className="text-[#F1F5F9] font-mono text-[11.5px] leading-relaxed pl-2 border-l-2 border-slate-500/70 bg-transparent py-1 pr-1.5 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
+      <div className="text-[#F1F5F9] font-mono text-[11.5px] leading-relaxed pl-2.5 border-l-2 border-sky-400 bg-slate-950/70 py-1 pr-1.5 rounded-r drop-shadow-md font-medium">
         {toast.text}
       </div>
     </div>
