@@ -755,16 +755,16 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
   if (!scenario || toasts.length === 0) return null;
 
   return (
-    <div className="absolute top-3 left-3 z-30 flex flex-col gap-2 w-full max-w-[340px] sm:max-w-[380px] pointer-events-none select-none font-mono">
+    <div className="absolute top-3 left-3 z-30 flex flex-col gap-2 w-full max-w-[calc(100%-24px)] sm:max-w-[380px] pointer-events-none select-none font-mono">
       {toasts.map(toast => {
         return (
           <div
             key={toast.id}
             onClick={() => handleDismissToast(toast.id)}
-            className="canva-toast-enter pointer-events-auto w-full bg-slate-900/95 backdrop-blur-md border border-slate-700/80 hover:border-slate-500 shadow-2xl shadow-black/80 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
+            className="canva-toast-enter pointer-events-auto w-full bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
             title="Bấm để đóng tin nhắn này"
           >
-            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-slate-700/60">
+            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-[rgba(148,163,184,0.2)]">
               <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider drop-shadow-sm text-sky-400">
                 <span className="w-2 h-2 rounded-full animate-ping inline-block bg-sky-400" />
                 <Radio className="w-3.5 h-3.5 text-sky-400" />
@@ -784,7 +784,7 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
                 ✕
               </button>
             </div>
-            <div className="font-mono text-[12px] leading-relaxed pl-2.5 border-l-2 border-sky-400 bg-slate-950/70 text-slate-100 py-1.5 pr-2 rounded-r drop-shadow-md font-medium">
+            <div className="font-mono text-[12px] leading-relaxed pl-2 border-l-2 border-slate-500/70 bg-transparent text-slate-100 py-1.5 pr-2 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
               {toast.text}
             </div>
           </div>
