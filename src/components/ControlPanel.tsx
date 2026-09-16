@@ -60,6 +60,23 @@ export default function ControlPanel({
   const currentStartNodeId = selectedAircraft?.currentNodeId ?? config.startNodeId;
   const currentDestNodeId = selectedAircraft?.targetNodeId ?? config.destinationNodeId;
 
+  // ── Khảo sát chế độ bay tự động (Departure vs Arrival) ──
+  const isCurrentlyArrival = React.useMemo(() => {
+    // Nếu điểm xuất phát hiện tại là đầu đường băng hoặc không phải stand -> Mặc định là Arrival
+    const isStand = currentStartNodeId.includes('STAND') ||
+      V3_OPERATIONAL_STANDS.some(s => s.id === currentStartNodeId);
+    return !isStand;
+  }, [currentStartNodeId]);
+
+  const [flightMode, setFlightMode] = React.useState<'departure' | 'arrival'>(
+    isCurrentlyArrival ? 'arrival' : 'departure'
+  );
+
+  // Cập nhật flightMode khi đổi tàu bay
+  React.useEffect(() => {
+    setFlightMode(isCurrentlyArrival ? 'arrival' : 'departure');
+  }, [selectedAircraftId, isCurrentlyArrival]);
+
   const operationalDropdownOptions = React.useMemo(() => {
     // Strictly format the exact 44 Operational Nodes in user-specified order
     return V3_EXACT_OPERATIONAL_NODES.map((opDef) => {
@@ -71,39 +88,93 @@ export default function ControlPanel({
       const nodeId = matchedNode ? matchedNode.id : opDef.id;
       let label = opDef.label;
       if (opDef.id === 'STOP_BAR_25R') {
-        label = 'STOP BAR 25R (Nơi máy bay hạ cánh)';
+        label = 'STOP BAR 25R (Nơi máy bay hạ cánh RWY 25R)';
       } else if (opDef.id === 'STOP_BAR_25L') {
-        label = 'STOP BAR 25L (Nơi máy bay cất cánh)';
+        label = 'STOP BAR 25L (Nơi máy bay cất cánh RWY 25L)';
+      } else if (opDef.id === 'W11_07R') {
+        label = 'W11/07R (Nơi máy bay cất cánh RWY 07R)';
+      } else if (opDef.id === 'W5_07L' || opDef.label === '07L') {
+        label = `${opDef.label} (Nơi máy bay hạ cánh RWY 07L)`;
       }
 
       return {
         value: nodeId,
         label,
+        origId: opDef.id,
+        origCategory: opDef.category,
       };
     });
   }, [graph]);
 
-  const startOptions = operationalDropdownOptions;
+  // Bộ lọc Điểm xuất phát theo Chế độ bay chuẩn ATC
+  const startOptions = React.useMemo(() => {
+    return operationalDropdownOptions.map(opt => {
+      const isStand = opt.origCategory === 'STAND' || opt.value.includes('STAND') || opt.label.includes('STAND');
+      const isRunwayThreshold = opt.origId === 'STOP_BAR_25R' || opt.origId === 'W5_07L' || opt.label.includes('07L') || opt.origId === 'STOP_BAR_25L' || opt.origId === 'W11_07R';
 
+      if (flightMode === 'departure') {
+        if (!isStand) {
+          return {
+            value: opt.value,
+            label: `${opt.label} — 🚫 (Khởi hành: Phải xuất phát từ Bến đỗ STAND)`,
+            disabled: true,
+          };
+        }
+      } else {
+        // Arrival: Phải xuất phát từ đường băng hạ cánh
+        const isArrivalRunway = opt.origId === 'STOP_BAR_25R' || opt.origId === 'W5_07L' || opt.label.includes('07L');
+        if (!isArrivalRunway && !isRunwayThreshold) {
+          return {
+            value: opt.value,
+            label: `${opt.label} — 🚫 (Đến/Hạ cánh: Phải từ đầu đường băng 25R hoặc 07L)`,
+            disabled: true,
+          };
+        }
+      }
+
+      return {
+        value: opt.value,
+        label: opt.label,
+        disabled: false,
+      };
+    });
+  }, [operationalDropdownOptions, flightMode]);
+
+  // Bộ lọc Điểm đến theo Chế độ bay chuẩn ATC
   const destOptions = React.useMemo(() => {
     return operationalDropdownOptions.map(opt => {
-      // Tìm xem có tàu bay nào khác trong manualFleet đang đỗ / chiếm dụng tại bến này không
+      const isStand = opt.origCategory === 'STAND' || opt.value.includes('STAND') || opt.label.includes('STAND');
+      const isDepartureRunway = opt.origId === 'STOP_BAR_25L' || opt.origId === 'W11_07R';
+
+      // 1. Kiểm tra quy chế chuyến bay
+      if (flightMode === 'departure') {
+        if (!isDepartureRunway) {
+          return {
+            value: opt.value,
+            label: `${opt.label} — 🚫 (Khởi hành: Điểm đến phải là vạch cất cánh 25L hoặc 07R)`,
+            disabled: true,
+          };
+        }
+      } else {
+        // Arrival: Điểm đến bắt buộc phải là bến đỗ (Stand)
+        if (!isStand) {
+          return {
+            value: opt.value,
+            label: `${opt.label} — 🚫 (Hạ cánh: Điểm đến phải là Bến đỗ STAND)`,
+            disabled: true,
+          };
+        }
+      }
+
+      // 2. Tìm xem có tàu bay nào khác trong manualFleet đang đỗ / chiếm dụng tại bến này không
       const occupyingAircraft = manualFleet.find(ac => {
         if (ac.id === selectedAircraftId) return false;
-
-        // Chỉ kiểm tra đối với các điểm là Bến đỗ (Stand)
-        const isStand = opt.value.includes('STAND') ||
-          opt.label.includes('STAND') ||
-          V3_OPERATIONAL_STANDS.some(s => s.id === opt.value || s.label === opt.label);
-
         if (!isStand) return false;
 
-        // Kiểm tra xem tàu bay khác có đang ở vị trí này không (đỗ hoặc chờ)
         const isAtCurrentNode = ac.currentNodeId === opt.value;
         const isDestinedAndParked = (ac.targetNodeId === opt.value) &&
           (ac.status === 'parked' || ac.status === 'arrived' || ac.status === 'waiting');
 
-        // Đối chiếu qua label/node id trong đồ thị
         const optNode = graph.nodes.find(n => n.id === opt.value || n.label === opt.label);
         const acCurNode = graph.nodes.find(n => n.id === ac.currentNodeId || n.label === ac.currentNodeId);
         const isNodeMatch = optNode && acCurNode && (optNode.id === acCurNode.id || (optNode.label && optNode.label === acCurNode.label));
@@ -125,7 +196,7 @@ export default function ControlPanel({
         disabled: false,
       };
     });
-  }, [operationalDropdownOptions, manualFleet, selectedAircraftId, graph.nodes]);
+  }, [operationalDropdownOptions, flightMode, manualFleet, selectedAircraftId, graph.nodes]);
 
   return (
     <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
@@ -243,6 +314,56 @@ export default function ControlPanel({
 
       {/* Tuyến đường */}
       <Section title="Tuyến đường khai thác">
+        {/* Toggle Chế độ bay chuẩn ATC */}
+        <div className="flex flex-col gap-1">
+          <label className="text-xs text-[#475569] font-medium">Chế độ bay (ATC Flight Rule)</label>
+          <div className="grid grid-cols-2 gap-2 bg-[#F1F5F9] p-1 rounded-lg border border-[#E2E8F0]">
+            <button
+              type="button"
+              onClick={() => {
+                setFlightMode('departure');
+                // Tự động set điểm đến mặc định là STOP BAR 25L nếu điểm đến hiện tại không phải cất cánh
+                const isDepartureDest = currentDestNodeId === 'STOP_BAR_25L' || currentDestNodeId === 'v3_line_05_p07' || currentDestNodeId === 'v3_line_17_p16' || currentDestNodeId === 'W11_07R' || currentDestNodeId === 'v3_line_16_p01';
+                if (!isDepartureDest) {
+                  onConfigChange({ destinationNodeId: 'v3_line_05_p07' });
+                }
+              }}
+              className={`py-1.5 px-3 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                flightMode === 'departure'
+                  ? 'bg-[#1C67DA] text-white shadow-xs'
+                  : 'text-[#475569] hover:text-[#0D254C] hover:bg-white/60'
+              }`}
+            >
+              <span>🛫</span>
+              <span>Khởi hành (Departure)</span>
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setFlightMode('arrival');
+                // Tự động set điểm xuất phát là STOP BAR 25R nếu điểm xuất phát hiện tại đang là bến đỗ
+                const isArrivalStart = currentStartNodeId === 'STOP_BAR_25R' || currentStartNodeId === 'v3_line_01_p03' || currentStartNodeId === 'W5_07L' || currentStartNodeId === 'v3_line_03_p00' || currentStartNodeId === '07L';
+                if (!isArrivalStart) {
+                  onConfigChange({ startNodeId: 'v3_line_01_p03' });
+                }
+              }}
+              className={`py-1.5 px-3 rounded-md text-xs font-bold transition flex items-center justify-center gap-1.5 cursor-pointer ${
+                flightMode === 'arrival'
+                  ? 'bg-[#16845B] text-white shadow-xs'
+                  : 'text-[#475569] hover:text-[#0D254C] hover:bg-white/60'
+              }`}
+            >
+              <span>🛬</span>
+              <span>Đến / Hạ cánh (Arrival)</span>
+            </button>
+          </div>
+          <span className="text-[10px] text-[#64748B] italic">
+            {flightMode === 'departure'
+              ? '• Xuất phát: Bến đỗ STAND → Đến: Vạch cất cánh RWY 25L hoặc 07R'
+              : '• Xuất phát: Đầu đường băng hạ cánh 25R/07L → Đến: Bến đỗ STAND'}
+          </span>
+        </div>
+
         <LabeledSelect
           label="Điểm xuất phát"
           value={currentStartNodeId}
