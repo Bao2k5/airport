@@ -373,7 +373,7 @@ export default function ControlPanel({
 
       {/* Nút điều khiển */}
       <div className="flex flex-col gap-2.5 mt-2 border-t border-[#E6ECF0] pt-3">
-        {!isRunning && !isPaused && routeStatus === 'pending' && (
+        {(!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && routeStatus === 'pending' && (
           <button
             data-testid="accept-route-btn"
             onClick={() => executeAction('accept_route', onAcceptRoute)}

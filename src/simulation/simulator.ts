@@ -450,10 +450,12 @@ export function startManualAircraft(
     ...state,
     isRunning: true,
     isPaused: false,
+    routeStatus: 'accepted',
     manualFleet: updatedFleet,
     aircraft: selectedAc,
     selectedAircraftId: aircraftId,
     warningMessage: null,
+    lightStates: selectedAc ? computeLightStates(selectedAc, state.blockedEdgeIds, graph) : state.lightStates,
     liveEventLog: newLogs,
   };
 }
@@ -504,7 +506,7 @@ export function resetToManualMode(
     elapsedSeconds: 0,
     etaSeconds: eta,
     warningMessage: null,
-    lightStates: selectedAc ? computeLightStates(selectedAc, staticBlockedEdgeIds, graph) : {},
+    lightStates: {},
     blockedEdgeIds: staticBlockedEdgeIds,
     liveEventLog: [
       {
@@ -551,6 +553,7 @@ export function resetManualAircraft(
     : aircraftId;
   const selectedAc = updatedFleet.find(a => a.id === selectedId) || updatedFleet[0];
   const anyTaxiing = updatedFleet.some(a => a.status === 'taxiing');
+  const isResetSelected = selectedId === aircraftId;
   const newLogs = appendLiveLog(state.liveEventLog, {
     atSeconds: state.elapsedSeconds,
     callsign: defaultSpec.callsign,
@@ -566,6 +569,8 @@ export function resetManualAircraft(
     manualFleet: updatedFleet,
     aircraft: selectedAc,
     selectedAircraftId: selectedId,
+    routeStatus: isResetSelected ? 'pending' : (selectedAc.status === 'taxiing' ? 'accepted' : 'pending'),
+    lightStates: isResetSelected || selectedAc.status !== 'taxiing' ? {} : state.lightStates,
     liveEventLog: newLogs,
   };
 }
@@ -905,7 +910,7 @@ export function initSimulation(
     elapsedSeconds: 0,
     etaSeconds: eta,
     warningMessage: null,
-    lightStates: selectedAircraft ? computeLightStates(selectedAircraft, blockedEdgeIds, graph) : {},
+    lightStates: {},
     blockedEdgeIds,
     runwayOccupancy: { NORTH: null, SOUTH: null },
     liveEventLog: [
@@ -930,6 +935,7 @@ export function acceptRoute(
       return {
         ...ac,
         routeVisible: true,
+        guidanceVisible: true,
       };
     }
     return ac;

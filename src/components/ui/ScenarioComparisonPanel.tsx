@@ -1,8 +1,7 @@
-import { useState, type ReactNode } from 'react';
+import type { ReactNode } from 'react';
 import AirportMap from '../AirportMap';
 import SurfaceCard from './SurfaceCard';
 import type { AirportGraph, SimulationState } from '../../types';
-import { ChevronDown, ChevronUp, Radio } from 'lucide-react';
 
 interface ScenarioComparisonPanelProps {
   title: string;
@@ -38,7 +37,6 @@ export default function ScenarioComparisonPanel({
   aircraftScale = 1.5,
 }: ScenarioComparisonPanelProps) {
   const isFtg = renderMode === 'ftg';
-  const [mobileHudOpen, setMobileHudOpen] = useState(false);
 
   return (
     <SurfaceCard className="flex flex-col h-full min-h-[380px] sm:min-h-[440px] lg:min-h-0 overflow-hidden shadow-md relative">
@@ -74,23 +72,11 @@ export default function ScenarioComparisonPanel({
         {/* Alert notification popup */}
         {alertContent}
 
-        {/* Top-Left Telemetry HUD Card (Chỉ hiển thị Overlay trên Desktop lớn >= 1024px) */}
+        {/* Dynamic Island Capsule HUD (Centered top, snug single line) */}
         {hudContent && (
-          <div className="hidden lg:block">
+          <div className="block">
             {hudContent}
           </div>
-        )}
-
-        {/* Nút Toggle xem nhật ký nhanh trên Mobile ở góc map */}
-        {hudContent && (
-          <button
-            onClick={() => setMobileHudOpen(v => !v)}
-            className="lg:hidden absolute top-2.5 left-2.5 z-20 px-2.5 py-1.5 rounded-lg bg-black/30 hover:bg-black/50 active:bg-black/70 text-xs font-bold text-[#F1F5F9] border border-white/20 backdrop-blur-md shadow-md flex items-center gap-1.5 cursor-pointer min-h-[36px]"
-          >
-            <Radio className={`w-3.5 h-3.5 ${isFtg ? 'text-[#06B6D4]' : 'text-[#F43F5E]'}`} />
-            <span>{mobileHudOpen ? 'Ẩn nhật ký' : 'Xem nhật ký & HUD'}</span>
-            {mobileHudOpen ? <ChevronUp className="w-3.5 h-3.5" /> : <ChevronDown className="w-3.5 h-3.5" />}
-          </button>
         )}
 
         {/* Done Completion Badge */}
@@ -101,13 +87,6 @@ export default function ScenarioComparisonPanel({
           </SurfaceCard>
         )}
       </div>
-
-      {/* 3. Khối Nhật Ký & Telemetry mở rộng trên Mobile (Nằm DƯỚI bản đồ, KHÔNG CHE bản đồ) */}
-      {hudContent && mobileHudOpen && (
-        <div className="lg:hidden p-2.5 sm:p-3 border-t border-[rgba(148,163,184,0.16)] bg-[#070B13]/80 backdrop-blur-md animate-fadeIn">
-          {hudContent}
-        </div>
-      )}
 
       {/* 4. Bottom Live Status Banner */}
       <div className="px-3 sm:px-3.5 py-2 sm:py-2.5 bg-[#0E1523]/70 backdrop-blur-md border-t border-[rgba(148,163,184,0.16)] text-xs text-[#94A3B8] flex items-center justify-between flex-shrink-0 gap-2">

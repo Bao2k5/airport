@@ -94,3 +94,140 @@ html, body {
   animation: canvaSlideIn 0.5s cubic-bezier(0.16, 1, 0.3, 1) forwards;
   will-change: transform, opacity, filter;
 }
+
+/* Apple Dynamic Island fluid spring pop-down animation */
+@keyframes dynamicIslandFluidIn {
+  0% {
+    opacity: 0;
+    transform: translateY(-20px) scale(0.6, 0.4);
+  }
+  50% {
+    opacity: 1;
+    transform: translateY(2.5px) scale(1.03, 1.02);
+  }
+  75% {
+    transform: translateY(-0.8px) scale(0.992, 0.995);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1, 1);
+  }
+}
+
+.dynamic-island-pill {
+  animation: dynamicIslandFluidIn 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+  will-change: transform, opacity;
+}
+
+.dynamic-island-enter {
+  animation: dynamicIslandFluidIn 0.46s cubic-bezier(0.16, 1, 0.3, 1) both;
+  transform-origin: top center;
+  will-change: transform, opacity;
+}
+
+/* Dynamic Island progress countdown bar */
+@keyframes islandProgressCountdown {
+  from {
+    width: 100%;
+  }
+  to {
+    width: 0%;
+  }
+}
+
+.island-countdown-bar {
+  animation-name: islandProgressCountdown;
+  animation-timing-function: linear;
+  animation-fill-mode: forwards;
+  animation-duration: 5s;
+}
+
+/* Authentic iPhone Dynamic Island Morphing Container */
+.dynamic-island-shell {
+  transition: width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              max-width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              min-width 0.45s cubic-bezier(0.16, 1, 0.3, 1),
+              padding 0.35s cubic-bezier(0.16, 1, 0.3, 1),
+              background-color 0.3s ease,
+              border-color 0.3s ease,
+              box-shadow 0.3s ease,
+              transform 0.45s cubic-bezier(0.16, 1, 0.3, 1);
+  will-change: width, max-width, transform;
+  transform-origin: top center;
+}
+
+@keyframes islandContentFadeIn {
+  from {
+    opacity: 0;
+    transform: scale(0.95);
+  }
+  to {
+    opacity: 1;
+    transform: scale(1);
+  }
+}
+
+.island-content-in {
+  animation: islandContentFadeIn 0.28s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+/* 3D Stacked Cards (iOS Multi-Notification Depth) */
+.island-stack-wrapper {
+  perspective: 800px;
+  position: relative;
+  display: inline-flex;
+}
+
+.island-card-underlay-1 {
+  position: absolute;
+  top: 4.5px;
+  left: 8px;
+  right: 8px;
+  bottom: -4.5px;
+  border-radius: 9999px;
+  background: rgba(15, 23, 42, 0.35);
+  backdrop-filter: blur(8px);
+  border: 1px solid rgba(100, 116, 139, 0.3);
+  box-shadow: 0 4px 16px rgba(0, 0, 0, 0.3);
+  transform: scale(0.96);
+  z-index: -10;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+.island-card-underlay-2 {
+  position: absolute;
+  top: 8.5px;
+  left: 16px;
+  right: 16px;
+  bottom: -8.5px;
+  border-radius: 9999px;
+  background: rgba(2, 6, 23, 0.25);
+  backdrop-filter: blur(6px);
+  border: 1px solid rgba(71, 85, 105, 0.2);
+  box-shadow: 0 6px 20px rgba(0, 0, 0, 0.35);
+  transform: scale(0.92);
+  z-index: -20;
+  pointer-events: none;
+  transition: all 0.35s cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+/* 3D Card Stack Pop-In Animation when front card changes */
+@keyframes islandCardPopIn {
+  0% {
+    opacity: 0;
+    transform: translateY(8px) scale(0.96);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+
+.island-card-pop-in {
+  animation: islandCardPopIn 0.35s cubic-bezier(0.16, 1, 0.3, 1) both;
+}
+
+
+

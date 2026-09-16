@@ -18,6 +18,7 @@ import {
   resetManualAircraft,
   resetToManualMode,
   sanitizeManualFleet,
+  computeLightStates,
 } from './simulation/simulator';
 import { findPath, routeToEdges } from './simulation/pathfinding';
 import { getAirlineDef } from './data/airlineTypes';
@@ -91,6 +92,12 @@ export default function App() {
         base.selectedAircraftId = found.id;
       }
       if (saved.elapsedSeconds) base.elapsedSeconds = saved.elapsedSeconds;
+    }
+    if (base.aircraft && base.aircraft.status !== 'taxiing') {
+      base.routeStatus = 'pending';
+      base.aircraft.routeVisible = false;
+      base.aircraft.guidanceVisible = false;
+      base.lightStates = {};
     }
     return base;
   });
@@ -249,11 +256,32 @@ export default function App() {
           destinationNodeId: selectedAc.targetNodeId,
         }));
       }
+
+      const isTaxiing = selectedAc?.status === 'taxiing';
+      const newRouteStatus = isTaxiing ? 'accepted' : 'pending';
+
+      const updatedFleet = sanitized.map(ac => {
+        if (ac.id === (selectedAc?.id || aircraftId) && !isTaxiing) {
+          return {
+            ...ac,
+            routeVisible: false,
+            guidanceVisible: false,
+          };
+        }
+        return ac;
+      });
+
+      const updatedSelectedAc = updatedFleet.find(a => a.id === (selectedAc?.id || aircraftId)) || selectedAc;
+
       return {
         ...prev,
-        manualFleet: sanitized,
-        selectedAircraftId: selectedAc ? selectedAc.id : 'VN001',
-        aircraft: selectedAc || prev.aircraft,
+        manualFleet: updatedFleet,
+        selectedAircraftId: updatedSelectedAc ? updatedSelectedAc.id : 'VN001',
+        aircraft: updatedSelectedAc || prev.aircraft,
+        routeStatus: newRouteStatus,
+        lightStates: isTaxiing && updatedSelectedAc
+          ? computeLightStates(updatedSelectedAc, prev.blockedEdgeIds, currentGraph)
+          : {},
       };
     });
   }, [currentGraph]);

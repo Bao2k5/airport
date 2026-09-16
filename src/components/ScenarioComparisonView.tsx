@@ -5,7 +5,6 @@ import { setupScenario5Traditional, setupScenario5FTG } from '../data/presetScen
 import { scenarioTick, startScenario, routeToEdges } from '../simulation/scenarioRunner';
 import ScenarioRunPage from './ui/ScenarioRunPage';
 import ScenarioComparisonPanel from './ui/ScenarioComparisonPanel';
-import { Radio, CheckCircle2 } from 'lucide-react';
 
 interface Props {
   graph: AirportGraph;
@@ -47,54 +46,105 @@ const pOut2Full = [
 interface ToastMessage {
   id: string;
   text: string;
-  time: number;
+  time?: number;
+  durationSec?: number;
 }
 
-function ToastItem({
-  toast,
+function parseToastMeta(text: string) {
+  const isPilot = text.includes('👨‍✈️') || text.toLowerCase().includes('pilot');
+  const isFod = text.includes('FOD') || text.includes('vật thể lạ');
+  const isEmergency = text.includes('🚨') || text.includes('khẩn nguy') || text.includes('STOP');
+  const isFtg = text.includes('🟢') || text.includes('FTG') || text.includes('Follow-the-Green');
+
+  const callsignMatch = text.match(/\b(HVN\d+|BAV\d+|THA\d+|RESCUE\d+|VJ\d+|VN\d+|INB\d+|OUT\d+|OUTB\d+)\b/i);
+  const callsign = callsignMatch ? callsignMatch[1].toUpperCase() : null;
+
+  const quoteMatch = text.match(/"([^"]+)"/);
+  const content = quoteMatch ? quoteMatch[1] : text.replace(/^[^:]+:\s*/, '');
+
+  return { isPilot, isFod, isEmergency, isFtg, callsign, content };
+}
+
+function ComparisonDynamicIslandHud({
+  toasts,
   onDismiss,
   variant,
 }: {
-  toast: ToastMessage;
+  toasts: ToastMessage[];
   onDismiss: (id: string) => void;
   variant: 'traditional' | 'ftg';
 }) {
-  useEffect(() => {
-    const t = setTimeout(() => {
-      onDismiss(toast.id);
-    }, 5000); // 5s: tự động tắt gọn gàng, không bị chồng đè
-    return () => clearTimeout(t);
-  }, [toast.id, onDismiss]);
-
   const isTrad = variant === 'traditional';
 
-  return (
-    <div
-      onClick={() => onDismiss(toast.id)}
-      className="canva-toast-enter pointer-events-auto w-full max-w-[330px] bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl rounded-tl-sm p-2.5 text-xs text-[#F1F5F9] transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
-      title="Bấm để đóng tin nhắn này"
-    >
-      <div className="flex items-center justify-between gap-2 mb-1 pb-1 border-b border-[rgba(148,163,184,0.2)]">
-        <div className="flex items-center gap-1.5 text-sky-400 font-bold text-[10.5px] uppercase tracking-wider drop-shadow-md">
-          <span className="w-2 h-2 rounded-full bg-sky-400 animate-ping inline-block" />
-          {isTrad ? <Radio className="w-3.5 h-3.5 text-sky-400" /> : <CheckCircle2 className="w-3.5 h-3.5 text-sky-400" />}
-          <span>{isTrad ? 'KSVKL (VHF Ground)' : 'A-SMGCS / KSVKL'}</span>
+  if (toasts.length === 0) {
+    return (
+      <div className="absolute top-2 inset-x-0 z-20 flex justify-center pointer-events-none select-none font-mono">
+        <div className="bg-black/40 backdrop-blur-md border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.3)] h-5 px-2.5 rounded-full flex items-center justify-center pointer-events-auto">
+          <span className={`w-2 h-2 rounded-full inline-block animate-pulse ${
+            isTrad ? 'bg-sky-400 shadow-[0_0_8px_#38bdf8]' : 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
+          }`} />
         </div>
-        <button
-          type="button"
-          onClick={(e) => {
-            e.stopPropagation();
-            onDismiss(toast.id);
-          }}
-          className="text-[#94A3B8] hover:text-white text-xs px-1 hover:bg-white/10 rounded transition-colors"
-          title="Đóng"
-        >
-          ✕
-        </button>
       </div>
-      <div className="text-[#F1F5F9] font-mono text-[11.5px] leading-relaxed pl-2 border-l-2 border-slate-500/70 bg-transparent py-1 pr-1.5 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
-        {toast.text}
-      </div>
+    );
+  }
+
+  return (
+    <div className="absolute top-2 inset-x-0 z-20 flex flex-col items-center gap-1.5 pointer-events-none select-none font-mono">
+      {toasts.map(toast => {
+        const meta = parseToastMeta(toast.text);
+        const durationSec = toast.durationSec ?? 3.2;
+
+        return (
+          <div
+            key={toast.id}
+            className={`dynamic-island-shell relative overflow-hidden backdrop-blur-md rounded-full text-xs transition-all duration-300 inline-flex items-center gap-2 cursor-pointer select-none pointer-events-auto island-card-pop-in ${
+              isTrad
+                ? 'bg-slate-950/40 hover:bg-slate-900/55 border border-sky-500/50 hover:border-sky-400/80 shadow-[0_8px_24px_rgba(0,0,0,0.4)] py-1.5 px-3.5 max-w-[94vw] w-auto text-sky-100'
+                : 'bg-slate-950/40 hover:bg-slate-900/55 border border-emerald-500/50 hover:border-emerald-400/80 shadow-[0_8px_24px_rgba(0,0,0,0.4)] py-1.5 px-3.5 max-w-[94vw] w-auto text-emerald-100'
+            }`}
+            onClick={() => onDismiss(toast.id)}
+            title="Bấm để đóng thông báo này"
+          >
+            <div className="flex items-center gap-1.5 shrink-0">
+              <span className={`w-2 h-2 rounded-full inline-block animate-pulse shadow-[0_0_8px_currentColor] ${
+                isTrad ? 'bg-sky-400 text-sky-400' : 'bg-emerald-400 text-emerald-400'
+              }`} />
+              <span className={`text-[9px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border leading-none ${
+                isTrad ? 'bg-sky-500/20 text-sky-300 border-sky-500/50' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+              }`}>
+                {isTrad ? 'VHF' : 'FTG'}
+              </span>
+              {meta.callsign && (
+                <span className="text-[10px] font-bold text-sky-300 bg-sky-950/70 border border-sky-600/50 px-2 py-0.5 rounded-full tracking-wide leading-none">
+                  {meta.callsign}
+                </span>
+              )}
+            </div>
+
+            <div className="font-mono text-[11px] sm:text-[11.5px] leading-tight text-slate-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] whitespace-nowrap truncate max-w-[45vw] sm:max-w-none font-medium">
+              {meta.content}
+            </div>
+
+            {/* Nút đóng [✕] */}
+            <button
+              type="button"
+              onClick={(e) => {
+                e.stopPropagation();
+                onDismiss(toast.id);
+              }}
+              className="text-[#94A3B8] hover:text-white text-xs px-1 hover:bg-white/20 rounded-full transition-colors shrink-0 ml-0.5"
+              title="Đóng lệnh này"
+            >
+              ✕
+            </button>
+
+            <div
+              className={`absolute bottom-0 left-0 h-[1.5px] ${isTrad ? 'bg-sky-400/80' : 'bg-emerald-400/80'} island-countdown-bar`}
+              style={{ animationDuration: `${durationSec}s` }}
+            />
+          </div>
+        );
+      })}
     </div>
   );
 }
@@ -134,9 +184,29 @@ export default function Scenario5ComparisonView({
   const [rightFinalTime, setRightFinalTime] = useState<number | null>(null);
 
 
-  // Toast state for collapsed HUD view: queue of active chat bubbles, each lasting 4.5s
+  // Toast state for collapsed HUD view: queue of active chat bubbles
   const [leftToasts, setLeftToasts] = useState<ToastMessage[]>([]);
   const [rightToasts, setRightToasts] = useState<ToastMessage[]>([]);
+
+  const leftTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const rightTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+
+  const clearLeftTimers = useCallback(() => {
+    leftTimeoutsRef.current.forEach(clearTimeout);
+    leftTimeoutsRef.current = [];
+  }, []);
+
+  const clearRightTimers = useCallback(() => {
+    rightTimeoutsRef.current.forEach(clearTimeout);
+    rightTimeoutsRef.current = [];
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      clearLeftTimers();
+      clearRightTimers();
+    };
+  }, [clearLeftTimers, clearRightTimers]);
 
   const handleDismissLeftToast = useCallback((id: string) => {
     setLeftToasts(prev => prev.filter(t => t.id !== id));
@@ -151,6 +221,10 @@ export default function Scenario5ComparisonView({
   const tradInitClearancesIssuedRef = useRef(false);
   const ftgInitClearancesIssuedRef = useRef(false);
 
+  // Hiệu ứng thác đổ tuần tự (Staggered Cascade) và cùng nhau biến mất (Dismiss Together):
+  // - 3 lệnh xuất hiện lần lượt từng đợt nối đuôi nhau (cách nhau 400ms).
+  // - Cả 3 lệnh cùng hiển thị đầy đủ trên màn hình để người dùng nắm bắt thông tin.
+  // - Khi cả 3 đã xuất hiện xong, hiển thị thêm ~2.4s rồi CÙNG NHAU THOÁT đồng loạt về viên thuốc mini.
   useEffect(() => {
     if (traditionalEvents.length <= prevTradCountRef.current) {
       prevTradCountRef.current = traditionalEvents.length;
@@ -159,14 +233,90 @@ export default function Scenario5ComparisonView({
     const newItems = traditionalEvents.slice(prevTradCountRef.current);
     prevTradCountRef.current = traditionalEvents.length;
 
-    const newToasts: ToastMessage[] = newItems.map((ev, i) => ({
-      id: `${Date.now()}-${i}-${Math.random()}`,
-      text: ev.text,
-      time: ev.time,
-    }));
+    clearLeftTimers();
 
-    setLeftToasts(prev => [...prev.slice(-3), ...newToasts]);
-  }, [traditionalEvents, traditionalEvents.length]);
+    if (newItems.length === 1) {
+      const t0: ToastMessage = {
+        id: `${Date.now()}-0-${Math.random()}`,
+        text: newItems[0].text,
+        time: newItems[0].time,
+        durationSec: 5.0,
+      };
+      setLeftToasts([t0]);
+      const dismissT = setTimeout(() => {
+        setLeftToasts([]);
+      }, 5000);
+      leftTimeoutsRef.current.push(dismissT);
+    } else if (newItems.length === 2) {
+      const t0: ToastMessage = {
+        id: `${Date.now()}-0-${Math.random()}`,
+        text: newItems[0].text,
+        time: newItems[0].time,
+        durationSec: 2.8,
+      };
+      const t1: ToastMessage = {
+        id: `${Date.now()}-1-${Math.random()}`,
+        text: newItems[1].text,
+        time: newItems[1].time,
+        durationSec: 2.4,
+      };
+      // Đợt 1: Lệnh 1 hiện ngay
+      setLeftToasts([t0]);
+
+      // Đợt 2: Lệnh 2 trồi lên sau 400ms
+      const stage1 = setTimeout(() => {
+        setLeftToasts(prev => [...prev, t1]);
+      }, 400);
+      leftTimeoutsRef.current.push(stage1);
+
+      // Cả 2 cùng nhau thoát đồng loạt sau 2.8s
+      const dismissT = setTimeout(() => {
+        setLeftToasts([]);
+      }, 2800);
+      leftTimeoutsRef.current.push(dismissT);
+    } else {
+      // 3 lệnh trở lên (ví dụ 3 lệnh mở màn của INB01, OUT01, OUT02)
+      const t0: ToastMessage = {
+        id: `${Date.now()}-0-${Math.random()}`,
+        text: newItems[0].text,
+        time: newItems[0].time,
+        durationSec: 3.2,
+      };
+      const t1: ToastMessage = {
+        id: `${Date.now()}-1-${Math.random()}`,
+        text: newItems[1].text,
+        time: newItems[1].time,
+        durationSec: 2.8,
+      };
+      const t2: ToastMessage = {
+        id: `${Date.now()}-2-${Math.random()}`,
+        text: newItems[2].text,
+        time: newItems[2].time,
+        durationSec: 2.4,
+      };
+
+      // Đợt 1: Lệnh 1 hiện ngay (0ms)
+      setLeftToasts([t0]);
+
+      // Đợt 2: Lệnh 2 trồi lên nối đuôi bên dưới sau 400ms
+      const stage1 = setTimeout(() => {
+        setLeftToasts(prev => [...prev, t1]);
+      }, 400);
+      leftTimeoutsRef.current.push(stage1);
+
+      // Đợt 3: Lệnh 3 trồi lên nối đuôi bên dưới sau 800ms
+      const stage2 = setTimeout(() => {
+        setLeftToasts(prev => [...prev, t2]);
+      }, 800);
+      leftTimeoutsRef.current.push(stage2);
+
+      // Cả 3 lệnh cùng hiển thị đầy đủ, sau đó CÙNG NHAU THOÁT đồng loạt tại mốc 3.2s!
+      const dismissT = setTimeout(() => {
+        setLeftToasts([]);
+      }, 3200);
+      leftTimeoutsRef.current.push(dismissT);
+    }
+  }, [traditionalEvents, clearLeftTimers]);
 
   useEffect(() => {
     if (ftgEvents.length <= prevFtgCountRef.current) {
@@ -176,14 +326,81 @@ export default function Scenario5ComparisonView({
     const newItems = ftgEvents.slice(prevFtgCountRef.current);
     prevFtgCountRef.current = ftgEvents.length;
 
-    const newToasts: ToastMessage[] = newItems.map((ev, i) => ({
-      id: `${Date.now()}-${i}-${Math.random()}`,
-      text: ev.text,
-      time: ev.time,
-    }));
+    clearRightTimers();
 
-    setRightToasts(prev => [...prev.slice(-3), ...newToasts]);
-  }, [ftgEvents, ftgEvents.length]);
+    if (newItems.length === 1) {
+      const t0: ToastMessage = {
+        id: `${Date.now()}-0-${Math.random()}`,
+        text: newItems[0].text,
+        time: newItems[0].time,
+        durationSec: 5.0,
+      };
+      setRightToasts([t0]);
+      const dismissT = setTimeout(() => {
+        setRightToasts([]);
+      }, 5000);
+      rightTimeoutsRef.current.push(dismissT);
+    } else if (newItems.length === 2) {
+      const t0: ToastMessage = {
+        id: `${Date.now()}-0-${Math.random()}`,
+        text: newItems[0].text,
+        time: newItems[0].time,
+        durationSec: 2.8,
+      };
+      const t1: ToastMessage = {
+        id: `${Date.now()}-1-${Math.random()}`,
+        text: newItems[1].text,
+        time: newItems[1].time,
+        durationSec: 2.4,
+      };
+      setRightToasts([t0]);
+      const stage1 = setTimeout(() => {
+        setRightToasts(prev => [...prev, t1]);
+      }, 400);
+      rightTimeoutsRef.current.push(stage1);
+
+      const dismissT = setTimeout(() => {
+        setRightToasts([]);
+      }, 2800);
+      rightTimeoutsRef.current.push(dismissT);
+    } else {
+      const t0: ToastMessage = {
+        id: `${Date.now()}-0-${Math.random()}`,
+        text: newItems[0].text,
+        time: newItems[0].time,
+        durationSec: 3.2,
+      };
+      const t1: ToastMessage = {
+        id: `${Date.now()}-1-${Math.random()}`,
+        text: newItems[1].text,
+        time: newItems[1].time,
+        durationSec: 2.8,
+      };
+      const t2: ToastMessage = {
+        id: `${Date.now()}-2-${Math.random()}`,
+        text: newItems[2].text,
+        time: newItems[2].time,
+        durationSec: 2.4,
+      };
+
+      setRightToasts([t0]);
+
+      const stage1 = setTimeout(() => {
+        setRightToasts(prev => [...prev, t1]);
+      }, 400);
+      rightTimeoutsRef.current.push(stage1);
+
+      const stage2 = setTimeout(() => {
+        setRightToasts(prev => [...prev, t2]);
+      }, 800);
+      rightTimeoutsRef.current.push(stage2);
+
+      const dismissT = setTimeout(() => {
+        setRightToasts([]);
+      }, 3200);
+      rightTimeoutsRef.current.push(dismissT);
+    }
+  }, [ftgEvents, clearRightTimers]);
 
   const runwayChangeTriggeredRef = useRef(false);
   const tradRunwayChangeTriggeredRef = useRef(false);
@@ -1333,6 +1550,8 @@ export default function Scenario5ComparisonView({
     tradTakeoffStartRef.current.clear();
     setTraditionalEvents([]);
     setFtgEvents([]);
+    clearLeftTimers();
+    clearRightTimers();
     setLeftToasts([]);
     setRightToasts([]);
     tradInitClearancesIssuedRef.current = false;
@@ -1386,18 +1605,11 @@ export default function Scenario5ComparisonView({
         bgImage={bgImage}
         ftgTag="FtG: OFF"
         hudContent={
-          leftToasts.length > 0 ? (
-            <div className="relative lg:absolute lg:top-3 lg:left-3 z-10 flex flex-col gap-2 w-full lg:max-w-xs pointer-events-none">
-              {leftToasts.map(toast => (
-                <ToastItem
-                  key={toast.id}
-                  toast={toast}
-                  onDismiss={handleDismissLeftToast}
-                  variant="traditional"
-                />
-              ))}
-            </div>
-          ) : null
+          <ComparisonDynamicIslandHud
+            toasts={leftToasts}
+            onDismiss={handleDismissLeftToast}
+            variant="traditional"
+          />
         }
         statusBanner={
           <span className="flex items-center gap-1.5 leading-snug">
@@ -1425,18 +1637,11 @@ export default function Scenario5ComparisonView({
         ftgTag="FtG: ACTIVE"
         alertContent={null}
         hudContent={
-          rightToasts.length > 0 ? (
-            <div className="relative lg:absolute lg:top-3 lg:left-3 z-10 flex flex-col gap-2 w-full lg:max-w-xs pointer-events-none">
-              {rightToasts.map(toast => (
-                <ToastItem
-                  key={toast.id}
-                  toast={toast}
-                  onDismiss={handleDismissRightToast}
-                  variant="ftg"
-                />
-              ))}
-            </div>
-          ) : null
+          <ComparisonDynamicIslandHud
+            toasts={rightToasts}
+            onDismiss={handleDismissRightToast}
+            variant="ftg"
+          />
         }
         statusBanner={
           <span className="flex items-center gap-1.5 leading-snug">

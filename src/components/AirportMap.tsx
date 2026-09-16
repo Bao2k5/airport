@@ -14,7 +14,6 @@ import AirportLighting from './AirportLighting';
 import { getAirlineDef } from '../data/airlineTypes';
 import { loadImageWithRetry, type AssetLoadState } from '../utils/assetLoader';
 import type { AirportGraph, AirportNode, Aircraft, SimulationState } from '../types';
-import { Radio } from 'lucide-react';
 
 interface Props {
   state: SimulationState;
@@ -690,9 +689,24 @@ interface AtcToastMessage {
   createdAt: number;
 }
 
+function parseToastMeta(text: string) {
+  const isPilot = text.includes('👨‍✈️') || text.toLowerCase().includes('pilot');
+  const isFod = text.includes('FOD') || text.includes('vật thể lạ');
+  const isEmergency = text.includes('🚨') || text.includes('khẩn nguy') || text.includes('cháy động cơ');
+  const isFtg = text.includes('🟢') || text.includes('FTG') || text.includes('Follow-the-Green');
+
+  const callsignMatch = text.match(/\b(HVN\d+|BAV\d+|THA\d+|RESCUE\d+|VJ\d+|VN\d+|INB\d+|OUT\d+)\b/i);
+  const callsign = callsignMatch ? callsignMatch[1].toUpperCase() : null;
+
+  const quoteMatch = text.match(/"([^"]+)"/);
+  const content = quoteMatch ? quoteMatch[1] : text.replace(/^[^:]+:\s*/, '');
+
+  return { isPilot, isFod, isEmergency, isFtg, callsign, content };
+}
+
 function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
   const [toasts, setToasts] = useState<AtcToastMessage[]>([]);
-  const prevEventsLengthRef = useRef(0);
+  const prevEventsLength = useRef(0);
 
   const scenario = state.scenario;
   const events = scenario?.events ?? [];
@@ -700,38 +714,48 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
   // Reset khi đổi kịch bản hoặc khi kịch bản chạy lại từ đầu
   useEffect(() => {
     setToasts([]);
-    prevEventsLengthRef.current = 0;
+    prevEventsLength.current = 0;
   }, [scenario?.id, state.elapsedSeconds === 0]);
 
-  // Mỗi câu thoại tự động biến mất sau 7s kể từ khi xuất hiện (đủ thời gian đọc đầy đủ các huấn lệnh đồng thời)
+  // Chạy tuần tự từng lệnh trồi lên nhanh (Fast Sequential Queue):
+  // - Nếu có >= 3 lệnh: mỗi lệnh hiện nhanh 1.3s rồi chuyển lệnh tiếp theo.
+  // - Nếu có 2 lệnh: mỗi lệnh hiện 1.8s.
+  // - Nếu có 1 lệnh đơn lẻ: hiện 4.5s.
   useEffect(() => {
     if (toasts.length === 0) return;
-    const interval = setInterval(() => {
-      const now = Date.now();
-      setToasts(prev => prev.filter(t => now - t.createdAt < 7000));
-    }, 500);
-    return () => clearInterval(interval);
-  }, [toasts.length]);
+    const currentId = toasts[0].id;
+    const durationMs = toasts.length >= 3 ? 1300 : (toasts.length === 2 ? 1800 : 4500);
+    const timer = setTimeout(() => {
+      setToasts(prev => {
+        if (prev.length === 0 || prev[0].id !== currentId) return prev;
+        return prev.slice(1);
+      });
+    }, durationMs);
+    return () => clearTimeout(timer);
+  }, [toasts[0]?.id, toasts.length]);
 
-  // Khi có huấn lệnh mới: lập tức bung câu thoại nổi tại đúng thời điểm phát lệnh
+  // Khi có huấn lệnh mới: bung câu thoại nổi tại đúng thời điểm phát lệnh
   useEffect(() => {
     if (!scenario) return;
 
-    // Nếu kịch bản vừa được restart lại từ đầu (số lượng event giảm đi)
-    if (events.length < prevEventsLengthRef.current) {
-      prevEventsLengthRef.current = 0;
+    if (events.length < prevEventsLength.current) {
+      prevEventsLength.current = 0;
       setToasts([]);
     }
 
-    if (events.length <= prevEventsLengthRef.current) {
-      return;
-    }
+    if (events.length <= prevEventsLength.current) return;
 
-    const newEvents = events.slice(prevEventsLengthRef.current);
-    prevEventsLengthRef.current = events.length;
+    const newEvents = events.slice(prevEventsLength.current);
+    prevEventsLength.current = events.length;
 
-    // Lọc bỏ thông báo ban đầu của hệ thống "Kịch bản bắt đầu."
-    const actionableEvents = newEvents.filter((ev: any) => ev.message && !ev.message.includes('Kịch bản bắt đầu'));
+    // Lọc bỏ các thông báo hệ thống hoàn thành kịch bản để tránh rác HUD
+    const actionableEvents = newEvents.filter((ev: any) =>
+      !ev.message.includes('100%') &&
+      !ev.message.includes('HOÀN THÀNH') &&
+      !ev.message.includes('Kịch bản hoàn tất') &&
+      !ev.message.includes('bắt đầu') &&
+      !ev.message.includes('Khởi chạy')
+    );
     if (actionableEvents.length === 0) return;
 
     const now = Date.now();
@@ -743,7 +767,7 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
       createdAt: now,
     }));
 
-    // Giữ tối đa 4 tin nhắn đồng thời xếp dọc để hiển thị đầy đủ các huấn lệnh (kể cả khi 3 tàu bay nhận lệnh cùng lúc)
+    // Giữ tối đa 4 tin nhắn mới nhất
     setToasts(prev => [...prev, ...newToasts].slice(-4));
   }, [events, events.length, scenario?.id]);
 
@@ -751,45 +775,119 @@ function ScenarioAtcHudOverlay({ state }: { state: SimulationState }) {
     setToasts(prev => prev.filter(t => t.id !== id));
   }, []);
 
-  // Nếu không có kịch bản hoặc không có câu thoại nào cần hiển thị thì màn hình hoàn toàn sạch
-  if (!scenario || toasts.length === 0) return null;
+  if (!scenario) return null;
+
+  const durationSec = toasts.length >= 3 ? 1.3 : (toasts.length === 2 ? 1.8 : 4.5);
+  const isExpanded = toasts.length > 0;
+  const activeToast = isExpanded ? toasts[0] : null;
+  const meta = activeToast ? parseToastMeta(activeToast.text) : null;
+
+  const badgeBg = meta?.isEmergency || meta?.isFod
+    ? 'bg-rose-500/20 text-rose-300 border-rose-500/50'
+    : meta?.isPilot
+    ? 'bg-amber-500/20 text-amber-300 border-amber-500/50'
+    : meta?.isFtg
+    ? 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+    : 'bg-sky-500/20 text-sky-300 border-sky-500/50';
+
+  const pingColor = meta?.isEmergency || meta?.isFod
+    ? 'bg-rose-400 text-rose-400'
+    : meta?.isPilot
+    ? 'bg-amber-400 text-amber-400'
+    : meta?.isFtg
+    ? 'bg-emerald-400 text-emerald-400'
+    : 'bg-sky-400 text-sky-400';
 
   return (
-    <div className="absolute top-3 left-3 z-30 flex flex-col gap-2 w-full max-w-[calc(100%-24px)] sm:max-w-[380px] pointer-events-none select-none font-mono">
-      {toasts.map(toast => {
-        return (
-          <div
-            key={toast.id}
-            onClick={() => handleDismissToast(toast.id)}
-            className="canva-toast-enter pointer-events-auto w-full bg-transparent border border-slate-500/70 hover:border-slate-400 shadow-lg shadow-black/60 rounded-xl p-2.5 text-xs text-slate-100 transition-all duration-300 hover:scale-[1.01] cursor-pointer select-none"
-            title="Bấm để đóng tin nhắn này"
-          >
-            <div className="flex items-center justify-between gap-2 mb-1.5 pb-1 border-b border-[rgba(148,163,184,0.2)]">
-              <div className="flex items-center gap-1.5 font-bold text-[11px] uppercase tracking-wider drop-shadow-sm text-sky-400">
-                <span className="w-2 h-2 rounded-full animate-ping inline-block bg-sky-400" />
-                <Radio className="w-3.5 h-3.5 text-sky-400" />
-                <span className="text-slate-200">
-                  KSVKL / Huấn lệnh ATC
+    <div className="absolute top-2 inset-x-0 z-30 flex items-center justify-center pointer-events-none select-none font-mono">
+      {/* 3D Stacked Cards Wrapper */}
+      <div className="island-stack-wrapper pointer-events-auto">
+        {/* Lớp viền bo cong xếp chồng 3D phía sau (nếu có 2 hoặc 3 lệnh) */}
+        {isExpanded && toasts.length >= 2 && (
+          <div className="island-card-underlay-1" />
+        )}
+        {isExpanded && toasts.length >= 3 && (
+          <div className="island-card-underlay-2" />
+        )}
+
+        <div
+          className={`dynamic-island-shell relative overflow-hidden backdrop-blur-md rounded-full text-xs transition-all duration-300 inline-flex items-center gap-2 cursor-pointer select-none ${
+            isExpanded
+              ? 'bg-slate-950/40 hover:bg-slate-900/55 border border-slate-500/50 hover:border-sky-400/80 shadow-[0_8px_24px_rgba(0,0,0,0.4)] py-1.5 px-3.5 max-w-[94vw] w-auto'
+              : 'bg-black/40 hover:bg-black/60 border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.3)] h-5 px-2.5 w-auto flex items-center justify-center'
+          }`}
+          onClick={() => {
+            if (activeToast) handleDismissToast(activeToast.id);
+          }}
+          title={isExpanded ? 'Bấm để đóng thông báo này' : 'A-SMGCS Live Monitor'}
+        >
+          {!isExpanded ? (
+            /* Trạng thái CHỜ (Idle Mini Pill chuẩn iPhone) */
+            <div className="island-content-in flex items-center justify-center">
+              <span className="w-2 h-2 rounded-full inline-block bg-emerald-400 animate-pulse shadow-[0_0_8px_#34d399]" />
+            </div>
+          ) : activeToast && meta ? (
+            /* Trạng thái NỞ TO: Từng thông báo trồi lên nhanh */
+            <div key={activeToast.id} className="island-card-pop-in flex items-center gap-2 w-auto">
+              {/* Badge & Callsign */}
+              <div className="flex items-center gap-1.5 shrink-0">
+                <span className={`w-2 h-2 rounded-full inline-block animate-pulse shadow-[0_0_8px_currentColor] ${pingColor}`} />
+                <span className={`text-[9px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border leading-none ${badgeBg}`}>
+                  {meta.isEmergency ? 'EMG' : meta.isFod ? 'FOD' : meta.isPilot ? 'PILOT' : meta.isFtg ? 'FTG' : 'ATC'}
                 </span>
+                {meta.callsign && (
+                  <span className="text-[10px] font-bold text-sky-300 bg-sky-950/70 border border-sky-600/50 px-2 py-0.5 rounded-full tracking-wide leading-none">
+                    {meta.callsign}
+                  </span>
+                )}
               </div>
+
+              {/* Nội dung câu lệnh 1 dòng khít */}
+              <div className="font-mono text-[11px] sm:text-[11.5px] leading-tight text-slate-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] whitespace-nowrap truncate max-w-[55vw] sm:max-w-none font-medium">
+                {meta.content}
+              </div>
+
+              {/* Chấm phân trang tiến trình hàng đợi nếu có >= 2 lệnh */}
+              {toasts.length > 1 && (
+                <div className="flex items-center gap-1 shrink-0 px-1" title={`Còn ${toasts.length - 1} lệnh tiếp theo`}>
+                  {Array.from({ length: Math.min(toasts.length, 4) }).map((_, idx) => (
+                    <span
+                      key={idx}
+                      className={`h-1.5 rounded-full transition-all duration-300 ${
+                        idx === 0
+                          ? 'w-3 bg-sky-400 shadow-[0_0_6px_#38bdf8]'
+                          : 'w-1.5 bg-slate-600/80'
+                      }`}
+                    />
+                  ))}
+                </div>
+              )}
+
+              {/* Nút đóng [✕] */}
               <button
                 type="button"
                 onClick={(e) => {
                   e.stopPropagation();
-                  handleDismissToast(toast.id);
+                  handleDismissToast(activeToast.id);
                 }}
-                className="text-slate-400 hover:text-white text-xs px-1.5 py-0.5 hover:bg-white/10 rounded transition-colors"
-                title="Đóng"
+                className="text-slate-400 hover:text-white text-xs px-1 hover:bg-white/20 rounded-full transition-colors shrink-0 ml-0.5"
+                title="Đóng lệnh này"
               >
                 ✕
               </button>
+
+              {/* Thanh đếm ngược countdown ở đáy capsule */}
+              <div
+                key={activeToast.id}
+                className={`absolute bottom-0 left-0 h-[1.5px] ${
+                  meta.isEmergency || meta.isFod ? 'bg-rose-400/80' : meta.isFtg ? 'bg-emerald-400/80' : 'bg-sky-400/80'
+                } island-countdown-bar`}
+                style={{ animationDuration: `${durationSec}s` }}
+              />
             </div>
-            <div className="font-mono text-[12px] leading-relaxed pl-2 border-l-2 border-slate-500/70 bg-transparent text-slate-100 py-1.5 pr-2 rounded-r drop-shadow-[0_1.5px_1.5px_rgba(0,0,0,0.9)] font-medium">
-              {toast.text}
-            </div>
-          </div>
-        );
-      })}
+          ) : null}
+        </div>
+      </div>
     </div>
   );
 }
@@ -1352,8 +1450,14 @@ function FollowTheGreenRenderer({
   isSelected?: boolean;
   blockedEdgeIds?: Set<string>;
 }) {
-  // STRICT RULE: Do not show guidance when aircraft is parked, arrived, departed, waiting, or guidanceVisible is false
-  if (aircraft.status === 'parked' || aircraft.status === 'arrived' || aircraft.status === 'departed' || aircraft.status === 'waiting' || aircraft.guidanceVisible === false) {
+  // STRICT RULE: Do not show guidance when aircraft is arrived, departed, waiting, guidanceVisible is false, or parked without accepted route
+  if (
+    aircraft.status === 'arrived' ||
+    aircraft.status === 'departed' ||
+    aircraft.status === 'waiting' ||
+    aircraft.guidanceVisible === false ||
+    (aircraft.status === 'parked' && !aircraft.routeVisible)
+  ) {
     return null;
   }
   // Tàu đang đỗ ở bến ban đầu chưa pushback thì không hiện đèn FTG

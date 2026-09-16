@@ -533,7 +533,7 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
     watchFor: def.watchFor,
     observations,
     startedAtSeconds: 0,
-    events: [{ atSeconds: 0, message: 'Kịch bản bắt đầu.', severity: 'info' }],
+    events: [],
     pendingTriggers: triggers,
     completed: false,
   };
@@ -1576,7 +1576,6 @@ export function scenarioTick(
 
   if (nextState.scenario && !nextState.scenario.completed && allArrived) {
     if (allObsPass) {
-      nextState = logScenarioEvent(nextState, 'Kịch bản hoàn tất — tất cả tiêu chí quan sát đã đạt chuẩn 100%.', 'info');
       if (nextState.scenario) {
         nextState.scenario.completed = true;
       }
