@@ -124,17 +124,17 @@ export function isTakeoffRunwayNode(
   if (!nodeIdOrLabel) return false;
   const upper = nodeIdOrLabel.toUpperCase();
   // Runway 25L (Default via E6)
-  if (nodeIdOrLabel === 'STOP_BAR_25L' || nodeIdOrLabel === 'v3_line_17_p16' || nodeIdOrLabel === 'v3_line_05_p07') return true;
-  if (upper.includes('25L') && (upper.includes('STOP BAR') || upper.includes('STOP_BAR'))) return true;
+  if (nodeIdOrLabel === 'STOP_BAR_25L' || nodeIdOrLabel === 'v3_line_17_p16' || nodeIdOrLabel === 'v3_line_05_p07' || nodeIdOrLabel === 'v3_line_05_p06') return true;
+  if (upper.includes('25L') && (upper.includes('STOP BAR') || upper.includes('STOP_BAR') || upper.includes('E6'))) return true;
   // Runway 07R (Runway change / incident diversion)
-  if (nodeIdOrLabel === 'W11_07R' || nodeIdOrLabel === 'v3_line_16_p01' || upper.includes('W11/07R')) return true;
+  if (nodeIdOrLabel === 'W11_07R' || nodeIdOrLabel === 'v3_line_16_p01' || nodeIdOrLabel === 'v3_line_16_p00' || upper.includes('W11/07R') || upper.includes('07R')) return true;
 
   if (nodes) {
     const node = nodes.find(n => n.id === nodeIdOrLabel || n.label === nodeIdOrLabel);
     if (node && node.label) {
       const lUpper = node.label.toUpperCase();
-      if (lUpper.includes('25L') && (lUpper.includes('STOP BAR') || lUpper.includes('STOP_BAR'))) return true;
-      if (lUpper.includes('W11/07R')) return true;
+      if (lUpper.includes('25L') && (lUpper.includes('STOP BAR') || lUpper.includes('STOP_BAR') || lUpper.includes('E6'))) return true;
+      if (lUpper.includes('W11/07R') || lUpper.includes('07R')) return true;
     }
   }
   return false;

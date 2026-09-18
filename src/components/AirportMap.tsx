@@ -12,6 +12,7 @@ import { useEffect, useRef, useState, useCallback, memo } from 'react';
 import { airportGraphV3, SVG_WIDTH, SVG_HEIGHT } from '../data/airportGraph.v3';
 import AirportLighting from './AirportLighting';
 import { getAirlineDef } from '../data/airlineTypes';
+import { isTakeoffRunwayNode } from '../data/v3OperationalNodes';
 import { loadImageWithRetry, type AssetLoadState } from '../utils/assetLoader';
 import type { AirportGraph, AirportNode, Aircraft, SimulationState } from '../types';
 
@@ -217,10 +218,10 @@ function AirportMap({
 
   // Reset departed animation cache when scenario or simulation resets/restarts
   useEffect(() => {
-    if (state.elapsedSeconds === 0 || !state.isRunning) {
+    if (state.elapsedSeconds === 0) {
       departedAnimMap.current.clear();
     }
-  }, [state.elapsedSeconds, state.isRunning, state.scenario?.id]);
+  }, [state.elapsedSeconds, state.scenario?.id]);
 
   const zoomed = view.w < SVG_WIDTH - 0.5;
   const nowMs = performance.now();
@@ -244,11 +245,11 @@ function AirportMap({
         const targetNode = ac.assignedRoute?.[ac.assignedRoute.length - 1] || ac.targetNodeId;
         const isAtRouteEnd = (ac.routeEdgeIndex ?? 0) >= (ac.assignedRoute?.length ?? 1) - 1;
         
-        const isDeparting07R = targetNode === 'v3_line_16_p00' && (ac.status === 'departed' || (isAtRouteEnd && ac.currentNodeId === 'v3_line_16_p00'));
-        const isDeparting25L = targetNode === 'v3_line_17_p16' && (ac.status === 'departed' || (isAtRouteEnd && ac.currentNodeId === 'v3_line_17_p16'));
-        const isTakeoffTarget = isDeparting07R || isDeparting25L || (ac.status === 'departed' && ac.role === 'departing');
+        const isDeparting07R = (targetNode === 'v3_line_16_p00' || targetNode === 'v3_line_16_p01' || targetNode === 'W11_07R' || ac.currentNodeId === 'v3_line_16_p00' || ac.currentNodeId === 'v3_line_16_p01');
+        const isDeparting25L = (targetNode === 'v3_line_17_p16' || targetNode === 'v3_line_05_p07' || targetNode === 'STOP_BAR_25L' || ac.currentNodeId === 'v3_line_05_p07' || ac.currentNodeId === 'v3_line_17_p16');
+        const isTakeoffTarget = isDeparting07R || isDeparting25L || (ac.status === 'departed' && (ac.role === 'departing' || isTakeoffRunwayNode(targetNode, activeGraph.nodes)));
 
-        if (isTakeoffTarget) {
+        if (isTakeoffTarget && (ac.status === 'departed' || isAtRouteEnd)) {
           if (!departedAnimMap.current.has(ac.id)) {
             let startX = 1136, startY = 176, heading = 247.5;
             if (isDeparting07R || targetNode === 'v3_line_16_p00') {
@@ -258,10 +259,10 @@ function AirportMap({
           }
           const anim = departedAnimMap.current.get(ac.id)!;
           const elapsed = (nowMs - anim.startTime) / 1000;
-          if (elapsed >= 1.3) {
-            return false; // Hết 1.3 giây chạy đà và cất cánh nhanh thì biến mất hoàn toàn
+          if (elapsed >= 2.0) {
+            return false;
           }
-          return true; // Trong 1.3 giây này vẽ hiệu ứng chạy đà cất cánh nhanh
+          return true;
         } else {
           // Xóa khỏi danh sách departed nếu máy bay đang chạy chuyến mới / chạy lại / quay đầu
           departedAnimMap.current.delete(ac.id);
@@ -272,8 +273,32 @@ function AirportMap({
       })
     : (state.manualFleet && state.manualFleet.length
         ? state.manualFleet.filter(ac => {
+            const targetNode = ac.assignedRoute?.[ac.assignedRoute.length - 1] || ac.targetNodeId;
+            const isAtRouteEnd = (ac.routeEdgeIndex ?? 0) >= (ac.assignedRoute?.length ?? 1) - 1;
+            
+            const isDeparting07R = (targetNode === 'v3_line_16_p00' || targetNode === 'v3_line_16_p01' || targetNode === 'W11_07R' || ac.currentNodeId === 'v3_line_16_p00' || ac.currentNodeId === 'v3_line_16_p01');
+            const isDeparting25L = (targetNode === 'v3_line_17_p16' || targetNode === 'v3_line_05_p07' || targetNode === 'STOP_BAR_25L' || ac.currentNodeId === 'v3_line_05_p07' || ac.currentNodeId === 'v3_line_17_p16');
+            const isTakeoffTarget = isDeparting07R || isDeparting25L || isTakeoffRunwayNode(targetNode, activeGraph.nodes) || ac.status === 'departed';
+
+            if (isTakeoffTarget && (ac.status === 'departed' || isAtRouteEnd)) {
+              if (!departedAnimMap.current.has(ac.id)) {
+                let startX = 1136, startY = 176, heading = 247.5;
+                if (isDeparting07R || targetNode === 'v3_line_16_p00' || ac.currentNodeId === 'v3_line_16_p00' || ac.currentNodeId === 'v3_line_16_p01') {
+                  startX = 67; startY = 704; heading = 67.5;
+                }
+                departedAnimMap.current.set(ac.id, { startTime: performance.now(), startX, startY, heading });
+              }
+              const anim = departedAnimMap.current.get(ac.id)!;
+              const elapsed = (nowMs - anim.startTime) / 1000;
+              if (elapsed >= 2.0) {
+                return false; // Hết 2.0 giây cất cánh thì biến mất hoàn toàn
+              }
+              return true; // Trong 2.0 giây này hiển thị hiệu ứng cất cánh
+            } else {
+              departedAnimMap.current.delete(ac.id);
+            }
+
             if (ac.status === 'departed') return false;
-            departedAnimMap.current.delete(ac.id);
             return true;
           })
         : (state.aircraft ? [state.aircraft] : []));
@@ -528,12 +553,13 @@ function AirportMap({
           let renderOpacity = 1.0;
           let liftScaleFactor = 1.0;
 
-          if (isScenario && departedAnimMap.current.has(ac.id)) {
+          if (departedAnimMap.current.has(ac.id)) {
             const anim = departedAnimMap.current.get(ac.id)!;
             const elapsed = (nowMs - anim.startTime) / 1000;
-            if (elapsed < 1.3) {
-              const progress = Math.min(1.0, elapsed / 1.3);
-              const rollDist = Math.pow(progress, 2.0) * 180; // Chạy đà nhanh và dứt khoát trên đường băng
+            const TAKEOFF_DURATION = 2.0;
+            if (elapsed < TAKEOFF_DURATION) {
+              const progress = Math.min(1.0, elapsed / TAKEOFF_DURATION);
+              const rollDist = Math.pow(progress, 1.8) * 260; // Chạy đà và bốc đầu cất cánh dọc đường băng
               const rad = (anim.heading * Math.PI) / 180;
               const dx = Math.sin(rad);
               const dy = -Math.cos(rad);
@@ -543,8 +569,8 @@ function AirportMap({
                 y: anim.startY + dy * rollDist,
                 heading: anim.heading,
               };
-              // Phóng to nhẹ (+40%) khi nhấc bánh và mờ dần vào không gian
-              liftScaleFactor = 1.0 + 0.40 * Math.pow(progress, 1.3);
+              // Phóng to nhẹ (+50%) khi nhấc bánh bốc đầu bay lên và mờ dần vào không gian
+              liftScaleFactor = 1.0 + 0.50 * Math.pow(progress, 1.2);
               renderOpacity = progress < 0.55 ? 1.0 : Math.max(0, 1.0 - (progress - 0.55) / 0.45);
             } else {
               departedAnimMap.current.delete(ac.id);

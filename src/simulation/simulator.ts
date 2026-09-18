@@ -434,6 +434,17 @@ export function startManualAircraft(
     return state;
   }
 
+  // Strict rule: Only 1 aircraft can run at a time in manual mode!
+  const runningAc = state.manualFleet.find(
+    a => a.id !== aircraftId && (a.status === 'taxiing' || a.status === 'holding')
+  );
+  if (runningAc) {
+    return {
+      ...state,
+      warningMessage: `Không thể cho ${aircraftId} lăn bánh vì tàu ${runningAc.callsign} đang thực hiện chuyến. Mỗi thời điểm chỉ điều phối 1 tàu! Vui lòng đợi hoàn thành chuyến.`,
+    };
+  }
+
   const updatedFleet = state.manualFleet.map(ac => {
     if (ac.id === aircraftId) {
       const route = ac.assignedRoute && ac.assignedRoute.length >= 2
@@ -441,7 +452,7 @@ export function startManualAircraft(
         : (findPath(graph, ac.currentNodeId, ac.targetNodeId) || [ac.currentNodeId]);
       const routeEdgeIds = routeToEdges(route, graph.edges);
 
-      const isNewTrip = ac.status === 'parked' || ac.status === 'arrived' || (ac.routeEdgeIndex >= (routeEdgeIds?.length ?? 0));
+      const isNewTrip = ac.status === 'parked' || ac.status === 'arrived' || ac.status === 'departed' || (ac.routeEdgeIndex >= (routeEdgeIds?.length ?? 0));
       const effectiveIndex = isNewTrip ? 0 : ac.routeEdgeIndex;
       const effectiveProgress = isNewTrip ? 0 : ac.progressOnEdge;
 
@@ -878,13 +889,34 @@ export function simulationTick(
     }
 
     const isArrived = newEdgeIndex >= routeEdgeIds.length;
+    let finalStatus: Aircraft['status'] = ac.status;
     if (isArrived) {
-      tickLogs = appendLiveLog(tickLogs, {
-        atSeconds: state.elapsedSeconds + dt,
-        callsign: ac.callsign,
-        message: `Tàu bay ${ac.callsign} đã đến đích ${ac.targetNodeId} an toàn.`,
-        severity: 'info',
-      });
+      const isTakeoff = isTakeoffRunwayNode(ac.targetNodeId, graph.nodes) ||
+        isTakeoffRunwayNode(newCurrentNodeId, graph.nodes) ||
+        ac.targetNodeId === 'v3_line_05_p07' ||
+        ac.targetNodeId === 'v3_line_17_p16' ||
+        ac.targetNodeId === 'v3_line_16_p00' ||
+        ac.targetNodeId === 'v3_line_16_p01' ||
+        ac.targetNodeId === 'STOP_BAR_25L' ||
+        ac.targetNodeId === 'W11_07R';
+
+      finalStatus = isTakeoff ? 'departed' : 'arrived';
+
+      if (isTakeoff) {
+        tickLogs = appendLiveLog(tickLogs, {
+          atSeconds: state.elapsedSeconds + dt,
+          callsign: ac.callsign,
+          message: `🛫 Tàu bay ${ac.callsign} đã vào đường băng cất cánh ${ac.targetNodeId}. Bắt đầu chạy đà tăng tốc cất cánh và rời khỏi vùng trời sân bay...`,
+          severity: 'info',
+        });
+      } else {
+        tickLogs = appendLiveLog(tickLogs, {
+          atSeconds: state.elapsedSeconds + dt,
+          callsign: ac.callsign,
+          message: `✓ Tàu bay ${ac.callsign} đã đến đích ${ac.targetNodeId} an toàn. Hoàn thành chuyến bay.`,
+          severity: 'info',
+        });
+      }
     }
 
     return {
@@ -893,8 +925,8 @@ export function simulationTick(
       progressOnEdge: Math.min(newProgress, 1),
       currentNodeId: newCurrentNodeId,
       currentEdgeId: newEdgeIndex < routeEdgeIds.length ? routeEdgeIds[newEdgeIndex] : null,
-      speedKts: effectiveSpeed,
-      status: isArrived ? ('arrived' as const) : ('taxiing' as const),
+      speedKts: isArrived ? 0 : effectiveSpeed,
+      status: isArrived ? finalStatus : ('taxiing' as const),
       holdReason: undefined,
     };
   });
@@ -959,6 +991,18 @@ export function acceptRoute(
   graph: AirportGraph = airportGraph,
 ): SimulationState {
   const selectedId = state.selectedAircraftId || 'VN001';
+
+  // Strict rule: If another aircraft is taxiing/holding, don't allow accepting route for a different aircraft
+  const runningAc = (state.manualFleet || []).find(
+    a => a.id !== selectedId && (a.status === 'taxiing' || a.status === 'holding')
+  );
+  if (runningAc) {
+    return {
+      ...state,
+      warningMessage: `Tàu bay ${runningAc.callsign} đang lăn bánh. Vui lòng đợi hoàn thành chuyến trước khi chấp nhận tuyến cho tàu khác.`,
+    };
+  }
+
   const updatedFleet = (state.manualFleet || []).map(ac => {
     if (ac.id === selectedId) {
       const validRoute = findPath(graph, ac.currentNodeId, ac.targetNodeId, state.blockedEdgeIds) || ac.assignedRoute || [ac.currentNodeId];

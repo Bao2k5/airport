@@ -305,15 +305,19 @@ export default function App() {
 
       const updatedSelectedAc = updatedFleet.find(a => a.id === (selectedAc?.id || aircraftId)) || selectedAc;
 
+      const runningAc = updatedFleet.find(a => a.status === 'taxiing' || a.status === 'holding');
+      const lightTargetAc = runningAc || (isTaxiing && updatedSelectedAc ? updatedSelectedAc : null);
+      const activeLights = lightTargetAc
+        ? computeLightStates(lightTargetAc, prev.blockedEdgeIds, currentGraph)
+        : (newRouteStatus === 'accepted' && updatedSelectedAc ? computeLightStates(updatedSelectedAc, prev.blockedEdgeIds, currentGraph) : {});
+
       return {
         ...prev,
         manualFleet: updatedFleet,
         selectedAircraftId: updatedSelectedAc ? updatedSelectedAc.id : 'VN001',
         aircraft: updatedSelectedAc || prev.aircraft,
         routeStatus: newRouteStatus,
-        lightStates: isTaxiing && updatedSelectedAc
-          ? computeLightStates(updatedSelectedAc, prev.blockedEdgeIds, currentGraph)
-          : {},
+        lightStates: activeLights,
       };
     });
   }, [currentGraph]);
