@@ -43,7 +43,7 @@ import {
 import { isStandNode, isTakeoffRunwayNode, isLanding25RNode } from './data/v3OperationalNodes';
 
 const DEFAULT_CONFIG: SimulationConfig = {
-  startNodeId:       'v3_line_33_p00', // STAND_10
+  startNodeId:       'v3_line_37_p00', // STAND_1
   destinationNodeId: 'v3_line_05_p07', // STOP BAR 25L (via E6)
   callsign:          'VN001',
   airlineCode:       'VJ',

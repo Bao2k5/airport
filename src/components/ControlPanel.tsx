@@ -157,21 +157,6 @@ export default function ControlPanel({
     }
   }, [isCurrentStartStand, isCurrentStartLanding25R, currentDestNodeId, graph.nodes, onConfigChange, selectedAircraft?.status]);
 
-  // Ngược lại: Nếu start là STOP BAR 25R (hạ cánh) mà dest vẫn là runway cất cánh (25L/07R) →
-  // tự động reset dest về STAND_10 (tránh trường hợp tàu trước đó ở Stand bị lưu dest 25L)
-  React.useEffect(() => {
-    if (selectedAircraft && selectedAircraft.status !== 'parked') return;
-    if (isCurrentStartLanding25R && isTakeoffRunwayNode(currentDestNodeId, graph.nodes)) {
-      // Tìm STAND_10 làm default, hoặc stand đầu tiên trong danh sách
-      const defaultStandOpt = operationalDropdownOptions.find(o =>
-        o.label.includes('STAND_10') || o.value === 'v3_line_33_p00'
-      ) || operationalDropdownOptions.find(o => o.label.includes('STAND_'));
-      if (defaultStandOpt) {
-        onConfigChange({ destinationNodeId: defaultStandOpt.value });
-      }
-    }
-  }, [isCurrentStartLanding25R, currentDestNodeId, graph.nodes, onConfigChange, operationalDropdownOptions, selectedAircraft?.status]);
-
   // 2. Điểm đến:
   // - Nếu xuất phát từ Stand: Chỉ hiển thị STOP BAR 25L (mặc định qua E6) và W11/07R (dự phòng đổi chiều).
   // - Nếu xuất phát từ đường băng (hạ cánh): Chỉ hiển thị danh sách các Stand (khóa bến đã có tàu chiếm dụng).
@@ -208,19 +193,34 @@ export default function ControlPanel({
       return isStand || isW9BW7A;
     });
 
+    // Tập hợp tất cả node ID của Stand từ graph để resolve nhất quán
+    const resolveStandNodeId = (idOrLabel: string): string => {
+      const n = graph.nodes.find(node => node.id === idOrLabel || node.label === idOrLabel);
+      return n ? n.id : idOrLabel;
+    };
+
     return standOptionsOnly.map(opt => {
+      // Resolve opt.value về node ID chuẩn trong graph
+      const optNodeId = resolveStandNodeId(opt.value);
+
       const occupyingAircraft = manualFleet.find(ac => {
         if (ac.id === selectedAircraftId) return false;
 
-        const isAtCurrentNode = ac.currentNodeId === opt.value;
-        const isDestinedAndParked = (ac.targetNodeId === opt.value) &&
+        // Resolve node ID của aircraft về chuẩn graph
+        const acCurrentId = resolveStandNodeId(ac.currentNodeId);
+        const acTargetId = resolveStandNodeId(ac.targetNodeId);
+
+        // Tàu đang đứng ở stand này
+        const isPhysicallyHere = acCurrentId === optNodeId;
+
+        // Tàu đang được giao về stand này và chưa di chuyển đi (parked/arrived/waiting)
+        const isAssignedHere = acTargetId === optNodeId &&
           (ac.status === 'parked' || ac.status === 'arrived' || ac.status === 'waiting');
 
-        const optNode = graph.nodes.find(n => n.id === opt.value || n.label === opt.label);
-        const acCurNode = graph.nodes.find(n => n.id === ac.currentNodeId || n.label === ac.currentNodeId);
-        const isNodeMatch = optNode && acCurNode && (optNode.id === acCurNode.id || (optNode.label && optNode.label === acCurNode.label));
+        // Tàu đang taxiing và điểm cuối route là stand này (sắp chiếm)
+        const isTaxiingHere = ac.status === 'taxiing' && acTargetId === optNodeId;
 
-        return isAtCurrentNode || isDestinedAndParked || isNodeMatch;
+        return isPhysicallyHere || isAssignedHere || isTaxiingHere;
       });
 
       if (occupyingAircraft) {

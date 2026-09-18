@@ -238,7 +238,7 @@ export const CANONICAL_FLEET_SPECS: {
   startId: string;
   destId: string;
 }[] = [
-  { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'v3_line_33_p00', destId: 'v3_line_05_p07' }, // STAND_10 -> STOP BAR 25L (via E6)
+  { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'v3_line_37_p00', destId: 'v3_line_05_p07' }, // STAND_1 -> STOP BAR 25L (via E6)
   { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'v3_line_31_p00', destId: 'v3_line_05_p07' }, // STAND_12 -> STOP BAR 25L (via E6)
   { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'v3_line_32_p00', destId: 'v3_line_05_p07' }, // STAND_11 -> STOP BAR 25L (via E6)
   { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'v3_line_29_p01', destId: 'v3_line_05_p07' }, // STAND_7 -> STOP BAR 25L (via E6)

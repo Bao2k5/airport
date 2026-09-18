@@ -4,7 +4,7 @@
 import type { SimulationConfig, SimulationState } from '../types';
 import type { GraphId } from '../data/graphRegistry';
 
-const STORAGE_KEY = 'airport_sim_saved_state_v1';
+const STORAGE_KEY = 'airport_sim_saved_state_v2';
 const RELOAD_GUARD_KEY = 'airport_sim_reload_guard_v1';
 const MAX_RELOADS_PER_WINDOW = 3;
 const RELOAD_WINDOW_MS = 10000;
