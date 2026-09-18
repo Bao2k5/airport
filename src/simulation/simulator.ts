@@ -12,7 +12,8 @@ import type {
 import { airportGraphV3 as airportGraph } from '../data/airportGraph.v3';
 import { getAircraftSpec } from '../data/aircraftTypes';
 import { getAirlineDef, AIRLINES } from '../data/airlineTypes';
-import { findPath, routeToEdges, estimateTravelTimeSeconds } from './pathfinding';
+import { findPath, routeToEdges, estimateTravelTimeSeconds, routeHasRestrictedEdges } from './pathfinding';
+import { isStandNode, isTakeoffRunwayNode, isLanding25RNode } from '../data/v3OperationalNodes';
 
 /** Apply weather speed penalty (fraction of max speed to use) */
 export function weatherSpeedFactor(config: SimulationConfig): number {
@@ -237,12 +238,12 @@ export const CANONICAL_FLEET_SPECS: {
   startId: string;
   destId: string;
 }[] = [
-  { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'v3_line_33_p00', destId: 'v3_line_05_p07' }, // STAND_10 -> STOP BAR 25L
-  { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'v3_line_31_p00', destId: 'v3_line_01_p03' }, // STAND_12 -> STOP BAR 25R
-  { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'v3_line_32_p00', destId: 'v3_line_05_p07' }, // STAND_11 -> STOP BAR 25L
-  { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'v3_line_29_p01', destId: 'v3_line_01_p03' }, // STAND_7 -> STOP BAR 25R
-  { id: 'VN005', callsign: 'VN005', airlineCode: 'SQ', type: 'A350', startId: 'v3_line_22_p01', destId: 'v3_line_03_p00' }, // STAND_17 -> W5/07L
-  { id: 'VN006', callsign: 'VN006', airlineCode: 'TG', type: 'A350', startId: 'v3_line_26_p04', destId: 'v3_line_16_p01' }, // STAND_22 -> W11/07R
+  { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'v3_line_33_p00', destId: 'v3_line_05_p07' }, // STAND_10 -> STOP BAR 25L (via E6)
+  { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'v3_line_31_p00', destId: 'v3_line_05_p07' }, // STAND_12 -> STOP BAR 25L (via E6)
+  { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'v3_line_32_p00', destId: 'v3_line_05_p07' }, // STAND_11 -> STOP BAR 25L (via E6)
+  { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'v3_line_29_p01', destId: 'v3_line_05_p07' }, // STAND_7 -> STOP BAR 25L (via E6)
+  { id: 'VN005', callsign: 'VN005', airlineCode: 'SQ', type: 'A350', startId: 'v3_line_22_p01', destId: 'v3_line_05_p07' }, // STAND_17 -> STOP BAR 25L (via E6)
+  { id: 'VN006', callsign: 'VN006', airlineCode: 'TG', type: 'A350', startId: 'v3_line_26_p04', destId: 'v3_line_05_p07' }, // STAND_22 -> STOP BAR 25L (via E6)
 ];
 
 export function createDefaultManualFleet(
@@ -327,12 +328,17 @@ export function sanitizeManualFleet(
       }
       seenCallsigns.add(effectiveCallsign);
 
-      if (ac.status === 'parked') {
+      if (ac.status === 'parked' && isStandNode(ac.currentNodeId, graph.nodes)) {
         if (seenParkedStands.has(ac.currentNodeId)) {
           hasCorruption = true;
           break;
         }
         seenParkedStands.add(ac.currentNodeId);
+      }
+
+      if (ac.assignedRoute && routeHasRestrictedEdges(ac.assignedRoute, graph.edges)) {
+        hasCorruption = true;
+        break;
       }
     }
   }
@@ -348,11 +354,21 @@ export function sanitizeManualFleet(
       const isCustomCallsignValid = existing.callsign && !CANONICAL_FLEET_SPECS.some(s => s.id !== spec.id && s.callsign === existing.callsign);
       const safeCallsign = isCustomCallsignValid ? existing.callsign : spec.callsign;
 
+      const isValidCurrentNode = existing.currentNodeId && graph.nodes.some(n => n.id === existing.currentNodeId);
       const safeCurrentNode = (existing.status === 'taxiing' || existing.status === 'holding')
         ? existing.currentNodeId
-        : spec.startId;
+        : (isValidCurrentNode ? existing.currentNodeId : spec.startId);
 
-      const route = findPath(graph, safeCurrentNode, existing.targetNodeId || spec.destId) || [safeCurrentNode];
+      let safeTargetNode = existing.targetNodeId || spec.destId;
+      // Chỉ clamp về STOP BAR 25L khi máy bay ở Stand (cất cánh)
+      // KHÔNG clamp nếu đang ở STOP BAR 25R (hạ cánh → phải về Stand)
+      if (isStandNode(safeCurrentNode, graph.nodes)
+          && !isLanding25RNode(safeCurrentNode, graph.nodes)
+          && !isTakeoffRunwayNode(safeTargetNode, graph.nodes)) {
+        safeTargetNode = spec.destId;
+      }
+
+      const route = findPath(graph, safeCurrentNode, safeTargetNode) || [safeCurrentNode];
       const routeEdges = routeToEdges(route, graph.edges);
 
       return {
@@ -363,7 +379,7 @@ export function sanitizeManualFleet(
         aircraftAsset: airlineDef.asset,
         aircraftType: existing.aircraftType || spec.type,
         currentNodeId: safeCurrentNode,
-        targetNodeId: existing.targetNodeId || spec.destId,
+        targetNodeId: safeTargetNode,
         assignedRoute: route,
         currentEdgeId: routeEdges ? routeEdges[0] : null,
         status: existing.status === 'taxiing' ? ('taxiing' as const) : ('parked' as const),
@@ -425,6 +441,10 @@ export function startManualAircraft(
         : (findPath(graph, ac.currentNodeId, ac.targetNodeId) || [ac.currentNodeId]);
       const routeEdgeIds = routeToEdges(route, graph.edges);
 
+      const isNewTrip = ac.status === 'parked' || ac.status === 'arrived' || (ac.routeEdgeIndex >= (routeEdgeIds?.length ?? 0));
+      const effectiveIndex = isNewTrip ? 0 : ac.routeEdgeIndex;
+      const effectiveProgress = isNewTrip ? 0 : ac.progressOnEdge;
+
       return {
         ...ac,
         status: 'taxiing' as const,
@@ -432,7 +452,9 @@ export function startManualAircraft(
         routeVisible: true,
         guidanceVisible: true,
         assignedRoute: route,
-        currentEdgeId: routeEdgeIds ? routeEdgeIds[ac.routeEdgeIndex] : null,
+        routeEdgeIndex: effectiveIndex,
+        progressOnEdge: effectiveProgress,
+        currentEdgeId: routeEdgeIds ? routeEdgeIds[effectiveIndex] : null,
       };
     }
     return ac;
@@ -571,6 +593,13 @@ export function resetManualAircraft(
     selectedAircraftId: selectedId,
     routeStatus: isResetSelected ? 'pending' : (selectedAc.status === 'taxiing' ? 'accepted' : 'pending'),
     lightStates: isResetSelected || selectedAc.status !== 'taxiing' ? {} : state.lightStates,
+    blockedEdgeIds: new Set<string>(),
+    warningMessage: null,
+    config: {
+      ...state.config,
+      incident: 'none',
+      incidentEdgeId: null,
+    },
     liveEventLog: newLogs,
   };
 }
@@ -932,8 +961,12 @@ export function acceptRoute(
   const selectedId = state.selectedAircraftId || 'VN001';
   const updatedFleet = (state.manualFleet || []).map(ac => {
     if (ac.id === selectedId) {
+      const validRoute = findPath(graph, ac.currentNodeId, ac.targetNodeId, state.blockedEdgeIds) || ac.assignedRoute || [ac.currentNodeId];
+      const validEdges = routeToEdges(validRoute, graph.edges);
       return {
         ...ac,
+        assignedRoute: validRoute,
+        currentEdgeId: validEdges ? validEdges[ac.routeEdgeIndex] : ac.currentEdgeId,
         routeVisible: true,
         guidanceVisible: true,
       };
@@ -1019,11 +1052,34 @@ export function clearIncidents(
   };
 }
 
+/**
+ * Các cạnh thuộc hành lang độc đạo cất cánh T38 -> E6 -> 25L
+ * Tuyệt đối không được đặt sự cố trên tuyến này để tránh nghẽn toàn bộ luồng cất cánh.
+ */
+export const INCIDENT_PROHIBITED_EDGES = new Set<string>([
+  'E_v3_line_25_p00_v3_line_17_p11', // T38 -> line 17
+  'E_v3_line_17_p11_v3_line_17_p12',
+  'E_v3_line_17_p12_v3_line_17_p13', // tới E6
+  'E_v3_line_17_p13_v3_line_17_p14', // từ E6
+  'E_v3_line_17_p14_v3_line_17_p15',
+  'E_v3_line_17_p15_v3_line_05_p07',
+  'E_v3_line_05_p07_v3_line_17_p16', // tới STOP BAR 25L
+  'E_v3_line_26_p00_v3_line_05_p07',
+  'E_v3_line_26_p03_v3_line_17_p12',
+]);
+
+export const MAX_ACTIVE_INCIDENTS = 4;
+
 /** Pick a random edge strictly AHEAD of the aircraft on its current route */
 export function randomIncidentEdge(
   state: SimulationState,
   graph: AirportGraph = airportGraph,
 ): string | null {
+  // Giới hạn tối đa 4 sự cố cùng lúc
+  if (state.blockedEdgeIds.size >= MAX_ACTIVE_INCIDENTS) {
+    return null;
+  }
+
   const selectedId = state.selectedAircraftId;
   const ac = (state.manualFleet?.find(a => a.id === selectedId && a.status === 'taxiing'))
     || state.manualFleet?.find(a => a.status === 'taxiing')
@@ -1033,7 +1089,7 @@ export function randomIncidentEdge(
   const routeEdgeIds = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
   const ahead = routeEdgeIds
     .slice(ac.routeEdgeIndex + 1)
-    .filter(id => !state.blockedEdgeIds.has(id));
+    .filter(id => !state.blockedEdgeIds.has(id) && !INCIDENT_PROHIBITED_EDGES.has(id));
   if (!ahead.length) return null;
 
   const fromNode = ac.assignedRoute[ac.routeEdgeIndex + 1] || ac.currentNodeId;

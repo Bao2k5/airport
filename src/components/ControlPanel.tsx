@@ -4,7 +4,14 @@ import React from 'react';
 import { airportGraphV3 } from '../data/airportGraph.v3';
 import { AIRLINES, type AirlineCode } from '../data/airlineTypes';
 import { useActionLock } from '../utils/useActionLock';
-import { V3_EXACT_OPERATIONAL_NODES, V3_OPERATIONAL_STANDS, toSafeNodeId } from '../data/v3OperationalNodes';
+import {
+  V3_EXACT_OPERATIONAL_NODES,
+  V3_OPERATIONAL_STANDS,
+  toSafeNodeId,
+  isStandNode,
+  isTakeoffRunwayNode,
+  isLanding25RNode,
+} from '../data/v3OperationalNodes';
 import type { AirportGraph, Aircraft, SimulationConfig } from '../types';
 
 interface Props {
@@ -57,7 +64,7 @@ export default function ControlPanel({
   const currentAirline = AIRLINES[currentAirlineCode] || AIRLINES.VN;
   const currentCallsign = selectedAircraft?.callsign ?? config.callsign;
   const currentAircraftType = selectedAircraft?.aircraftType ?? config.aircraftType;
-  const currentStartNodeId = selectedAircraft?.currentNodeId ?? config.startNodeId;
+  const currentStartNodeId = (selectedAircraft?.status === 'parked' ? selectedAircraft?.currentNodeId : selectedAircraft?.assignedRoute?.[0]) ?? config.startNodeId;
   const currentDestNodeId = selectedAircraft?.targetNodeId ?? config.destinationNodeId;
 
   const operationalDropdownOptions = React.useMemo(() => {
@@ -68,12 +75,19 @@ export default function ControlPanel({
         n => n.label === opDef.label || n.id === opDef.id || toSafeNodeId(n.id) === opDef.id
       );
 
-      const nodeId = matchedNode ? matchedNode.id : opDef.id;
+      let nodeId = matchedNode ? matchedNode.id : opDef.id;
+      // Đồng bộ nếu là STOP_BAR_25L và điểm đến hiện tại là v3_line_05_p07 hoặc v3_line_17_p16
+      if (opDef.id === 'STOP_BAR_25L' && (currentDestNodeId === 'v3_line_05_p07' || currentDestNodeId === 'v3_line_17_p16')) {
+        nodeId = currentDestNodeId;
+      }
+
       let label = opDef.label;
       if (opDef.id === 'STOP_BAR_25R') {
         label = 'STOP BAR 25R (Nơi máy bay hạ cánh)';
       } else if (opDef.id === 'STOP_BAR_25L') {
         label = 'STOP BAR 25L (Nơi máy bay cất cánh)';
+      } else if (opDef.id === 'W11_07R') {
+        label = 'W11/07R (Nơi máy bay cất cánh RWY 07R)';
       }
 
       return {
@@ -81,29 +95,127 @@ export default function ControlPanel({
         label,
       };
     });
-  }, [graph]);
+  }, [graph, currentDestNodeId]);
 
-  const startOptions = operationalDropdownOptions;
+  // 1. Điểm xuất phát: Chỉ giữ lại Bến đỗ (Stand) và Điểm hạ cánh duy nhất STOP BAR 25R
+  const startOptions = React.useMemo(() => {
+    return operationalDropdownOptions.filter(opt => {
+      // Bến đỗ (Stand)
+      const isStand = opt.value.includes('STAND') ||
+        opt.label.includes('STAND') ||
+        V3_OPERATIONAL_STANDS.some(s => s.id === opt.value || s.label === opt.label);
+      if (isStand) return true;
 
+      // Điểm hạ cánh: Chỉ duy nhất STOP BAR 25R
+      const isLandingPoint =
+        opt.value === 'STOP_BAR_25R' ||
+        opt.value === 'v3_line_01_p03' ||
+        opt.label.startsWith('STOP BAR 25R');
+      if (isLandingPoint) return true;
+
+      return false;
+    });
+  }, [operationalDropdownOptions]);
+
+  // Tự động hồi phục về STAND_10 nếu điểm xuất phát hiện tại không nằm trong danh sách hợp lệ
+  // CHỈ kiểm tra khi máy bay đang ở trạng thái 'parked' (chưa bấm cho lăn)
+  React.useEffect(() => {
+    if (selectedAircraft && selectedAircraft.status !== 'parked') return;
+    if (startOptions.length > 0) {
+      const isValidStart = startOptions.some(o => o.value === currentStartNodeId);
+      if (!isValidStart) {
+        const stand10 = startOptions.find(o => o.label.includes('STAND_10')) || startOptions[0];
+        if (stand10) {
+          onConfigChange({ startNodeId: stand10.value });
+        }
+      }
+    }
+  }, [currentStartNodeId, startOptions, onConfigChange, selectedAircraft?.status]);
+
+  const isCurrentStartStand = React.useMemo(() => {
+    return isStandNode(currentStartNodeId, graph.nodes);
+  }, [currentStartNodeId, graph.nodes]);
+
+  // Kiểm tra xem điểm xuất phát có phải là STOP BAR 25R (hạ cánh) không
+  const isCurrentStartLanding25R = React.useMemo(() => {
+    return isLanding25RNode(currentStartNodeId, graph.nodes);
+  }, [currentStartNodeId, graph.nodes]);
+
+  // Nếu tàu bay đang ở Stand (cất cánh) mà điểm đến không phải là đường băng cất cánh (25L hoặc 07R), tự động chuyển về STOP BAR 25L
+  // CHỈ áp dụng khi máy bay đang 'parked' VÀ điểm xuất phát KHÔNG PHẢI là STOP BAR 25R (hạ cánh)
+  React.useEffect(() => {
+    if (selectedAircraft && selectedAircraft.status !== 'parked') return;
+    // Nếu điểm xuất phát là STOP BAR 25R → máy bay hạ cánh → KHÔNG clamp đích về 25L
+    if (isCurrentStartLanding25R) return;
+    if (isCurrentStartStand) {
+      const isAuthorizedTakeoff = isTakeoffRunwayNode(currentDestNodeId, graph.nodes);
+      if (!isAuthorizedTakeoff) {
+        const stopBar25L = graph.nodes.find(n => n.label === 'STOP BAR 25L' || n.id === 'v3_line_17_p16' || n.id === 'v3_line_05_p07');
+        const defaultDestId = stopBar25L ? stopBar25L.id : 'v3_line_05_p07';
+        onConfigChange({ destinationNodeId: defaultDestId });
+      }
+    }
+  }, [isCurrentStartStand, isCurrentStartLanding25R, currentDestNodeId, graph.nodes, onConfigChange, selectedAircraft?.status]);
+
+  // Ngược lại: Nếu start là STOP BAR 25R (hạ cánh) mà dest vẫn là runway cất cánh (25L/07R) →
+  // tự động reset dest về STAND_10 (tránh trường hợp tàu trước đó ở Stand bị lưu dest 25L)
+  React.useEffect(() => {
+    if (selectedAircraft && selectedAircraft.status !== 'parked') return;
+    if (isCurrentStartLanding25R && isTakeoffRunwayNode(currentDestNodeId, graph.nodes)) {
+      // Tìm STAND_10 làm default, hoặc stand đầu tiên trong danh sách
+      const defaultStandOpt = operationalDropdownOptions.find(o =>
+        o.label.includes('STAND_10') || o.value === 'v3_line_33_p00'
+      ) || operationalDropdownOptions.find(o => o.label.includes('STAND_'));
+      if (defaultStandOpt) {
+        onConfigChange({ destinationNodeId: defaultStandOpt.value });
+      }
+    }
+  }, [isCurrentStartLanding25R, currentDestNodeId, graph.nodes, onConfigChange, operationalDropdownOptions, selectedAircraft?.status]);
+
+  // 2. Điểm đến:
+  // - Nếu xuất phát từ Stand: Chỉ hiển thị STOP BAR 25L (mặc định qua E6) và W11/07R (dự phòng đổi chiều).
+  // - Nếu xuất phát từ đường băng (hạ cánh): Chỉ hiển thị danh sách các Stand (khóa bến đã có tàu chiếm dụng).
   const destOptions = React.useMemo(() => {
-    return operationalDropdownOptions.map(opt => {
-      // Tìm xem có tàu bay nào khác trong manualFleet đang đỗ / chiếm dụng tại bến này không
+    if (isCurrentStartStand) {
+      const allowedTakeoff = operationalDropdownOptions.filter(opt => {
+        const isDest25L = opt.value === 'STOP_BAR_25L' ||
+          opt.value === 'v3_line_17_p16' ||
+          opt.value === 'v3_line_05_p07' ||
+          opt.label.includes('STOP BAR 25L');
+
+        const isDest07R = opt.value === 'W11_07R' ||
+          opt.value === 'v3_line_16_p01' ||
+          opt.label.includes('W11/07R');
+
+        return isDest25L || isDest07R;
+      });
+
+      return allowedTakeoff.map(opt => {
+        return {
+          value: opt.value,
+          label: opt.label,
+          disabled: false,
+        };
+      });
+    }
+
+    // Tàu bay hạ cánh: Hiển thị danh sách các Stand và điểm thoát ly W9B/W7A
+    const standOptionsOnly = operationalDropdownOptions.filter(opt => {
+      const isW9BW7A = opt.value === 'W9B_W7A' || opt.value === 'v3_line_18_p03' || opt.label.includes('W9B/W7A');
+      const isStand = opt.value.includes('STAND') ||
+        opt.label.includes('STAND') ||
+        V3_OPERATIONAL_STANDS.some(s => s.id === opt.value || s.label === opt.label);
+      return isStand || isW9BW7A;
+    });
+
+    return standOptionsOnly.map(opt => {
       const occupyingAircraft = manualFleet.find(ac => {
         if (ac.id === selectedAircraftId) return false;
 
-        // Chỉ kiểm tra đối với các điểm là Bến đỗ (Stand)
-        const isStand = opt.value.includes('STAND') ||
-          opt.label.includes('STAND') ||
-          V3_OPERATIONAL_STANDS.some(s => s.id === opt.value || s.label === opt.label);
-
-        if (!isStand) return false;
-
-        // Kiểm tra xem tàu bay khác có đang ở vị trí này không (đỗ hoặc chờ)
         const isAtCurrentNode = ac.currentNodeId === opt.value;
         const isDestinedAndParked = (ac.targetNodeId === opt.value) &&
           (ac.status === 'parked' || ac.status === 'arrived' || ac.status === 'waiting');
 
-        // Đối chiếu qua label/node id trong đồ thị
         const optNode = graph.nodes.find(n => n.id === opt.value || n.label === opt.label);
         const acCurNode = graph.nodes.find(n => n.id === ac.currentNodeId || n.label === ac.currentNodeId);
         const isNodeMatch = optNode && acCurNode && (optNode.id === acCurNode.id || (optNode.label && optNode.label === acCurNode.label));
@@ -125,7 +237,8 @@ export default function ControlPanel({
         disabled: false,
       };
     });
-  }, [operationalDropdownOptions, manualFleet, selectedAircraftId, graph.nodes]);
+  }, [operationalDropdownOptions, isCurrentStartStand, manualFleet, selectedAircraftId, graph.nodes]);
+
 
   return (
     <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
@@ -316,15 +429,17 @@ export default function ControlPanel({
         <button
           data-testid="incident-btn"
           onClick={() => executeAction('trigger_incident', onTriggerIncident)}
-          disabled={!isRunning || getActionState('trigger_incident').isPending}
+          disabled={!isRunning || blockedCount >= 4 || getActionState('trigger_incident').isPending}
           className="w-full bg-[#D32F2F] hover:bg-[#B91C1C] active:bg-[#991B1B] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white text-xs sm:text-sm font-bold px-4 py-2.5 rounded-xl transition min-h-[44px] flex items-center justify-center gap-2 shadow-sm cursor-pointer"
         >
           <span>{getActionState('trigger_incident').isPending ? '⏳' : '⚠'}</span>
           {getActionState('trigger_incident').isPending
             ? 'Đang xử lý…'
+            : blockedCount >= 4
+            ? 'Đã đạt giới hạn tối đa (4 sự cố)'
             : getActionState('trigger_incident').canRetry
             ? 'Thử lại: Tạo sự cố'
-            : 'Tạo sự cố trên tuyến phía trước'}
+            : `Tạo sự cố trên tuyến phía trước (${blockedCount}/4)`}
         </button>
 
         <div className="flex items-center gap-2.5 min-h-[34px]">

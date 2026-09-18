@@ -40,10 +40,11 @@ import {
   type GraphId,
   getAirportGraph,
 } from './data/graphRegistry';
+import { isStandNode, isTakeoffRunwayNode, isLanding25RNode } from './data/v3OperationalNodes';
 
 const DEFAULT_CONFIG: SimulationConfig = {
-  startNodeId:       'P1',
-  destinationNodeId: 'RWY07L_THR',
+  startNodeId:       'v3_line_33_p00', // STAND_10
+  destinationNodeId: 'v3_line_05_p07', // STOP BAR 25L (via E6)
   callsign:          'VN001',
   airlineCode:       'VJ',
   aircraftType:      'A321',
@@ -82,7 +83,7 @@ export default function App() {
     const base = initSimulation(initialConfig, baseGraph);
     if (saved) {
       if (saved.blockedEdgeIds && Array.isArray(saved.blockedEdgeIds)) {
-        base.blockedEdgeIds = new Set(saved.blockedEdgeIds);
+        base.blockedEdgeIds = new Set([...base.blockedEdgeIds, ...saved.blockedEdgeIds]);
       }
       if (saved.manualFleet && Array.isArray(saved.manualFleet) && saved.manualFleet.length > 0) {
         base.manualFleet = sanitizeManualFleet(saved.manualFleet, baseGraph);
@@ -247,13 +248,27 @@ export default function App() {
       const sanitized = sanitizeManualFleet(prev.manualFleet, currentGraph);
       const selectedAc = sanitized.find(a => a.id === aircraftId) || sanitized[0];
       if (selectedAc) {
+        let safeDest = selectedAc.targetNodeId;
+        // Chỉ clamp về 25L khi tàu bay ở Stand (cất cánh), KHÔNG clamp khi đang ở STOP BAR 25R (hạ cánh)
+        if (isStandNode(selectedAc.currentNodeId, currentGraph.nodes)
+            && !isLanding25RNode(selectedAc.currentNodeId, currentGraph.nodes)
+            && !isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
+          const stopBar25L = currentGraph.nodes.find(n => n.label === 'STOP BAR 25L' || n.id === 'v3_line_17_p16' || n.id === 'v3_line_05_p07');
+          safeDest = stopBar25L ? stopBar25L.id : 'v3_line_05_p07';
+        }
+        // Nếu tàu đang ở STOP BAR 25R (hạ cánh) mà targetNodeId vẫn là runway cất cánh (lỗi state) → reset về STAND_10
+        if (isLanding25RNode(selectedAc.currentNodeId, currentGraph.nodes) && isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
+          const defaultStand = currentGraph.nodes.find(n => n.id === 'v3_line_33_p00' || n.label === 'STAND_10')
+            || currentGraph.nodes.find(n => n.label && n.label.startsWith('STAND_'));
+          safeDest = defaultStand ? defaultStand.id : 'v3_line_33_p00';
+        }
         setConfig(c => ({
           ...c,
           callsign: selectedAc.callsign,
           airlineCode: selectedAc.airlineCode || 'VN',
           aircraftType: selectedAc.aircraftType || 'A321',
           startNodeId: selectedAc.currentNodeId,
-          destinationNodeId: selectedAc.targetNodeId,
+          destinationNodeId: safeDest,
         }));
       }
 
@@ -262,8 +277,25 @@ export default function App() {
 
       const updatedFleet = sanitized.map(ac => {
         if (ac.id === (selectedAc?.id || aircraftId) && !isTaxiing) {
+          let safeDest = ac.targetNodeId;
+          // Chỉ clamp về 25L khi tàu bay ở Stand (cất cánh), KHÔNG clamp khi đang ở STOP BAR 25R (hạ cánh)
+          if (isStandNode(ac.currentNodeId, currentGraph.nodes)
+              && !isLanding25RNode(ac.currentNodeId, currentGraph.nodes)
+              && !isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
+            const stopBar25L = currentGraph.nodes.find(n => n.label === 'STOP BAR 25L' || n.id === 'v3_line_17_p16' || n.id === 'v3_line_05_p07');
+            safeDest = stopBar25L ? stopBar25L.id : 'v3_line_05_p07';
+          }
+          // Nếu tàu đang ở STOP BAR 25R (hạ cánh) mà safeDest vẫn là runway cất cánh → reset về STAND_10
+          if (isLanding25RNode(ac.currentNodeId, currentGraph.nodes) && isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
+            const defaultStand = currentGraph.nodes.find(n => n.id === 'v3_line_33_p00' || n.label === 'STAND_10')
+              || currentGraph.nodes.find(n => n.label && n.label.startsWith('STAND_'));
+            safeDest = defaultStand ? defaultStand.id : 'v3_line_33_p00';
+          }
+          const freshRoute = findPath(currentGraph, ac.currentNodeId, safeDest, prev.blockedEdgeIds) || ac.assignedRoute;
           return {
             ...ac,
+            targetNodeId: safeDest,
+            assignedRoute: freshRoute,
             routeVisible: false,
             guidanceVisible: false,
           };
@@ -302,7 +334,27 @@ export default function App() {
           const updatedFleet = sanitized.map(ac => {
             if (ac.id !== selectedId) return ac;
             const newStart = patch.startNodeId ?? ac.currentNodeId;
-            const newDest = patch.destinationNodeId ?? ac.targetNodeId;
+            let newDest = patch.destinationNodeId ?? ac.targetNodeId;
+
+            // Nếu tàu bay ở Stand (cất cánh): mặc định chỉ đi 25L qua E6 (hoặc 07R khi có sự cố đổi chiều)
+            // KHÔNG áp dụng nếu điểm xuất phát là STOP BAR 25R (máy bay đang hạ cánh → phải về Stand)
+            if (isStandNode(newStart, currentGraph.nodes)
+                && !isLanding25RNode(newStart, currentGraph.nodes)
+                && !isTakeoffRunwayNode(newDest, currentGraph.nodes)) {
+              const stopBar25L = currentGraph.nodes.find(n => n.label === 'STOP BAR 25L' || n.id === 'v3_line_17_p16' || n.id === 'v3_line_05_p07');
+              newDest = stopBar25L ? stopBar25L.id : 'v3_line_05_p07';
+            }
+
+            // Ngược lại: Nếu start là STOP BAR 25R (hạ cánh) mà dest vẫn là runway cất cánh (25L/07R) →
+            // đây là trạng thái lỗi (tàu trước đó ở Stand), phải reset về Stand mặc định STAND_10
+            if (isLanding25RNode(newStart, currentGraph.nodes) && isTakeoffRunwayNode(newDest, currentGraph.nodes)) {
+              const defaultStand = currentGraph.nodes.find(n => n.id === 'v3_line_33_p00' || n.label === 'STAND_10')
+                || currentGraph.nodes.find(n => n.label && n.label.startsWith('STAND_'));
+              newDest = defaultStand ? defaultStand.id : 'v3_line_33_p00';
+              // Đồng bộ config.destinationNodeId để dropdown hiển thị đúng
+              next.destinationNodeId = newDest;
+            }
+
             const newRoute = findPath(currentGraph, newStart, newDest, blockedEdgeIds) || [newStart];
             const newEdges = routeToEdges(newRoute, currentGraph.edges);
             const newAirlineCode = patch.airlineCode ?? ac.airlineCode ?? 'VN';
@@ -423,6 +475,8 @@ export default function App() {
     lastTimeRef.current = null;
     setSimSpeed(1);
     simSpeedRef.current = 1;
+    setAutoIncidents(false);
+    setConfig(prev => ({ ...prev, incident: 'none', incidentEdgeId: null }));
 
     setSimState(prev => {
       if (prev.scenario) {

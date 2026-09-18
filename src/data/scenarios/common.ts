@@ -145,7 +145,8 @@ export function resolveV3NodeId(idOrLabel: string, graph: AirportGraph = airport
 
   if (norm.includes('stop bar 25l') || norm.includes('25l')) return 'v3_line_05_p05';
   if (norm.includes('stop bar 25r') || norm.includes('25r')) return 'v3_line_01_p03';
-  if (norm.includes('w5/07r') || norm.includes('w5/07l') || norm.includes('w5')) return 'v3_line_03_p00';
+  if (norm.includes('w6/07l') || norm.includes('w6') || norm.includes('w5/07r') || norm.includes('w5/07l') || norm.includes('w5')) return 'v3_line_03_p00';
+  if (norm.includes('07r/w11')) return 'v3_line_16_p00';
   if (norm.includes('w11/07r') || norm.includes('w11')) return 'v3_line_16_p01';
   if (norm.includes('w9a') || norm.includes('w9b') || norm.includes('w9')) return 'v3_line_17_p04';
 

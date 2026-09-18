@@ -32,8 +32,8 @@ export const V3_OPERATIONAL_STANDS: OperationalNodeDef[] = [
 
 // 26 Operational Points (Intersections, Exits, Stop Bars)
 export const V3_OPERATIONAL_POINTS: OperationalNodeDef[] = [
-  { id: 'W5_07L', label: 'W5/07L', category: 'INTERSECTION', description: 'Giao cắt W5 và 07L' },
-  { id: 'W5_07R', label: 'W5/07R', category: 'INTERSECTION', description: 'Giao cắt W5 và 07R' },
+  { id: 'W6_07L', label: 'W6/07L', category: 'INTERSECTION', description: 'Giao cắt W6 và 07L' },
+  { id: '07R_W11', label: '07R/W11', category: 'INTERSECTION', description: 'Nút giao 07R và W11' },
   { id: 'W11_07R', label: 'W11/07R', category: 'INTERSECTION', description: 'Nút vào W11 đầu 07R' },
   { id: 'W9A_07R', label: 'W9A/07R', category: 'INTERSECTION', description: 'Nút thoát W9A đầu 07R' },
   { id: 'W9B', label: 'W9B', category: 'INTERSECTION', description: 'Trục đáy đường lăn W9B' },
@@ -94,4 +94,72 @@ export function getOperationalDisplayLabel(idOrLabel: string): string {
 export function isOperationalNode(idOrLabel: string): boolean {
   const safeId = toSafeNodeId(idOrLabel);
   return V3_OPERATIONAL_MAP_BY_ID.has(safeId);
+}
+
+/** Check if a node is an operational Stand (bến đỗ) */
+export function isStandNode(
+  nodeIdOrLabel?: string | null,
+  nodes?: { id: string; label?: string; type?: string }[]
+): boolean {
+  if (!nodeIdOrLabel) return false;
+  const upper = nodeIdOrLabel.toUpperCase();
+  if (upper.includes('STAND')) return true;
+  if (V3_OPERATIONAL_STANDS.some(s => s.id === nodeIdOrLabel || s.label === nodeIdOrLabel)) return true;
+  if (nodes) {
+    const node = nodes.find(n => n.id === nodeIdOrLabel || n.label === nodeIdOrLabel);
+    if (node) {
+      if (node.type === 'stand') return true;
+      if (node.label && node.label.toUpperCase().includes('STAND')) return true;
+      if (V3_OPERATIONAL_STANDS.some(s => s.id === node.id || s.label === node.label)) return true;
+    }
+  }
+  return false;
+}
+
+/** Check if a node is an authorized takeoff threshold (25L via E6 or 07R during runway change) */
+export function isTakeoffRunwayNode(
+  nodeIdOrLabel?: string | null,
+  nodes?: { id: string; label?: string }[]
+): boolean {
+  if (!nodeIdOrLabel) return false;
+  const upper = nodeIdOrLabel.toUpperCase();
+  // Runway 25L (Default via E6)
+  if (nodeIdOrLabel === 'STOP_BAR_25L' || nodeIdOrLabel === 'v3_line_17_p16' || nodeIdOrLabel === 'v3_line_05_p07') return true;
+  if (upper.includes('25L') && (upper.includes('STOP BAR') || upper.includes('STOP_BAR'))) return true;
+  // Runway 07R (Runway change / incident diversion)
+  if (nodeIdOrLabel === 'W11_07R' || nodeIdOrLabel === 'v3_line_16_p01' || upper.includes('W11/07R')) return true;
+
+  if (nodes) {
+    const node = nodes.find(n => n.id === nodeIdOrLabel || n.label === nodeIdOrLabel);
+    if (node && node.label) {
+      const lUpper = node.label.toUpperCase();
+      if (lUpper.includes('25L') && (lUpper.includes('STOP BAR') || lUpper.includes('STOP_BAR'))) return true;
+      if (lUpper.includes('W11/07R')) return true;
+    }
+  }
+  return false;
+}
+
+/** Check if a node is the landing threshold STOP BAR 25R (hạ cánh).
+ *  Máy bay từ điểm này đang hạ cánh → KHÔNG clamp đích về STOP BAR 25L. */
+export function isLanding25RNode(
+  nodeIdOrLabel?: string | null,
+  nodes?: { id: string; label?: string }[]
+): boolean {
+  if (!nodeIdOrLabel) return false;
+  if (
+    nodeIdOrLabel === 'STOP_BAR_25R' ||
+    nodeIdOrLabel === 'v3_line_01_p03' ||
+    nodeIdOrLabel.startsWith('v3_line_01_')
+  ) return true;
+  const upper = nodeIdOrLabel.toUpperCase();
+  if (upper.includes('25R') && (upper.includes('STOP BAR') || upper.includes('STOP_BAR'))) return true;
+  if (nodes) {
+    const node = nodes.find(n => n.id === nodeIdOrLabel || n.label === nodeIdOrLabel);
+    if (node && node.label) {
+      const lUpper = node.label.toUpperCase();
+      if (lUpper.includes('25R') && (lUpper.includes('STOP BAR') || lUpper.includes('STOP_BAR'))) return true;
+    }
+  }
+  return false;
 }

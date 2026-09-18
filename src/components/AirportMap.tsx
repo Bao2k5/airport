@@ -1029,32 +1029,43 @@ function GraphV3OverlayRenderer() {
             />
 
             {/* Label for named operational nodes */}
-            {isNamed && (
-              <g transform="translate(0, -7)">
-                <rect
-                  x={-Math.max(14, node.label.length * 4.2) / 2}
-                  y={-6}
-                  width={Math.max(14, node.label.length * 4.2)}
-                  height={12}
-                  rx={3}
-                  fill="#090d16"
-                  fillOpacity={0.94}
-                  stroke="#00ffff"
-                  strokeWidth={0.9}
-                />
-                <text
-                  x={0}
-                  y={2.2}
-                  textAnchor="middle"
-                  fontSize={4.8}
-                  fill="#38bdf8"
-                  fontWeight={900}
-                  fontFamily="monospace"
-                >
-                  {node.label}
-                </text>
-              </g>
-            )}
+            {isNamed && (() => {
+              // Xử lý offset riêng cho nút 07R để không bị nhãn W5/07R và L03_P3 đè khuất
+              const is07R = node.label === '07R' || node.id === 'v3_line_05_p00';
+              const isW5_07R = node.label === 'W5/07R' || node.id === 'v3_line_03_p01';
+              const transform = is07R 
+                ? 'translate(-18, 0)' 
+                : isW5_07R 
+                ? 'translate(0, -10)' 
+                : 'translate(0, -7)';
+
+              return (
+                <g transform={transform}>
+                  <rect
+                    x={-Math.max(14, node.label.length * 4.2) / 2}
+                    y={-6}
+                    width={Math.max(14, node.label.length * 4.2)}
+                    height={12}
+                    rx={3}
+                    fill="#090d16"
+                    fillOpacity={0.94}
+                    stroke={is07R ? '#22c55e' : '#00ffff'}
+                    strokeWidth={is07R ? 1.4 : 0.9}
+                  />
+                  <text
+                    x={0}
+                    y={2.2}
+                    textAnchor="middle"
+                    fontSize={4.8}
+                    fill={is07R ? '#4ade80' : '#38bdf8'}
+                    fontWeight={900}
+                    fontFamily="monospace"
+                  >
+                    {node.label}
+                  </text>
+                </g>
+              );
+            })()}
           </g>
         );
       })}
@@ -1694,6 +1705,16 @@ function getStandParkingHeading(nodeId: string, node?: AirportNode | null): numb
   if (!node && !nodeId) return 270;
   const label = (node?.label || '').toUpperCase();
   const id = (nodeId || '').toLowerCase();
+
+  // Điểm hạ cánh STOP BAR 25R: Mũi tàu quay theo hướng hạ cánh đường băng 25R (248° / hướng Tây Nam)
+  if (label.includes('25R') || id.includes('line_01_p03')) {
+    return 248;
+  }
+
+  // Điểm cất cánh STOP BAR 25L: Mũi tàu quay theo hướng cất cánh đường băng 25L (68° / hướng Đông Bắc)
+  if (label.includes('25L') || id.includes('line_17_p16') || id.includes('line_05_p07')) {
+    return 68;
+  }
 
   // Stands 10, 11, 12, 13 (Phía Tây của Line 12): Mũi quay thẳng qua trái vào bến (270° / West)
   if (label === 'STAND_10' || label === 'STAND_11' || label === 'STAND_12' || label === 'STAND_13' ||
