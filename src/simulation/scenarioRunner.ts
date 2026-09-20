@@ -1191,6 +1191,34 @@ export function scenarioTick(
       }
     }
 
+    // Kịch bản 5 (Truyền thống): Cho OUT02 dừng lùi trước 1 node (tại v3_line_07_p01 -> v3_line_06_p03) để đứng hẳn ra ngoài tam giác giao lộ NS1/NS2, hoàn toàn thông thoáng
+    if (state.scenario?.id === 'lvc_peak_runway_direction_change' && ac.callsign === 'OUT02') {
+      const out1 = fleet.find(a => a.callsign === 'OUT01');
+      if (out1 && out1.status === 'holding') {
+        const targetNode = ac.assignedRoute[ac.routeEdgeIndex + 1];
+        // Dừng tại đoạn v3_line_07_p01 -> v3_line_06_p03 (hoặc trước khi vào v3_line_06_p03 / v3_line_05_p04)
+        if (
+          targetNode === 'v3_line_06_p03' ||
+          targetNode === 'v3_line_05_p04' ||
+          ac.currentNodeId === 'v3_line_07_p01' ||
+          ac.currentNodeId === 'v3_line_06_p03'
+        ) {
+          updatedFleet[idx] = {
+            ...ac,
+            currentNodeId: 'v3_line_07_p01',
+            progressOnEdge: 0.15,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            holdReason: 'stop-bar',
+            heldSeconds: (ac.heldSeconds ?? 0) + dt,
+            scenarioLabel: '🛑 DỪNG TRƯỚC GIAO LỘ (GIỮ KHOẢNG CÁCH SAU OUT01)',
+          };
+          continue;
+        }
+      }
+    }
+
     // Nếu tàu bay bị gán speedLimitKts === 0 thì giữ nguyên đứng yên
     if (ac.speedLimitKts === 0 && ac.status !== 'taxiing') {
       updatedFleet[idx] = {

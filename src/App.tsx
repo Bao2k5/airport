@@ -16,6 +16,7 @@ import {
   randomIncidentEdge,
   startManualAircraft,
   resetManualAircraft,
+  resetAllManualAircraft,
   resetToManualMode,
   sanitizeManualFleet,
   computeLightStates,
@@ -74,13 +75,26 @@ export default function App() {
 
   const [config, setConfig] = useState<SimulationConfig>(() => {
     const saved = loadStateFromStorage();
-    return saved?.config ? { ...DEFAULT_CONFIG, ...saved.config } : DEFAULT_CONFIG;
+    let initialConfig = saved?.config ? { ...DEFAULT_CONFIG, ...saved.config } : DEFAULT_CONFIG;
+    if (initialConfig.startNodeId === 'v3_line_29_p01') {
+      initialConfig.startNodeId = 'v3_line_28_p01';
+    }
+    if (initialConfig.callsign === 'VN004' && (initialConfig.startNodeId === 'v3_line_29_p01' || !initialConfig.startNodeId)) {
+      initialConfig.startNodeId = 'v3_line_28_p01';
+    }
+    return initialConfig;
   });
 
   const [simState, setSimState] = useState<SimulationState>(() => {
     const saved = loadStateFromStorage();
     const baseGraph = getAirportGraph(DEFAULT_GRAPH_ID);
-    const initialConfig = saved?.config ? { ...DEFAULT_CONFIG, ...saved.config } : DEFAULT_CONFIG;
+    let initialConfig = saved?.config ? { ...DEFAULT_CONFIG, ...saved.config } : DEFAULT_CONFIG;
+    if (initialConfig.startNodeId === 'v3_line_29_p01') {
+      initialConfig.startNodeId = 'v3_line_28_p01';
+    }
+    if (initialConfig.callsign === 'VN004' && (initialConfig.startNodeId === 'v3_line_29_p01' || !initialConfig.startNodeId)) {
+      initialConfig.startNodeId = 'v3_line_28_p01';
+    }
     const base = initSimulation(initialConfig, baseGraph);
     if (saved) {
       if (saved.blockedEdgeIds && Array.isArray(saved.blockedEdgeIds)) {
@@ -492,6 +506,23 @@ export default function App() {
     });
   }, [currentGraph, selectedGraphId]);
 
+  const handleResetAll = useCallback(() => {
+    clearPersistedState();
+    setInspectingPathAircraftId(null);
+    lastTimeRef.current = null;
+    setSimSpeed(1);
+    simSpeedRef.current = 1;
+    setAutoIncidents(false);
+    setConfig(prev => ({ ...prev, incident: 'none', incidentEdgeId: null }));
+
+    setSimState(prev => {
+      if (prev.scenario) {
+        return resetToManualMode(prev, currentGraph);
+      }
+      return resetAllManualAircraft(prev, currentGraph);
+    });
+  }, [currentGraph]);
+
   const handleCaptureAudit = useCallback(() => {
     setIsCapturingAudit(true);
     setTimeout(() => {
@@ -766,6 +797,7 @@ export default function App() {
                     onStart={handleStart}
                     onPause={handlePause}
                     onReset={handleReset}
+                    onResetAll={handleResetAll}
                     routeStatus={simState.routeStatus}
                     isRunning={simState.isRunning}
                     isPaused={simState.isPaused}
@@ -922,6 +954,7 @@ export default function App() {
                         onStart={handleStart}
                         onPause={handlePause}
                         onReset={handleReset}
+                        onResetAll={handleResetAll}
                         routeStatus={simState.routeStatus}
                         isRunning={simState.isRunning}
                         isPaused={simState.isPaused}

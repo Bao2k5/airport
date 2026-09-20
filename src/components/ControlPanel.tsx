@@ -25,6 +25,7 @@ interface Props {
   onStart: () => void;
   onPause: () => void;
   onReset: () => void;
+  onResetAll?: () => void;
   routeStatus: 'pending' | 'accepted';
   isRunning: boolean;
   isPaused: boolean;
@@ -47,6 +48,7 @@ export default function ControlPanel({
   onStart,
   onPause,
   onReset,
+  onResetAll,
   routeStatus,
   isRunning,
   isPaused,
@@ -59,9 +61,8 @@ export default function ControlPanel({
 }: Props) {
   const { executeAction, getActionState } = useActionLock(2000);
 
+
   const selectedAircraft = manualFleet.find(a => a.id === selectedAircraftId);
-  const runningAircraft = manualFleet.find(a => a.status === 'taxiing' || a.status === 'holding');
-  const isOtherAircraftRunning = !!runningAircraft && runningAircraft.id !== selectedAircraftId;
   const currentAirlineCode = (selectedAircraft?.airlineCode || config.airlineCode || 'VN') as AirlineCode;
   const currentAirline = AIRLINES[currentAirlineCode] || AIRLINES.VN;
   const currentCallsign = selectedAircraft?.callsign ?? config.callsign;
@@ -285,10 +286,6 @@ export default function ControlPanel({
                   badgeText = 'ĐÃ ĐẾN NƠI ✓';
                   badgeColor = '#1C67DA';
                   dotBg = '#1C67DA';
-                } else if (runningAircraft && runningAircraft.id !== ac.id) {
-                  badgeText = 'CHỜ LƯỢT';
-                  badgeColor = '#B45309';
-                  dotBg = '#F59E0B';
                 }
 
                 return (
@@ -528,33 +525,20 @@ export default function ControlPanel({
 
       {/* Nút điều khiển */}
       <div className="flex flex-col gap-2.5 mt-2 border-t border-[#E6ECF0] pt-3">
-        {/* Cảnh báo khi đang có tàu khác đang thực hiện chuyến */}
-        {isOtherAircraftRunning && (
-          <div className="bg-[#FFFBEB] border border-[#FDE68A] text-[#92400E] p-3 rounded-xl text-xs flex items-start gap-2 shadow-xs">
-            <span className="text-base leading-none">⚠️</span>
-            <div className="flex flex-col gap-0.5">
-              <span className="font-bold">Tàu bay {runningAircraft?.callsign} đang thực hiện chuyến</span>
-              <span className="text-[11px] leading-relaxed text-[#78350F]">
-                Theo tiêu chuẩn an toàn A-SMGCS, mỗi thời điểm chỉ điều phối 1 tàu chạy thủ công. Vui lòng đợi tàu <strong>{runningAircraft?.callsign}</strong> hoàn tất chuyến ({runningAircraft?.status === 'taxiing' ? 'đang lăn bánh' : 'đang dừng chờ'}) trước khi cho tàu tiếp theo lăn.
-              </span>
-            </div>
-          </div>
-        )}
-
         {/* Thông báo khi tàu đã cất cánh thành công */}
-        {!isOtherAircraftRunning && selectedAircraft?.status === 'departed' && (
+        {selectedAircraft?.status === 'departed' && (
           <div className="p-3.5 bg-[#F5F3FF] border border-[#DDD6FE] rounded-xl text-xs text-[#5B21B6] flex flex-col gap-1.5 shadow-xs">
             <div className="font-bold flex items-center gap-1.5 text-sm text-[#6D28D9]">
               <span>🛫</span> Tàu bay đã cất cánh thành công!
             </div>
             <p className="text-[#6D28D9] text-xs leading-relaxed">
-              Tàu <strong>{selectedAircraft.callsign}</strong> đã hoàn thành hành trình cất cánh và rời khỏi sân bay. Bạn có thể chọn tàu bay khác trong đội bay để tiếp tục điều phối, hoặc bấm <strong>"Đặt lại máy bay"</strong> bên dưới để đưa tàu về bến xuất phát.
+              Tàu <strong>{selectedAircraft.callsign}</strong> đã hoàn thành hành trình cất cánh và rời khỏi sân bay. Bạn có thể chọn tàu bay khác trong đội bay để tiếp tục điều phối, hoặc bấm <strong>"Đặt lại máy bay"</strong> / <strong>"Đặt lại toàn bộ máy bay"</strong> bên dưới để đưa tàu về bến xuất phát.
             </p>
           </div>
         )}
 
         {/* Thông báo khi tàu đã cập bến an toàn */}
-        {!isOtherAircraftRunning && selectedAircraft?.status === 'arrived' && (
+        {selectedAircraft?.status === 'arrived' && (
           <div className="p-3.5 bg-[#ECFDF5] border border-[#A7F3D0] rounded-xl text-xs text-[#065F46] flex flex-col gap-1.5 shadow-xs">
             <div className="font-bold flex items-center gap-1.5 text-sm text-[#047857]">
               <span>✓</span> Tàu bay đã cập bến an toàn!
@@ -565,19 +549,8 @@ export default function ControlPanel({
           </div>
         )}
 
-        {/* Nút bị khóa khi đang có tàu khác chạy */}
-        {isOtherAircraftRunning && (!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && (
-          <button
-            disabled
-            className="w-full bg-[#E2E8F0] text-[#94A3B8] font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 cursor-not-allowed border border-[#CBD5E1]"
-          >
-            <span>🔒</span>
-            Đang điều phối tàu: {runningAircraft?.callsign}
-          </button>
-        )}
-
         {/* Nút chấp nhận tuyến đường */}
-        {!isOtherAircraftRunning && (!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && routeStatus === 'pending' && (
+        {(!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && routeStatus === 'pending' && (
           <button
             data-testid="accept-route-btn"
             onClick={() => executeAction('accept_route', onAcceptRoute)}
@@ -594,7 +567,7 @@ export default function ControlPanel({
         )}
 
         {/* Điều khiển hành trình: Cho lăn bánh */}
-        {!isOtherAircraftRunning && (!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && routeStatus === 'accepted' && (
+        {(!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && routeStatus === 'accepted' && (
           <button
             data-testid="start-aircraft-btn"
             onClick={() => executeAction('start', onStart)}
@@ -654,6 +627,20 @@ export default function ControlPanel({
             : getActionState('reset').canRetry
             ? 'Thử lại đặt lại'
             : `Đặt lại máy bay: ${selectedAircraft?.callsign || selectedAircraftId}`}
+        </button>
+
+        <button
+          data-testid="reset-all-aircraft-btn"
+          onClick={() => executeAction('reset_all', onResetAll || onReset)}
+          disabled={getActionState('reset_all').isPending}
+          className="w-full bg-[#F8FAFC] hover:bg-[#EEF2F6] active:bg-[#E2E8F0] disabled:bg-[#F8FAFC] disabled:text-[#94A3B8] text-[#334155] border border-[#CBD5E1] font-bold py-2.5 rounded-xl transition text-sm min-h-[44px] flex items-center justify-center gap-2 cursor-pointer shadow-2xs"
+        >
+          <span>{getActionState('reset_all').isPending ? '⏳' : '↺'}</span>
+          {getActionState('reset_all').isPending
+            ? 'Đang xử lý…'
+            : getActionState('reset_all').canRetry
+            ? 'Thử lại'
+            : 'Đặt lại toàn bộ máy bay'}
         </button>
       </div>
     </div>

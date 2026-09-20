@@ -241,7 +241,7 @@ export const CANONICAL_FLEET_SPECS: {
   { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'v3_line_37_p00', destId: 'v3_line_05_p07' }, // STAND_1 -> STOP BAR 25L (via E6)
   { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'v3_line_31_p00', destId: 'v3_line_05_p07' }, // STAND_12 -> STOP BAR 25L (via E6)
   { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'v3_line_32_p00', destId: 'v3_line_05_p07' }, // STAND_11 -> STOP BAR 25L (via E6)
-  { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'v3_line_29_p01', destId: 'v3_line_05_p07' }, // STAND_7 -> STOP BAR 25L (via E6)
+  { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'v3_line_28_p01', destId: 'v3_line_05_p07' }, // STAND_8 -> STOP BAR 25L (via E6)
   { id: 'VN005', callsign: 'VN005', airlineCode: 'SQ', type: 'A350', startId: 'v3_line_22_p01', destId: 'v3_line_05_p07' }, // STAND_17 -> STOP BAR 25L (via E6)
   { id: 'VN006', callsign: 'VN006', airlineCode: 'TG', type: 'A350', startId: 'v3_line_26_p04', destId: 'v3_line_05_p07' }, // STAND_22 -> STOP BAR 25L (via E6)
 ];
@@ -313,6 +313,11 @@ export function sanitizeManualFleet(
     }
   }
 
+  // Stand 7 to Stand 8 migration for VN004
+  if (fleet.some(a => a && a.id === 'VN004' && (a.currentNodeId === 'v3_line_29_p01' || a.currentNodeId === 'STAND_7'))) {
+    hasCorruption = true;
+  }
+
   if (!hasCorruption) {
     for (const ac of fleet) {
       if (!ac || !ac.id || seenIds.has(ac.id)) {
@@ -343,9 +348,11 @@ export function sanitizeManualFleet(
     }
   }
 
+  let resultFleet: Aircraft[];
+
   if (hasCorruption) {
     console.warn('[FleetSanitizer] Rebuilding clean canonical 6-aircraft fleet.');
-    return CANONICAL_FLEET_SPECS.map(spec => {
+    resultFleet = CANONICAL_FLEET_SPECS.map(spec => {
       const canonicalDefault = defaultMap.get(spec.id)!;
       const existing = fleet.find(a => a && a.id === spec.id);
       if (!existing) return canonicalDefault;
@@ -355,9 +362,10 @@ export function sanitizeManualFleet(
       const safeCallsign = isCustomCallsignValid ? existing.callsign : spec.callsign;
 
       const isValidCurrentNode = existing.currentNodeId && graph.nodes.some(n => n.id === existing.currentNodeId);
-      const safeCurrentNode = (existing.status === 'taxiing' || existing.status === 'holding')
+      const isOldStand7 = existing.id === 'VN004' && (existing.currentNodeId === 'v3_line_29_p01' || existing.currentNodeId === 'STAND_7');
+      const safeCurrentNode = (existing.status === 'taxiing' || existing.status === 'holding') && !isOldStand7
         ? existing.currentNodeId
-        : (isValidCurrentNode ? existing.currentNodeId : spec.startId);
+        : (isOldStand7 ? spec.startId : (isValidCurrentNode ? existing.currentNodeId : spec.startId));
 
       let safeTargetNode = existing.targetNodeId || spec.destId;
       // Chỉ clamp về STOP BAR 25L khi máy bay ở Stand (cất cánh)
@@ -388,9 +396,33 @@ export function sanitizeManualFleet(
         guidanceVisible: existing.status === 'taxiing',
       };
     });
+  } else {
+    resultFleet = fleet;
   }
 
-  return fleet;
+  // Guaranteed check: ensure VN004 is never left parked at STAND_7
+  return resultFleet.map(ac => {
+    if (ac && ac.id === 'VN004' && (ac.currentNodeId === 'v3_line_29_p01' || ac.currentNodeId === 'STAND_7') && ac.status !== 'taxiing') {
+      const stand8 = 'v3_line_28_p01';
+      const safeDest = isTakeoffRunwayNode(ac.targetNodeId, graph.nodes) ? ac.targetNodeId : 'v3_line_05_p07';
+      const route = findPath(graph, stand8, safeDest) || [stand8];
+      const routeEdges = routeToEdges(route, graph.edges);
+      return {
+        ...ac,
+        currentNodeId: stand8,
+        targetNodeId: safeDest,
+        assignedRoute: route,
+        currentEdgeId: routeEdges ? routeEdges[0] : null,
+        routeEdgeIndex: 0,
+        progressOnEdge: 0,
+        status: 'parked' as const,
+        isMoving: false,
+        routeVisible: false,
+        guidanceVisible: false,
+      };
+    }
+    return ac;
+  });
 }
 
 function appendLiveLog(
@@ -434,17 +466,8 @@ export function startManualAircraft(
     return state;
   }
 
-  // Strict rule: Only 1 aircraft can run at a time in manual mode!
-  const runningAc = state.manualFleet.find(
-    a => a.id !== aircraftId && (a.status === 'taxiing' || a.status === 'holding')
-  );
-  if (runningAc) {
-    return {
-      ...state,
-      warningMessage: `Không thể cho ${aircraftId} lăn bánh vì tàu ${runningAc.callsign} đang thực hiện chuyến. Mỗi thời điểm chỉ điều phối 1 tàu! Vui lòng đợi hoàn thành chuyến.`,
-    };
-  }
 
+  // Multiple aircraft can run simultaneously - no sequential restriction
   const updatedFleet = state.manualFleet.map(ac => {
     if (ac.id === aircraftId) {
       const route = ac.assignedRoute && ac.assignedRoute.length >= 2
@@ -605,9 +628,60 @@ export function resetManualAircraft(
     routeStatus: isResetSelected ? 'pending' : (selectedAc.status === 'taxiing' ? 'accepted' : 'pending'),
     lightStates: isResetSelected || selectedAc.status !== 'taxiing' ? {} : state.lightStates,
     blockedEdgeIds: new Set<string>(),
+    runwayOccupancy: {
+      NORTH: state.runwayOccupancy?.NORTH === aircraftId ? null : (state.runwayOccupancy?.NORTH || null),
+      SOUTH: state.runwayOccupancy?.SOUTH === aircraftId ? null : (state.runwayOccupancy?.SOUTH || null),
+    },
     warningMessage: null,
     config: {
       ...state.config,
+      incident: 'none',
+      incidentEdgeId: null,
+    },
+    liveEventLog: newLogs,
+  };
+}
+
+/**
+ * Reset all aircraft in the manual fleet back to their initial parking stands
+ */
+export function resetAllManualAircraft(
+  state: SimulationState,
+  graph: AirportGraph = airportGraph,
+): SimulationState {
+  const defaultFleet = createDefaultManualFleet(graph);
+  const selectedId = CANONICAL_FLEET_SPECS.some(s => s.id === state.selectedAircraftId)
+    ? state.selectedAircraftId!
+    : 'VN001';
+  const selectedAc = defaultFleet.find(a => a.id === selectedId) || defaultFleet[0];
+
+  const newLogs = appendLiveLog(state.liveEventLog, {
+    atSeconds: state.elapsedSeconds,
+    message: 'Đã đặt lại toàn bộ 6 máy bay về bến đỗ xuất phát ban đầu.',
+    severity: 'info',
+  });
+
+  return {
+    ...state,
+    scenario: undefined,
+    scenarioAircraft: undefined,
+    isRunning: false,
+    isPaused: false,
+    manualFleet: defaultFleet,
+    aircraft: selectedAc,
+    selectedAircraftId: selectedId,
+    routeStatus: 'pending',
+    lightStates: {},
+    blockedEdgeIds: new Set<string>(),
+    runwayOccupancy: { NORTH: null, SOUTH: null },
+    warningMessage: null,
+    config: {
+      ...state.config,
+      callsign: selectedAc.callsign,
+      airlineCode: selectedAc.airlineCode || 'VJ',
+      aircraftType: selectedAc.aircraftType || 'A321',
+      startNodeId: selectedAc.currentNodeId,
+      destinationNodeId: selectedAc.targetNodeId,
       incident: 'none',
       incidentEdgeId: null,
     },
@@ -662,9 +736,20 @@ export function simulationTick(
 
   // 1. Identify which runway corridors are currently occupied (NORTH: 07L/25R, SOUTH: 07R/25L)
   const currentOccupancy: RunwayOccupancyState = {
-    NORTH: state.runwayOccupancy?.NORTH || null,
-    SOUTH: state.runwayOccupancy?.SOUTH || null,
+    NORTH: null,
+    SOUTH: null,
   };
+
+  // Only keep previous occupancy if the occupant aircraft is STILL actively taxiing or holding
+  for (const corridor of ['NORTH', 'SOUTH'] as const) {
+    const prevId = state.runwayOccupancy?.[corridor];
+    if (prevId) {
+      const occupant = fleet.find(f => f.id === prevId);
+      if (occupant && (occupant.status === 'taxiing' || occupant.status === 'holding')) {
+        currentOccupancy[corridor] = prevId;
+      }
+    }
+  }
 
   for (const ac of fleet) {
     if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
@@ -754,8 +839,10 @@ export function simulationTick(
 
     if (targetCorridor && targetCorridor !== currentCorridor) {
       const occupantId = currentOccupancy[targetCorridor];
-      if (occupantId && occupantId !== ac.id) {
-        const occupantAc = fleet.find(f => f.id === occupantId);
+      const occupantAc = occupantId ? fleet.find(f => f.id === occupantId) : null;
+      const isOccupantActive = occupantAc && (occupantAc.status === 'taxiing' || occupantAc.status === 'holding');
+
+      if (occupantId && occupantId !== ac.id && isOccupantActive) {
         if (ac.status !== 'holding' || ac.holdReason !== 'stop-bar') {
           tickLogs = appendLiveLog(tickLogs, {
             atSeconds: state.elapsedSeconds + dt,
@@ -832,11 +919,11 @@ export function simulationTick(
     }
 
     // Resume taxiing if previously holding and path is now clear
-    if (ac.status === 'holding' && (ac.holdReason === 'runway-occupied' || ac.holdReason === 'separation')) {
+    if (ac.status === 'holding' && (ac.holdReason === 'runway-occupied' || ac.holdReason === 'separation' || ac.holdReason === 'stop-bar')) {
       tickLogs = appendLiveLog(tickLogs, {
         atSeconds: state.elapsedSeconds + dt,
         callsign: ac.callsign,
-        message: `Đường lăn đã được giải phóng — ${ac.callsign} tiếp tục lăn bánh.`,
+        message: `Đường lăn / Đường băng đã được giải phóng — ${ac.callsign} tiếp tục lăn bánh.`,
         severity: 'info',
       });
     }
@@ -901,6 +988,14 @@ export function simulationTick(
         ac.targetNodeId === 'W11_07R';
 
       finalStatus = isTakeoff ? 'departed' : 'arrived';
+
+      // Giải phóng ngay lập tức hành lang đường băng khi máy bay cất cánh hoặc đã cập bến
+      if (currentOccupancy.NORTH === ac.id) {
+        currentOccupancy.NORTH = null;
+      }
+      if (currentOccupancy.SOUTH === ac.id) {
+        currentOccupancy.SOUTH = null;
+      }
 
       if (isTakeoff) {
         tickLogs = appendLiveLog(tickLogs, {
@@ -992,17 +1087,8 @@ export function acceptRoute(
 ): SimulationState {
   const selectedId = state.selectedAircraftId || 'VN001';
 
-  // Strict rule: If another aircraft is taxiing/holding, don't allow accepting route for a different aircraft
-  const runningAc = (state.manualFleet || []).find(
-    a => a.id !== selectedId && (a.status === 'taxiing' || a.status === 'holding')
-  );
-  if (runningAc) {
-    return {
-      ...state,
-      warningMessage: `Tàu bay ${runningAc.callsign} đang lăn bánh. Vui lòng đợi hoàn thành chuyến trước khi chấp nhận tuyến cho tàu khác.`,
-    };
-  }
 
+  // Multiple aircraft can run simultaneously - accept route for any aircraft regardless of others
   const updatedFleet = (state.manualFleet || []).map(ac => {
     if (ac.id === selectedId) {
       const validRoute = findPath(graph, ac.currentNodeId, ac.targetNodeId, state.blockedEdgeIds) || ac.assignedRoute || [ac.currentNodeId];

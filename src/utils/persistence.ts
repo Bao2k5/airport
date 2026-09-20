@@ -78,6 +78,27 @@ export function loadStateFromStorage(): PersistedData | null {
     if (!raw) return null;
     const parsed = JSON.parse(raw) as PersistedData;
     if (!parsed || parsed.version !== 1 || !parsed.config) return null;
+
+    // Migrate any legacy Stand 7 references for VN004 to Stand 8
+    if (parsed.config && parsed.config.startNodeId === 'v3_line_29_p01') {
+      parsed.config.startNodeId = 'v3_line_28_p01';
+    }
+    if (parsed.config && parsed.config.callsign === 'VN004' && parsed.config.startNodeId === 'v3_line_29_p01') {
+      parsed.config.startNodeId = 'v3_line_28_p01';
+    }
+    if (parsed.manualFleet && Array.isArray(parsed.manualFleet)) {
+      parsed.manualFleet = parsed.manualFleet.map((ac: any) => {
+        if (ac && ac.id === 'VN004' && (ac.currentNodeId === 'v3_line_29_p01' || ac.currentNodeId === 'STAND_7')) {
+          return {
+            ...ac,
+            currentNodeId: 'v3_line_28_p01',
+            assignedRoute: undefined,
+          };
+        }
+        return ac;
+      });
+    }
+
     return parsed;
   } catch (err) {
     console.warn('[Persistence] Could not load state from localStorage:', err);
