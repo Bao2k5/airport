@@ -516,7 +516,7 @@ export default function PrecisionChartPenAnnotator() {
     } catch (err) {
       setSaveStatus('error');
       exportJson();
-      setToastMsg('⚠️ Đã tải file JSON về máy (Download)');
+      setToastMsg('Đã tải file JSON về máy (Download)');
       setTimeout(() => {
         setSaveStatus('idle');
         setToastMsg(null);

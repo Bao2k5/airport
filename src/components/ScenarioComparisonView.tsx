@@ -574,7 +574,7 @@ export default function Scenario5ComparisonView({
               tradInbHoldAnnouncedRef.current = true;
               setTraditionalEvents(e => [
                 ...e,
-                { time: Math.round(currentSec), text: '⚠️ KSVKL: "INB01, holdshort of HS NS"' },
+                { time: Math.round(currentSec), text: 'KSVKL: "INB01, holdshort of HS NS"' },
               ]);
             }
             return {
@@ -623,7 +623,7 @@ export default function Scenario5ComparisonView({
               tradOutHoldAnnouncedRef.current = true;
               setTraditionalEvents(e => [
                 ...e,
-                { time: Math.round(currentSec), text: '⚠️ KSVKL: "OUTB01 (OUTB02), holdshort of HS NS"' },
+                { time: Math.round(currentSec), text: 'KSVKL: "OUTB01 (OUTB02), holdshort of HS NS"' },
               ]);
             }
             return {

@@ -429,7 +429,7 @@ export default function Scenario1ComparisonView({ graph, bgImage, onExit }: Prop
               tradWrongTurnAnnouncedRef.current = true;
               setTraditionalEvents(e => [
                 ...e,
-                { text: '⚠️ KSVKL: "HVN216, STOP IMMEDIATELY! Wrong turn into taxiway E4!"' },
+                { text: 'KSVKL: "HVN216, STOP IMMEDIATELY! Wrong turn into taxiway E4!"' },
               ]);
             }
           }

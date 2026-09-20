@@ -96,7 +96,7 @@ export default function StatusPanel({ state, graph = airportGraphV3 }: Props) {
 
       {warningMessage && (
         <div className="bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-xl px-3.5 py-2.5 text-xs font-semibold leading-relaxed flex items-start gap-2 shadow-2xs">
-          <span className="text-base leading-none text-[#D32F2F]">⚠</span>
+          <span className="w-2 h-2 rounded-full bg-[#D32F2F] mt-1.5 shrink-0" />
           <span>{warningMessage}</span>
         </div>
       )}
@@ -149,13 +149,13 @@ export default function StatusPanel({ state, graph = airportGraphV3 }: Props) {
 
                   {ac.speedReason && (
                     <div className="text-[10px] text-[#475569] font-medium bg-[#F1F5F9] px-2 py-0.5 rounded flex items-center gap-1">
-                      <span>ℹ️</span> {ac.speedReason}
+                      <span className="w-1.5 h-1.5 rounded-full bg-[#3B82F6] shrink-0" /> {ac.speedReason}
                     </div>
                   )}
 
                   {hasStopBar && (
                     <div className="text-[10px] font-bold text-[#991B1B] bg-[#FEF2F2] border border-[#FCA5A5] rounded-lg px-2 py-1 flex items-center gap-1.5">
-                      <span>⛔</span> STOP BAR — {ac.callsign === 'TG302' ? 'NHƯỜNG VN301' : 'DỪNG LẠI'}
+                      <span className="w-2 h-2 rounded-full bg-[#DC2626] shrink-0" /> STOP BAR — {ac.callsign === 'TG302' ? 'NHƯỜNG VN301' : 'DỪNG LẠI'}
                     </div>
                   )}
 

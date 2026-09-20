@@ -354,7 +354,7 @@ function AirportMap({
 
       {bgLoadState.status === 'error' && (
         <div className="absolute top-3 left-3 z-30 bg-red-950/95 border border-red-600 text-red-100 text-xs p-2.5 rounded-xl shadow-2xl flex items-center gap-2 max-w-sm">
-          <span>⚠️</span>
+          <span className="w-2 h-2 rounded-full bg-red-500 shrink-0" />
           <span className="flex-1 font-semibold">{bgLoadState.errorMessage || 'Không thể tải ảnh nền bản đồ.'}</span>
           <button
             onClick={() => loadBg(bgImage)}

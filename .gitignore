@@ -41,4 +41,16 @@ test_screenshots/
 *.tmp
 .eslintcache
 
+# Office & Thesis documents
+*.docx
+*.doc
+*.pdf
 
+# AI & Draft Markdown notes
+AGENTS.md
+CLAUDE.md
+CHUONG_*.md
+
+# Root temporary raw traces & junction JSON files
+/v3_junctions.confirmed.json
+/v3_raw_traces_manual.json

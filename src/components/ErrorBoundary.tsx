@@ -36,7 +36,7 @@ export class ErrorBoundary extends Component<Props, State> {
       return (
         <div className="p-4 m-2 bg-red-950/80 border border-red-700 rounded-xl text-red-100 flex flex-col gap-3 shadow-xl">
           <div className="flex items-center gap-2">
-            <span className="text-xl">⚠️</span>
+            <span className="w-3 h-3 rounded-full bg-red-500 shrink-0" />
             <div className="font-bold text-sm">
               {this.props.fallbackTitle || `Đã xảy ra sự cố trong khu vực: ${this.props.name || 'Giao diện'}`}
             </div>

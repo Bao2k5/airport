@@ -621,7 +621,7 @@ export default function App() {
         {watchdogStalled && (
           <div className="bg-[#FFFBEB] border-b border-[#FCD34D] text-[#92400E] px-4 py-2 text-xs flex items-center justify-between z-50 shadow-sm flex-shrink-0 animate-pulse">
             <span className="font-semibold flex items-center gap-1.5">
-              <span>⚠️</span> Mô phỏng bị gián đoạn vòng lặp. Vị trí và tuyến đường đã được bảo toàn.
+              <span className="w-2 h-2 rounded-full bg-amber-500 shrink-0" /> Mô phỏng bị gián đoạn vòng lặp. Vị trí và tuyến đường đã được bảo toàn.
             </span>
             <button
               onClick={() => {
