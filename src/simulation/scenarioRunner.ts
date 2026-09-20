@@ -807,7 +807,7 @@ export function scenarioTick(
     const isControlledScenario = state.scenario?.id === 'lvc_peak_runway_direction_change' || state.scenario?.id === 'lvc_hsns_intersection_conflict';
     const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
     const isCorridorOccupiedByOther = currentCorridor && currentOccupancy[currentCorridor] && currentOccupancy[currentCorridor] !== ac.id;
-    if (!isEmergencyAc && !isControlledScenario && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB')) {
+    if (!isEmergencyAc && !isControlledScenario && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB') && ac.callsign !== 'HVN123') {
       steppedAc = {
         ...ac,
         status: 'holding',
@@ -863,20 +863,25 @@ export function scenarioTick(
         }
       }
 
-      // Thời gian trôi qua kể từ khi BAV315 dừng an toàn (để tàu bay nghe huấn lệnh 2.5s rồi mới lăn bánh)
-      const isolatedElapsed = state.scenario?.isolatedAtSeconds !== undefined
-        ? (state.elapsedSeconds - state.scenario.isolatedAtSeconds)
+      // Thời gian thực tế trôi qua (giây thực = simulation seconds / 5.0) kể từ khi BAV315 dừng an toàn:
+      // Đồng bộ chuẩn xác 100% với từng đợt hiển thị huấn lệnh 2.5s trên thanh HUD:
+      // - 0s ➔ 2.5s: Hiển thị lệnh HVN123 (HVN123 lăn mượt mà xả đà vào W5)
+      // - 2.5s ➔ 5.0s: Hiển thị lệnh BAV456
+      // - 5.0s ➔ 7.5s: Hiển thị lệnh THA101
+      const isolatedRealSec = state.scenario?.isolatedAtSeconds !== undefined
+        ? ((state.elapsedSeconds - state.scenario.isolatedAtSeconds) / 5.0)
         : 0;
 
+      // 1. HVN123: Ngay khi BAV315 vừa thoát vào W4 an toàn -> HVN123 lập tức tiếp đất xả đà lăn liên tục vào W5 (chuyển động liền mạch, không bị khựng)
       if (ac.callsign === 'HVN123') {
-        if (!bav315Isolated || isolatedElapsed < 2.5) {
+        if (!bav315Isolated) {
           updatedFleet[idx] = {
             ...ac,
-            hidden: !bav315Isolated,
-            status: bav315Isolated ? 'holding' : 'waiting',
+            hidden: true,
+            status: 'waiting',
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: bav315Isolated ? '25R: ĐÃ NHẬN LỆNH KSVKL (CHUẨN BỊ LĂN)' : 'CHỜ BAV315 THOÁT LY VÀO W4',
+            scenarioLabel: 'CHỜ BAV315 THOÁT LY VÀO W4',
           };
           continue;
         } else if (ac.status === 'waiting' || ac.hidden || ac.status === 'queued' || ac.status === 'holding') {
@@ -891,11 +896,9 @@ export function scenarioTick(
         }
       }
 
-      // Tàu 3 (BAV456 tại Stand 22) và Tàu 4 (THA101 tại Stand 10):
-      // Giai đoạn 1: Đứng yên tại bến đỗ (hidden: false, status: holding).
-      // Giai đoạn 2 (khi bav315Isolated và sau 2.5s nhận lệnh): BAV456 và THA101 đồng thời lăn song song ra RW 25L.
-      if (ac.callsign === 'BAV456' || ac.callsign === 'THA101') {
-        if (!bav315Isolated || isolatedElapsed < 2.5) {
+      // 2. BAV456 (Stand 22): Huấn lệnh thứ 2 phát lúc t=2.5s -> BAV456 nhận lệnh xong lập tức pushback lăn ra E6 ngay từ 2.5s
+      if (ac.callsign === 'BAV456') {
+        if (!bav315Isolated || isolatedRealSec < 2.5) {
           updatedFleet[idx] = {
             ...ac,
             hidden: false,
@@ -903,8 +906,8 @@ export function scenarioTick(
             speedKts: 0,
             speedLimitKts: 0,
             scenarioLabel: bav315Isolated
-              ? (ac.callsign === 'BAV456' ? 'STAND 22: ĐÃ NHẬN LỆNH KSVKL (CHUẨN BỊ PUSHBACK)' : 'STAND 10: ĐÃ NHẬN LỆNH KSVKL (CHUẨN BỊ PUSHBACK)')
-              : (ac.callsign === 'BAV456' ? 'STAND 22: CHỜ BAV315 THOÁT LY' : 'STAND 10: CHỜ BAV315 THOÁT LY'),
+              ? 'STAND 22: CHỜ LƯỢT HUẤN LỆNH'
+              : 'STAND 22: CHỜ BAV315 THOÁT LY',
           };
           continue;
         } else if (ac.status === 'holding' || ac.status === 'waiting' || ac.status === 'queued') {
@@ -912,9 +915,35 @@ export function scenarioTick(
             ...ac,
             hidden: false,
             status: 'taxiing',
-            speedLimitKts: ac.callsign === 'BAV456' ? 16 : 14,
-            speedKts: ac.callsign === 'BAV456' ? 16 : 14,
-            scenarioLabel: ac.callsign === 'BAV456' ? 'STAND 22 ➔ E6 ➔ RW 25L' : 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
+            speedLimitKts: 16,
+            speedKts: 16,
+            scenarioLabel: 'STAND 22 ➔ E6 ➔ RW 25L',
+          };
+        }
+      }
+
+      // 3. THA101 (Stand 10): Huấn lệnh thứ 3 phát lúc t=5.0s -> THA101 nhận lệnh xong lập tức pushback lăn qua NS ra E6 ngay từ 5.0s
+      if (ac.callsign === 'THA101') {
+        if (!bav315Isolated || isolatedRealSec < 5.0) {
+          updatedFleet[idx] = {
+            ...ac,
+            hidden: false,
+            status: 'holding',
+            speedKts: 0,
+            speedLimitKts: 0,
+            scenarioLabel: bav315Isolated
+              ? 'STAND 10: CHỜ LƯỢT HUẤN LỆNH'
+              : 'STAND 10: CHỜ BAV315 THOÁT LY',
+          };
+          continue;
+        } else if (ac.status === 'holding' || ac.status === 'waiting' || ac.status === 'queued') {
+          ac = {
+            ...ac,
+            hidden: false,
+            status: 'taxiing',
+            speedLimitKts: 14,
+            speedKts: 14,
+            scenarioLabel: 'STAND 10 ➔ HS NS ➔ E6 ➔ RW 25L',
           };
         }
       }
@@ -1079,19 +1108,25 @@ export function scenarioTick(
         state.blockedEdgeIds.add('E_v3_line_18_p00_v3_line_18_p01');
         state.blockedEdgeIds.add('E_v3_line_18_p02_v3_line_18_p03');
 
-        // Báo động sự cố FOD trên hệ thống
-        if (state.scenario && !state.scenario.events.some((e: any) => e.message?.includes('[FOD_ALERT]'))) {
-          state.scenario.events = [
-            ...state.scenario.events,
-            {
-              atSeconds: state.elapsedSeconds,
-              message: '[FOD_ALERT] Phát hiện vật thể lạ FOD tại W7A MID — Đóng đường lăn W7A, thu hồi dải đèn FtG',
-              severity: 'critical',
-            },
-          ];
+        // 2. Khi HVN401 vừa tới W4/25R (v3_line_04_p01): Phát ngay thông báo của Pilot xin đổi tuyến!
+        const reachedW4_25R = ac.currentNodeId === 'v3_line_04_p01' ||
+          ac.currentNodeId === 'v3_line_04_p02' ||
+          (ac.routeEdgeIndex >= 4);
+
+        if (reachedW4_25R) {
+          if (state.scenario && !state.scenario.events.some((e: any) => e.message?.includes('holding short of Runway 25L'))) {
+            state.scenario.events = [
+              ...state.scenario.events,
+              {
+                atSeconds: state.elapsedSeconds,
+                message: '👨‍✈️ [PILOT REPORT] "HVN401, holding short of Runway 25L, unable W7 due FOD, request alternate taxi route."',
+                severity: 'warning',
+              },
+            ];
+          }
         }
 
-        // 2. Tàu bay tiếp tục lăn vào W4 và DỪNG LẠI trước thềm Runway 25L một khoảng an toàn
+        // 3. Tàu bay tiếp tục lăn thêm 1 tí trong W4 và DỪNG LẠI trước vạch dừng Runway 25L
         const reachedStopBar25L = ac.currentNodeId === 'v3_line_04_p03' ||
           (ac.routeEdgeIndex === 6 && ac.progressOnEdge >= 0.45) ||
           ac.routeEdgeIndex >= 7;
@@ -1099,43 +1134,20 @@ export function scenarioTick(
         if (reachedStopBar25L) {
           const holdTime = (ac.heldSeconds ?? 0) + dt;
 
-          // Giai đoạn dừng: Hiện đối thoại giữa Pilot và KSVKL (Tổng cộng ~5 giây thực tế)
-          if (holdTime < 12.0) {
-            // Pilot báo xin đổi đường (~2.5s thực tế)
-            if (state.scenario && !state.scenario.events.some((e: any) => e.message?.includes('holding short of Runway 25L'))) {
-              state.scenario.events = [
-                ...state.scenario.events,
-                {
-                  atSeconds: state.elapsedSeconds,
-                  message: '👨‍✈️ [PILOT REPORT] "HVN401, holding short of Runway 25L, unable W7 due FOD, request alternate taxi route."',
-                  severity: 'warning',
-                },
-              ];
-            }
-            state.comicBubble = {
-              speaker: 'HVN401 (Pilot)',
-              active: true,
-              text: '👨‍✈️ "HVN401, holding short of Runway 25L, unable W7 due FOD, request alternate taxi route."',
-            };
-          } else if (holdTime >= 12.0 && holdTime < 25.0) {
-            // KSVKL cấp huấn lệnh mới (~2.5s thực tế)
+          // Sau khi dừng khoảng 2.5s thực tế (12.5s mô phỏng): KSVKL cấp huấn lệnh mới
+          if (holdTime >= 5.0 && holdTime < 18.0) {
             if (state.scenario && !state.scenario.events.some((e: any) => e.message?.includes('cross runway 25L, taxi to stand 16'))) {
               state.scenario.events = [
                 ...state.scenario.events,
                 {
                   atSeconds: state.elapsedSeconds,
-                  message: '📻 [ATC CLEARANCE] "HVN401, roger, cross runway 25L, taxi to stand 16 via taxiway W9A and NS"',
+                  message: '📻 [ATC CLEARANCE] "HVN401, roger, cross runway 25L, taxi to stand 16 via W3 and E6 taxiway"',
                   severity: 'info',
                 },
               ];
             }
-            state.comicBubble = {
-              speaker: 'TWR 118.1 MHz',
-              active: true,
-              text: '📻 "HVN401, roger, cross runway 25L, taxi to stand 16 via taxiway W9A and NS"',
-            };
-          } else {
-            // 3. Sau khi KSVKL cấp phép (sau ~5s dừng chờ thực tế): Tính toán tuyến đường mới qua W9A và giải phóng tàu lăn tiếp
+          } else if (holdTime >= 18.0) {
+            // Sau khi KSVKL cấp phép xong (~3s thực tế): Tính toán tuyến đường mới và giải phóng tàu lăn tiếp
             const newPath = findPath(graph, 'v3_line_04_p03', 'v3_line_21_p01', state.blockedEdgeIds);
             if (newPath && newPath.length > 0) {
               const newEdges = routeToEdges(newPath, graph.edges) ?? [];
@@ -1152,25 +1164,14 @@ export function scenarioTick(
                 holdReason: undefined,
                 heldSeconds: 0,
                 clearedRoute: ['v3_line_04_p02', ...newPath],
-                scenarioLabel: 'TỰ ĐỘNG TÁI ĐỊNH TUYẾN QUA W9A ➔ STAND 16',
+                scenarioLabel: 'TÁI ĐỊNH TUYẾN QUA W3 & E6 ➔ STAND 16',
               };
               updatedFleet[idx] = ac;
-              state.comicBubble = undefined;
-              if (state.scenario && !state.scenario.events.some((e: any) => e.message?.includes('[FTG_REROUTE]'))) {
-                state.scenario.events = [
-                  ...state.scenario.events,
-                  {
-                    atSeconds: state.elapsedSeconds,
-                    message: '🟢 [FTG_REROUTE] Thu hồi đèn W7A — Kích hoạt vệt đèn xanh FtG mới qua W9A -> Stand 16',
-                    severity: 'info',
-                  },
-                ];
-              }
               continue;
             }
           }
 
-          // Trong thời gian đang chờ (holdTime < 25.0)
+          // Trong thời gian đang dừng trước vạch dừng 25L (holdTime < 18.0)
           steppedAc = {
             ...ac,
             currentNodeId: 'v3_line_04_p02',
@@ -1181,8 +1182,8 @@ export function scenarioTick(
             heldSeconds: holdTime,
             speedKts: 0,
             speedLimitKts: 0,
-            speedReason: 'Dừng đợi tại W4 trước Runway 25L chờ đổi lộ trình do FOD tại W7A',
-            scenarioLabel: '🛑 DỪNG ĐỢI TẠI W4/25L (CHỜ ĐỔI TUYẾN DO FOD)',
+            speedReason: 'Dừng đợi trước Runway 25L nhận huấn lệnh đổi tuyến',
+            scenarioLabel: '🛑 DỪNG TRƯỚC RWY 25L (CHỜ ĐỔI TUYẾN DO FOD)',
           };
           updatedFleet[idx] = steppedAc;
           continue;

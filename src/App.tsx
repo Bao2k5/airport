@@ -33,6 +33,7 @@ import type { SimulationConfig, SimulationState } from './types';
 import PresetScenariosPanel from './components/PresetScenariosPanel';
 import Scenario5ComparisonView from './components/ScenarioComparisonView';
 import Scenario1ComparisonView from './components/Scenario1ComparisonView';
+import ScenarioAtcHudBar from './components/ScenarioAtcHudBar';
 import { startScenario, scenarioTick } from './simulation/scenarioRunner';
 import {
   GRAPH_REGISTRY,
@@ -555,7 +556,7 @@ export default function App() {
 
   return (
     <ErrorBoundary name="Ứng dụng mô phỏng sân bay" fallbackTitle="Đã xảy ra sự cố trong ứng dụng">
-      <div className="w-full h-full min-h-screen bg-[#F8FAFC] text-[#202224] flex flex-col overflow-x-hidden">
+      <div className="w-full h-full min-h-screen md:h-screen bg-[#F8FAFC] text-[#202224] flex flex-col overflow-x-hidden md:overflow-hidden">
         {/* ── Scenario 5 Dual Map Comparison Mode ── */}
         {showScenario5Comparison && (
           <Scenario5ComparisonView
@@ -693,25 +694,33 @@ export default function App() {
         </div>
 
         {/* ── 3. Bố Cục Chính Hợp Nhất (Chỉ 1 Bản Đồ Duy Nhất Cho Mọi Viewport) ── */}
-        <main className="flex-1 flex flex-col md:flex-row gap-0 md:gap-3 p-0 md:p-3 overflow-hidden min-h-0 relative">
+        <main className="flex-1 flex flex-col md:flex-row gap-0 md:gap-2.5 lg:gap-3 p-0 md:p-2 lg:p-3 overflow-hidden min-h-0 relative">
           {/* Bản đồ sân bay tương tác chính — Duy nhất trong toàn bộ DOM */}
-          <div className="flex-1 w-full min-w-0 min-h-[220px] md:min-h-0 relative bg-white md:rounded-[10px] md:border md:border-[#E4E4E7] shadow-xs p-0 md:p-1 flex flex-col overflow-hidden">
-            <ErrorBoundary name="Bản đồ sân bay" fallbackTitle="Lỗi hiển thị bản đồ">
-              <AirportMap
-                state={simState}
-                graph={currentGraph}
-                bgImage={currentGraphEntry.bgImage}
-                onSelectAircraft={handleSelectAircraft}
-                showGraphV3Overlay={showGraphV3Overlay}
-                showGrid={showGrid}
-                showPaths={showPaths}
-                inspectingPathAircraftId={inspectingPathAircraftId}
-              />
-            </ErrorBoundary>
+          <div className="flex-1 w-full min-w-0 min-h-[220px] md:min-h-0 relative bg-[#070B13] md:rounded-[10px] md:border md:border-[#1E293B] shadow-xs flex flex-col overflow-hidden">
+            {/* Viewport Bản đồ 100% Thông Thoáng — Không bị che bởi thanh thông báo */}
+            <div className="flex-1 relative w-full h-full min-h-0 overflow-hidden">
+              <ErrorBoundary name="Bản đồ sân bay" fallbackTitle="Lỗi hiển thị bản đồ">
+                <AirportMap
+                  state={simState}
+                  graph={currentGraph}
+                  bgImage={currentGraphEntry.bgImage}
+                  onSelectAircraft={handleSelectAircraft}
+                  showGraphV3Overlay={showGraphV3Overlay}
+                  showGrid={showGrid}
+                  showPaths={showPaths}
+                  inspectingPathAircraftId={inspectingPathAircraftId}
+                />
+              </ErrorBoundary>
+            </div>
+
+            {/* Chừa riêng 1 ô bên dưới bản đồ cho thông báo chạy theo đúng từng tàu bay (Kịch bản 2, 3, 4) giống Kịch bản 1 & 5 */}
+            {simState.scenario && (
+              <ScenarioAtcHudBar state={simState} />
+            )}
           </div>
 
-          {/* ── 3A. Bảng Điều Khiển Desktop & Tablet (>= 768px) ── */}
-          <aside className="hidden md:flex w-80 lg:w-96 flex-shrink-0 flex-col gap-3 overflow-y-auto">
+          {/* ── 3A. Bảng Điều Khiển Desktop & Laptop Các Loại Kích Cỡ ── */}
+          <aside className="hidden md:flex w-72 lg:w-80 xl:w-96 flex-shrink-0 flex-col gap-2.5 lg:gap-3 overflow-y-auto">
             <ErrorBoundary name="Thanh điều khiển bên phải" fallbackTitle="Lỗi bảng điều khiển">
               {/* Tab Switcher */}
               <div className="flex bg-[#E4E4E7]/60 p-1 rounded-[10px]">

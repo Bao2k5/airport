@@ -122,22 +122,6 @@ export const scenario4FodClosure: PresetScenarioDef = {
           return state;
         },
       },
-      {
-        atSeconds: 3,
-        apply: (state: any) => {
-          if (state.scenario) {
-            state.scenario.events = [
-              ...state.scenario.events,
-              {
-                atSeconds: state.elapsedSeconds,
-                message: '[LVC_WEATHER] Sương mù RVR < 550m — Kích hoạt Follow-the-Greens cho HVN401',
-                severity: 'info',
-              },
-            ];
-          }
-          return state;
-        },
-      },
     ];
 
     return {

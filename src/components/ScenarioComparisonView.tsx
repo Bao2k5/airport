@@ -78,18 +78,26 @@ function ComparisonDynamicIslandHud({
 
   if (toasts.length === 0) {
     return (
-      <div className="absolute top-2 inset-x-0 z-20 flex justify-center pointer-events-none select-none font-mono">
-        <div className="bg-black/40 backdrop-blur-md border border-white/20 shadow-[0_4px_16px_rgba(0,0,0,0.3)] h-5 px-2.5 rounded-full flex items-center justify-center pointer-events-auto">
+      <div className="w-full h-9 px-3 flex items-center justify-between select-none font-mono text-xs">
+        <div className="flex items-center gap-2">
           <span className={`w-2 h-2 rounded-full inline-block animate-pulse ${
             isTrad ? 'bg-sky-400 shadow-[0_0_8px_#38bdf8]' : 'bg-emerald-400 shadow-[0_0_8px_#34d399]'
           }`} />
+          <span className={`text-[9px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border leading-none ${
+            isTrad ? 'bg-sky-500/20 text-sky-300 border-sky-500/50' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
+          }`}>
+            {isTrad ? 'VHF LIVE' : 'FTG LIVE'}
+          </span>
+          <span className="text-slate-400 text-[11px] truncate">
+            {isTrad ? 'Kênh điều hành thoại VHF 118.1 MHz' : 'Hệ thống đèn dẫn hướng A-SMGCS Follow-the-Green'}
+          </span>
         </div>
       </div>
     );
   }
 
   return (
-    <div className="absolute top-2 inset-x-0 z-20 flex flex-col items-center gap-1.5 pointer-events-none select-none font-mono">
+    <div className="w-full flex flex-col font-mono select-none">
       {toasts.map(toast => {
         const meta = parseToastMeta(toast.text);
         const durationSec = toast.durationSec ?? 3.2;
@@ -97,32 +105,31 @@ function ComparisonDynamicIslandHud({
         return (
           <div
             key={toast.id}
-            className={`dynamic-island-shell relative overflow-hidden backdrop-blur-md rounded-full text-xs transition-all duration-300 inline-flex items-center gap-2 cursor-pointer select-none pointer-events-auto island-card-pop-in ${
+            className={`relative overflow-hidden w-full px-3 py-1.5 flex items-center justify-between text-xs transition-all duration-300 border-b border-white/5 last:border-b-0 ${
               isTrad
-                ? 'bg-slate-950/40 hover:bg-slate-900/55 border border-sky-500/50 hover:border-sky-400/80 shadow-[0_8px_24px_rgba(0,0,0,0.4)] py-1.5 px-3.5 max-w-[94vw] w-auto text-sky-100'
-                : 'bg-slate-950/40 hover:bg-slate-900/55 border border-emerald-500/50 hover:border-emerald-400/80 shadow-[0_8px_24px_rgba(0,0,0,0.4)] py-1.5 px-3.5 max-w-[94vw] w-auto text-emerald-100'
+                ? 'bg-sky-950/40 text-sky-100 hover:bg-sky-900/40'
+                : 'bg-emerald-950/40 text-emerald-100 hover:bg-emerald-900/40'
             }`}
             onClick={() => onDismiss(toast.id)}
             title="Bấm để đóng thông báo này"
           >
-            <div className="flex items-center gap-1.5 shrink-0">
-              <span className={`w-2 h-2 rounded-full inline-block animate-pulse shadow-[0_0_8px_currentColor] ${
+            <div className="flex items-center gap-2 min-w-0 flex-1">
+              <span className={`w-2 h-2 rounded-full inline-block animate-pulse shadow-[0_0_8px_currentColor] shrink-0 ${
                 isTrad ? 'bg-sky-400 text-sky-400' : 'bg-emerald-400 text-emerald-400'
               }`} />
-              <span className={`text-[9px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border leading-none ${
+              <span className={`text-[9px] font-black tracking-wider uppercase px-1.5 py-0.5 rounded-full border leading-none shrink-0 ${
                 isTrad ? 'bg-sky-500/20 text-sky-300 border-sky-500/50' : 'bg-emerald-500/20 text-emerald-300 border-emerald-500/50'
               }`}>
                 {isTrad ? 'VHF' : 'FTG'}
               </span>
               {meta.callsign && (
-                <span className="text-[10px] font-bold text-sky-300 bg-sky-950/70 border border-sky-600/50 px-2 py-0.5 rounded-full tracking-wide leading-none">
+                <span className="text-[10px] font-bold text-sky-300 bg-sky-950/70 border border-sky-600/50 px-2 py-0.5 rounded-full tracking-wide leading-none shrink-0">
                   {meta.callsign}
                 </span>
               )}
-            </div>
-
-            <div className="font-mono text-[11px] sm:text-[11.5px] leading-tight text-slate-100 drop-shadow-[0_1px_2px_rgba(0,0,0,0.9)] whitespace-nowrap truncate max-w-[45vw] sm:max-w-none font-medium">
-              {meta.content}
+              <div className="font-mono text-[11px] sm:text-xs leading-tight text-slate-100 truncate flex-1 min-w-0 font-medium">
+                {meta.content}
+              </div>
             </div>
 
             {/* Nút đóng [✕] */}
@@ -132,7 +139,7 @@ function ComparisonDynamicIslandHud({
                 e.stopPropagation();
                 onDismiss(toast.id);
               }}
-              className="text-[#94A3B8] hover:text-white text-xs px-1 hover:bg-white/20 rounded-full transition-colors shrink-0 ml-0.5"
+              className="text-[#94A3B8] hover:text-white text-xs px-1.5 py-0.5 hover:bg-white/20 rounded-full transition-colors shrink-0 ml-1 cursor-pointer"
               title="Đóng lệnh này"
             >
               ✕
@@ -1635,7 +1642,6 @@ export default function Scenario5ComparisonView({
         graph={graph}
         bgImage={bgImage}
         ftgTag="FtG: ACTIVE"
-        alertContent={null}
         hudContent={
           <ComparisonDynamicIslandHud
             toasts={rightToasts}

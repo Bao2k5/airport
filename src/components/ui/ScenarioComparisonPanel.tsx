@@ -11,8 +11,6 @@ interface ScenarioComparisonPanelProps {
   graph: AirportGraph;
   bgImage?: string;
   hudContent?: ReactNode;
-  clearanceContent?: ReactNode;
-  alertContent?: ReactNode;
   isDone?: boolean;
   doneLabel?: string;
   statusBanner: ReactNode;
@@ -28,8 +26,6 @@ export default function ScenarioComparisonPanel({
   graph,
   bgImage,
   hudContent,
-  clearanceContent,
-  alertContent,
   isDone = false,
   doneLabel,
   statusBanner,
@@ -56,8 +52,8 @@ export default function ScenarioComparisonPanel({
         </div>
       </div>
 
-      {/* 2. Map Canvas Viewport (100% Thông Thoáng Trên Mobile, Không Bị Che) */}
-      <div className="flex-1 relative min-h-[280px] sm:min-h-[340px] lg:min-h-0 bg-[#070B13]">
+      {/* 2. Map Canvas Viewport (100% Thông Thoáng, Không Bị Che) */}
+      <div className="flex-1 relative min-h-[280px] sm:min-h-[340px] lg:min-h-0 bg-[#070B13] overflow-hidden">
         <AirportMap
           state={state}
           graph={graph}
@@ -65,19 +61,6 @@ export default function ScenarioComparisonPanel({
           renderMode={renderMode}
           aircraftScale={aircraftScale}
         />
-
-        {/* Clearance popup (Giai đoạn 1) */}
-        {clearanceContent}
-
-        {/* Alert notification popup */}
-        {alertContent}
-
-        {/* Dynamic Island Capsule HUD (Centered top, snug single line) */}
-        {hudContent && (
-          <div className="block">
-            {hudContent}
-          </div>
-        )}
 
         {/* Done Completion Badge */}
         {isDone && doneLabel && (
@@ -88,8 +71,15 @@ export default function ScenarioComparisonPanel({
         )}
       </div>
 
+      {/* 3. Ô thông báo riêng biệt bên dưới bản đồ (Không che bản đồ) */}
+      {hudContent && (
+        <div className="shrink-0 border-t border-[rgba(148,163,184,0.16)] bg-[#0A101D] overflow-hidden">
+          {hudContent}
+        </div>
+      )}
+
       {/* 4. Bottom Live Status Banner */}
-      <div className="px-3 sm:px-3.5 py-2 sm:py-2.5 bg-[#0E1523]/70 backdrop-blur-md border-t border-[rgba(148,163,184,0.16)] text-xs text-[#94A3B8] flex items-center justify-between flex-shrink-0 gap-2">
+      <div className="px-3 sm:px-3.5 py-1.5 sm:py-2 bg-[#0E1523]/90 backdrop-blur-md border-t border-[rgba(148,163,184,0.16)] text-xs text-[#94A3B8] flex items-center justify-between flex-shrink-0 gap-2">
         <div className="flex items-center gap-1.5 leading-snug flex-1 min-w-0">
           {statusBanner}
         </div>
