@@ -8,20 +8,20 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
   id: 'lvc_hsns_intersection_conflict',
   title: 'Kịch bản 2 — Xung đột ngã tư HS NS',
   teaser: 'VN301 hạ cánh 25R qua W4 về Stand 17 — VJ302 pushback Stand 11 dừng chờ đèn đỏ FtG tại L28_ENT, sau khi VN301 về bến đỗ 17 thì đèn chuyển xanh lăn ra RW 25L.',
-  situation: 'Giai đoạn 1:\n• Tàu bay 1 (VN301) vừa hạ cánh đang lăn vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W4 -> CROSS 25L -> W7 -> HS NS -> STAND 17. Huấn lệnh: "VN301, vacate left via W4 and cross runway 25L, taxi to stand 17 via W7 and NS taxiway".\n• Tàu bay 2 (VJ302) pushback tại vị trí Stand 11, di chuyển ra đường cất hạ cánh 25L. Khi tàu bay 1 taxi đến W7 thì tàu bay 2 mới bắt đầu pushback ra. Sau khi taxi ra đến vị trí L28_ENT thì dừng lại trước vạch dừng, dải đèn FtG chuyển sang màu đỏ nhường đường cho tàu bay 1. Tuyến di chuyển: STAND 11 -> L28_ENT (DỪNG ĐÈN ĐỎ FtG) -> HS NS -> E6 -> RW 25L. Huấn lệnh: "VJ302, taxi to holding point runway 25L via NS and E6 taxiway, follow the greens".\n\nGiai đoạn 2:\n• Khi tàu bay 1 lăn ngang qua Stand 16 về bến đỗ 17 an toàn, dải đèn FtG của tàu bay 2 chuyển sang màu xanh lá và tàu tiếp tục di chuyển qua E6 ra RW 25L an toàn.',
+  situation: 'Giai đoạn 1:\n• Tàu bay 1 (VN301) vừa hạ cánh đang lăn vào bến đỗ 17. Tuyến di chuyển: RW 25R -> W4 -> CROSS 25L -> W7A -> W7B -> HS NS -> STAND 17. Huấn lệnh: "VN301, vacate left via W4 and cross runway 25L, taxi to stand 17 via W7A, W7B and NS taxiway".\n• Tàu bay 2 (VJ302) pushback tại vị trí Stand 11, di chuyển ra đường cất hạ cánh 25L. Khi tàu bay 1 taxi đến W7A/W7B thì tàu bay 2 mới bắt đầu pushback ra. Sau khi taxi ra đến vị trí L28_ENT thì dừng lại trước vạch dừng, dải đèn FtG chuyển sang màu đỏ nhường đường cho tàu bay 1. Tuyến di chuyển: STAND 11 -> L28_ENT (DỪNG ĐÈN ĐỎ FtG) -> HS NS -> E6 -> RW 25L. Huấn lệnh: "VJ302, taxi to holding point runway 25L via NS and E6 taxiway, follow the greens".\n\nGiai đoạn 2:\n• Khi tàu bay 1 lăn ngang qua Stand 16 về bến đỗ 17 an toàn, dải đèn FtG của tàu bay 2 chuyển sang màu xanh lá và tàu tiếp tục di chuyển qua E6 ra RW 25L an toàn.',
   challenges: [
     'Giai đoạn 1: A-SMGCS phát hiện nguy cơ xung đột tại nút giao giữa VN301 (Inbound) và VJ302 (Outbound).',
     'Tự động chuyển dải đèn dẫn hướng Follow-the-Green sang màu đỏ và kích hoạt Stop Bar đỏ giữ VJ302 dừng an toàn tại L28_ENT.',
     'Giai đoạn 2: Khi VN301 đã về bến đỗ 17 an toàn, tự động cấp lại dải đèn xanh FtG cho VJ302 tiếp tục qua E6 ra RW 25L.'
   ],
   watchFor: [
-    'VN301 hạ cánh 25R lăn qua W4, cắt qua 25L vào trục W7.',
-    'Khi VN301 đến W7, VJ302 tại Stand 11 bắt đầu pushback ra.',
+    'VN301 hạ cánh 25R lăn qua W4, cắt qua 25L vào trục W7A ➔ W7B.',
+    'Khi VN301 đến W7A/W7B, VJ302 tại Stand 11 bắt đầu pushback ra.',
     'VJ302 đến điểm L28_ENT thì dừng lại trước vạch dừng, dải đèn FtG đổi sang màu đỏ duy nhất tại đây (speed = 0 kts).',
     'Khi VN301 về tới bến đỗ 17, đèn FtG của VJ302 chuyển lại màu xanh lá, VJ302 lăn tiếp qua E6 đến vạch chờ 25L.'
   ],
   setup: (g: AirportGraph = airportGraphV3) => {
-    // Tuyến Tàu 1: RW 25R - W4 - CROSS 25L - W7 - HS NS - STAND 17
+    // Tuyến Tàu 1: RW 25R - W4 - CROSS 25L - W7A - W7B - HS NS - STAND 17
     const tauARoute = [
       'v3_line_01_p03', // RW 25R
       'v3_line_01_p02',
@@ -102,7 +102,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
         routeEdgeIndex: 0,
         role: 'arriving',
         priority: 1,
-        scenarioLabel: '25R ➔ W4 ➔ W7 ➔ HS NS ➔ STAND 17',
+        scenarioLabel: '25R ➔ W4 ➔ W7A ➔ W7B ➔ HS NS ➔ STAND 17',
         clearedRoute: tauARoute,
         routeVisible: true,
       },
@@ -124,7 +124,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
         routeEdgeIndex: 0,
         role: 'departing',
         priority: 2,
-        scenarioLabel: 'STAND 11: CHỜ VN301 ĐẾN W7',
+        scenarioLabel: 'ĐANG ĐỖ STAND 11',
         clearedRoute: tauBRoute,
         routeVisible: true,
       },
@@ -133,7 +133,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
     const observations: ScenarioObservation[] = [
       {
         id: 'obs_2_1',
-        text: '[STAGE1_INBOUND_W7] VN301 hạ cánh 25R lăn qua W4/CROSS 25L đến W7 -> VJ302 bắt đầu pushback.',
+        text: '[STAGE1_INBOUND_W7] VN301 hạ cánh 25R lăn qua W4/CROSS 25L đến W7A/W7B -> VJ302 bắt đầu pushback.',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
@@ -142,7 +142,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
         check: (s) => {
           const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'VN301' || a.callsign === 'HVN301');
           if (ac && ac.routeEdgeIndex >= 12) {
-            return { pass: true, evidence: `VN301 đã đến W7, VJ302 bắt đầu pushback` };
+            return { pass: true, evidence: `VN301 đã đến W7A/W7B, VJ302 bắt đầu pushback` };
           }
           return { pass: false };
         },
@@ -192,7 +192,7 @@ export const scenario3HsnsConflict: PresetScenarioDef = {
               ...state.scenario.events,
               {
                 atSeconds: state.elapsedSeconds,
-                message: '📻 [ATC CLEARANCE] "VN301, vacate left via W4 and cross runway 25L, taxi to stand 17 via W7 and NS taxiway"',
+                message: '📻 [ATC CLEARANCE] "VN301, vacate left via W4 and cross runway 25L, taxi to stand 17 via W7A, W7B and NS taxiway"',
                 severity: 'info',
               },
             ];

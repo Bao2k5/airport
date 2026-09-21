@@ -956,7 +956,7 @@ export function scenarioTick(
           status: 'holding',
           speedKts: 0,
           speedLimitKts: 0,
-          scenarioLabel: 'STAND 11: CHỜ VN301 ĐẾN W7A/W7B',
+          scenarioLabel: 'ĐANG ĐỖ STAND 11',
         };
         updatedFleet[idx] = steppedAc;
         continue;
