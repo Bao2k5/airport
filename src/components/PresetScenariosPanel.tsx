@@ -273,28 +273,6 @@ export default function PresetScenariosPanel({
             );
           })()}
 
-          {/* Event Log Timeline */}
-          <div className="border-t border-[#E6ECF0] pt-2.5 flex flex-col gap-2">
-            <div className="text-xs font-bold uppercase tracking-wider text-[#0D254C]">
-              Nhật ký sự kiện ({currentScenarioState.events.length})
-            </div>
-            <div className="flex flex-col gap-1.5 max-h-36 sm:max-h-40 overflow-y-auto pr-1 font-mono text-[11px] bg-[#F8FAFC] p-2.5 rounded-xl border border-[#E2E8F0]">
-              {currentScenarioState.events.slice().reverse().map((evt: any, idx: number) => (
-                <div key={idx} className="flex items-start gap-1.5 text-[#334155]">
-                  <span className="text-[#64748B] font-bold flex-shrink-0">[{formatTime(evt.atSeconds)}]</span>
-                  <span className={
-                    evt.severity === 'critical'
-                      ? 'text-[#D32F2F] font-bold'
-                      : evt.severity === 'warning'
-                      ? 'text-[#D97706] font-semibold'
-                      : 'text-[#334155]'
-                  }>
-                    {evt.message}
-                  </span>
-                </div>
-              ))}
-            </div>
-          </div>
         </div>
       )}
 

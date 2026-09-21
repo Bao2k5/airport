@@ -73,8 +73,6 @@ export default function ScenarioPanel({ state, graph = airportGraphV3 }: Props) 
     return e && e.status !== 'closed' && e.status !== 'restricted';
   }) : null);
 
-  // Lọc lấy 4 nhật ký sự kiện liên quan nhất
-  const recentLogs = (state.liveEventLog || []).slice(-4).reverse();
 
   return (
     <div className="flex flex-col gap-3 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
@@ -137,32 +135,7 @@ export default function ScenarioPanel({ state, graph = airportGraphV3 }: Props) 
         </div>
       </div>
 
-      {/* Nhật ký sự kiện liên quan */}
-      {recentLogs.length > 0 && (
-        <div className="flex flex-col gap-1.5 border-t border-[#E6ECF0] pt-2.5">
-          <div className="text-[11px] font-bold uppercase tracking-wider text-[#0D254C]">
-            Nhật ký sự cố & điều phối
-          </div>
-          <div className="flex flex-col gap-1 max-h-28 overflow-y-auto pr-1 bg-[#F8FAFC] p-2 rounded-lg border border-[#E2E8F0] font-mono text-[11px]">
-            {recentLogs.map((log) => (
-              <div key={log.id} className="flex items-start gap-1.5 leading-snug">
-                <span className="text-[#64748B] font-bold flex-shrink-0">
-                  [{Math.floor(log.atSeconds)}s]
-                </span>
-                <span className={
-                  log.severity === 'warning'
-                    ? 'text-[#D97706] font-medium'
-                    : log.severity === 'critical'
-                    ? 'text-[#D32F2F] font-bold'
-                    : 'text-[#334155]'
-                }>
-                  {log.message}
-                </span>
-              </div>
-            ))}
-          </div>
-        </div>
-      )}
+
 
       {/* Hệ thống đèn Follow-the-Green */}
       <div className="border-t border-[#E6ECF0] pt-2.5 flex flex-col gap-1.5">

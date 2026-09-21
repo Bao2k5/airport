@@ -6,19 +6,19 @@ import type { PresetScenarioDef, ScenarioAircraft, ScenarioObservation, Scenario
 
 export const scenario2EmergencyFire: PresetScenarioDef = {
   id: 'emergency_priority_engine_fire',
-  title: 'Kịch bản 3 — Khẩn nguy BAV315 cháy động cơ thoát W4 dừng lại, HVN123 vào W5 về Stand 17',
-  teaser: 'BAV315 cháy động cơ thoát W4 dừng lại — HVN123 vào W5 về Stand 17, đồng thời BAV456 (Stand 22) & THA101 (Stand 10) cất cánh 25L.',
-  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Huấn lệnh: "BAV315 holdshort runway 25L". Tuyến di chuyển: RW 25R -> W4.\n• Tàu bay 3 (BAV456 tại Stand 22) và Tàu bay 4 (THA101 tại Stand 10) đỗ sẵn tại bến chờ giải tỏa.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W5 và vào bến đỗ 17. Huấn lệnh: "HVN123, vacate left via W5 and cross runway 25L, taxi to stand 17 via W11 and W7 taxiway". Tuyến di chuyển: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456 từ Stand 22): "BAV456, taxi to holding point runway 25L via E6 taxiway" và Tàu bay 4 (THA101 từ Stand 10): "THA101, taxi to holding point runway 25L via NS and E6 taxiway" cùng lăn song song ra RW 25L qua E6.',
+  title: 'Kịch bản 3 — Khẩn nguy BAV315 cháy động cơ thoát W4 dừng lại, HVN123 vào W6 về Stand 17',
+  teaser: 'BAV315 cháy động cơ thoát W4 dừng lại — HVN123 vào W6 về Stand 17, đồng thời BAV456 (Stand 22) & THA101 (Stand 10) cất cánh 25L.',
+  situation: 'Giai đoạn 1:\n• Tàu bay 1 (BAV315) khẩn nguy: Hạ cánh runway 25R bị cháy động cơ (tốc độ chậm hơn), sau đó thoát đường cất hạ cánh vào đường W4 và dừng lại. Huấn lệnh: "BAV315 holdshort runway 25L". Tuyến di chuyển: RW 25R -> W4.\n• Tàu bay 3 (BAV456 tại Stand 22) và Tàu bay 4 (THA101 tại Stand 10) đỗ sẵn tại bến chờ giải tỏa.\n\nGiai đoạn 2:\n• Tàu bay 2 (HVN123): Hạ cánh sau BAV315 đi vào W6 và vào bến đỗ 17. Huấn lệnh: "HVN123, vacate left via W6 and cross runway 25L, taxi to stand 17 via W11 and W7B taxiway". Tuyến di chuyển: RW 25R -> W6 -> CROSS 25L -> W11 -> W9B -> W7B -> STAND 17.\n• Đồng thời lúc đó, Tàu bay 3 (BAV456 từ Stand 22): "BAV456, taxi to holding point runway 25L via E6 taxiway" và Tàu bay 4 (THA101 từ Stand 10): "THA101, taxi to holding point runway 25L via NS and E6 taxiway" cùng lăn song song ra RW 25L qua E6.',
   challenges: [
     'Giai đoạn 1: BAV315 cháy động cơ thoát nhanh ra đường lăn W4 và dừng cô lập an toàn.',
     'Giai đoạn 2: Tự động điều phối luồng giao thông song song:',
-    '• HVN123 hạ cánh sau thoát qua W5, cắt qua 25L vào W11/W9B về Stand 17.',
+    '• HVN123 hạ cánh sau thoát qua W6, cắt qua 25L vào W11/W9B/W7B về Stand 17.',
     '• BAV456 từ Stand 22 pushback lăn ra đầu 25L cất cánh.',
     '• THA101 từ Stand 10 pushback lăn song song theo sau ra RW 25L.'
   ],
   watchFor: [
     'BAV315 cháy động cơ có lửa ở đuôi, xả đà vào W4 và dừng lại.',
-    'HVN123 hạ cánh thoát qua ngả W5 -> W11 -> W9B về Stand 17.',
+    'HVN123 hạ cánh thoát qua ngả W6 -> W11 -> W9B -> W7B về Stand 17.',
     'BAV456 (Stand 22) và THA101 (Stand 10) lăn thông suốt qua E6 ra vạch chờ cất cánh RW 25L.'
   ],
   setup: (g: AirportGraph = airportGraphV3) => {
@@ -34,16 +34,16 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
     ];
     const bav315Edges = routeToEdges(bav315Route, g.edges) ?? [];
 
-    // 2. HVN123: RW 25R -> W5 -> CROSS 25L -> W11 -> W9B -> STAND 17
+    // 2. HVN123: RW 25R -> W6 -> CROSS 25L -> W11 -> W9B -> W7B -> STAND 17
     const hvn123Route = [
       'v3_line_01_p03', // RW 25R (Hạ cánh)
       'v3_line_01_p02',
       'v3_line_06_p00',
       'v3_line_01_p01',
       'v3_line_04_p00',
-      'v3_line_03_p00', // W5/07L (Thoát vào đường lăn W5)
+      'v3_line_03_p00', // W6/07L (Thoát vào đường lăn W6)
       'v3_line_03_p_mid',
-      'v3_line_03_p01', // W5/07R
+      'v3_line_03_p01', // W6/07R
       'v3_line_16_p00', // CROSS 25L
       'v3_line_16_p01', // W11/07R
       'v3_line_16_p02',
@@ -51,11 +51,11 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
       'v3_line_17_p03',
       'v3_line_16_p04',
       'v3_line_17_p04', // W9B
-      'v3_line_18_p03', // W7
+      'v3_line_18_p03', // W7A
       'v3_line_17_p05',
       'v3_line_10_p04',
       'v3_line_17_p06',
-      'v3_line_11_p01',
+      'v3_line_11_p01', // W7B
       'v3_line_17_p07',
       'v3_line_19_p03', // HS_W7
       'v3_line_17_p08',
@@ -133,7 +133,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         routeEdgeIndex: 0,
         role: 'emergency',
         priority: 0,
-        scenarioLabel: '🔥 KHẨN NGUY: THOÁT VÀO W4 VÀ DỪNG LẠI',
+        scenarioLabel: 'KHẨN NGUY: THOÁT VÀO W4 VÀ DỪNG LẠI',
         clearedRoute: bav315Route,
         routeVisible: true,
       },
@@ -156,7 +156,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         routeEdgeIndex: 0,
         role: 'arriving',
         priority: 1,
-        scenarioLabel: '25R ➔ W5 ➔ W11 ➔ W9B ➔ STAND 17',
+        scenarioLabel: '25R ➔ W6 ➔ W11 ➔ W9B ➔ W7B ➔ STAND 17',
         clearedRoute: hvn123Route,
         routeVisible: true,
       },
@@ -227,7 +227,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
       },
       {
         id: 'obs_3_2',
-        text: '[INBOUND_W5_STAND17] HVN123 hạ cánh sau thoát qua W5 -> W11 -> W9B về Stand 17.',
+        text: '[INBOUND_W6_STAND17] HVN123 hạ cánh sau thoát qua W6 -> W11 -> W9B -> W7B về Stand 17.',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
@@ -236,7 +236,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         check: (s) => {
           const hvn = s.scenarioAircraft?.find((a: any) => a.callsign === 'HVN123');
           if (hvn && (hvn.status === 'taxiing' || hvn.status === 'arrived')) {
-            return { pass: true, evidence: `HVN123 lăn qua W5 về Stand 17` };
+            return { pass: true, evidence: `HVN123 lăn qua W6 -> W11 -> W9B -> W7B về Stand 17` };
           }
           return { pass: false };
         },
