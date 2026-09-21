@@ -92,7 +92,7 @@ export function loadStateFromStorage(): PersistedData | null {
           return {
             ...ac,
             currentNodeId: 'v3_line_28_p01',
-            assignedRoute: undefined,
+            assignedRoute: ['v3_line_28_p01', 'v3_line_05_p07'],
           };
         }
         return ac;

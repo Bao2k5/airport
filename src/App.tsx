@@ -752,7 +752,11 @@ export default function App() {
 
           {/* ── 3A. Bảng Điều Khiển Desktop & Laptop Các Loại Kích Cỡ ── */}
           <aside className="hidden md:flex w-72 lg:w-80 xl:w-96 flex-shrink-0 flex-col gap-2.5 lg:gap-3 overflow-y-auto">
-            <ErrorBoundary name="Thanh điều khiển bên phải" fallbackTitle="Lỗi bảng điều khiển">
+            <ErrorBoundary
+              name="Thanh điều khiển bên phải"
+              fallbackTitle="Lỗi bảng điều khiển"
+              onReset={() => setSimState(prev => resetToManualMode(prev, currentGraph))}
+            >
               {/* Tab Switcher */}
               <div className="flex bg-[#E4E4E7]/60 p-1 rounded-[10px]">
                 <button
@@ -940,7 +944,11 @@ export default function App() {
             {/* Nội dung Tab Panel */}
             {sheetExpanded && (
               <div className="max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F8FAFC]">
-                <ErrorBoundary name="Bảng điều khiển Mobile" fallbackTitle="Lỗi bảng điều khiển">
+                <ErrorBoundary
+                  name="Bảng điều khiển Mobile"
+                  fallbackTitle="Lỗi bảng điều khiển"
+                  onReset={() => setSimState(prev => resetToManualMode(prev, currentGraph))}
+                >
                   {mobileTab === 'control' && (
                     <>
                       <ControlPanel

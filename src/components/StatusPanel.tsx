@@ -60,10 +60,10 @@ export default function StatusPanel({ state, graph = airportGraphV3 }: Props) {
     ? currentGraph.edges.find(e => e.id === activeAircraft.currentEdgeId)
     : null;
 
-  const routeNodeLabels = activeAircraft?.assignedRoute.map(id => {
+  const routeNodeLabels = (activeAircraft?.assignedRoute || []).map(id => {
     const n = currentGraph.nodes.find(node => node.id === id);
     return n?.label || id;
-  }) ?? [];
+  });
 
   // Hợp nhất logs từ scenario và manual
   const allLogs = isScenarioMode && state.scenario?.events
