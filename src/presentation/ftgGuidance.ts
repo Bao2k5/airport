@@ -98,6 +98,13 @@ export function computeSegmentedGuidanceDots(
     accumulatedDist += slen;
   }
 
-  return { activeDots, previewDots: [] };
+  // Khi tàu dừng chờ (Stop Bar / Holding): chỉ hiển thị đèn đỏ cảnh báo ngay trước mũi tàu
+  // (Kịch bản 2 - VJ302: 4 đèn; Kịch bản 5 - INB01 và các trường hợp khác: 3 đèn),
+  // tránh dải đèn kéo dài tràn lên phía trên hoặc tràn xuống dưới nút giao.
+  const isHolding = aircraft.status === 'holding' || aircraft.holdReason === 'stop-bar';
+  const holdingLimit = (aircraft.callsign === 'VJ302' || aircraft.callsign === 'HVN302') ? 4 : 3;
+  const resultDots = isHolding ? activeDots.slice(0, holdingLimit) : activeDots;
+
+  return { activeDots: resultDots, previewDots: [] };
 }
 
