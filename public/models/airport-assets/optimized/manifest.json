@@ -1,0 +1,56 @@
+[
+  {
+    "file": "terminal.glb",
+    "meshes": 1,
+    "polygons": 18694,
+    "bytes": 1170588
+  },
+  {
+    "file": "aircraft-static.glb",
+    "meshes": 1,
+    "polygons": 14353,
+    "bytes": 383124
+  },
+  {
+    "file": "baggage-tug.glb",
+    "meshes": 1,
+    "polygons": 11922,
+    "bytes": 342012
+  },
+  {
+    "file": "baggage-cart.glb",
+    "meshes": 1,
+    "polygons": 9112,
+    "bytes": 283260
+  },
+  {
+    "file": "bus.glb",
+    "meshes": 1,
+    "polygons": 22638,
+    "bytes": 706692
+  },
+  {
+    "file": "jetbridge.glb",
+    "meshes": 2,
+    "polygons": 17999,
+    "bytes": 2714992
+  },
+  {
+    "file": "stairs.glb",
+    "meshes": 1,
+    "polygons": 3520,
+    "bytes": 139812
+  },
+  {
+    "file": "hangar.glb",
+    "meshes": 1,
+    "polygons": 5256,
+    "bytes": 265860
+  },
+  {
+    "file": "dumpster.glb",
+    "meshes": 1,
+    "polygons": 3288,
+    "bytes": 4762592
+  }
+]

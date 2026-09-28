@@ -72,6 +72,9 @@ export interface AirportGraph {
 }
 
 export interface Aircraft {
+  /** Optional complete-flight mode; interpreted by the shared simulation core. */
+  fullFlight?: boolean;
+  flight?: FlightMotion;
   id: string;
   callsign: string;
   airline?: string;
@@ -107,6 +110,22 @@ export interface Aircraft {
   extinguishingStartedAtSeconds?: number;
 }
 
+export interface FlightMotion {
+  kind: 'arrival' | 'departure';
+  phase: 'approach' | 'flare' | 'rollout' | 'lineup' | 'takeoff-roll' | 'rotate' | 'climb';
+  elapsed: number;
+  x: number;
+  y: number;
+  altitudeWorld: number;
+  pitch: number;
+  heading: number;
+  start: [number, number];
+  end: [number, number];
+  entry: [number, number];
+  resumeIndex: number;
+  corridor: 'NORTH' | 'SOUTH';
+}
+
 export interface SimulationConfig {
   startNodeId: string;
   destinationNodeId: string;
@@ -140,6 +159,14 @@ export interface SimulationState {
   aircraft: Aircraft | null;
   manualFleet?: Aircraft[];
   selectedAircraftId?: string;
+  /** Training-only surface control workflow. Self-running scenarios keep this disabled. */
+  practiceMode?: boolean;
+  controllerRole?: 'GND' | 'TWR';
+  controllerByAircraft?: Record<string, 'GND' | 'TWR'>;
+  handoffRequests?: Record<string, 'GND' | 'TWR'>;
+  readbackConfirmed?: Record<string, boolean>;
+  runwayClearancePending?: Record<string, boolean>;
+  runwayClearanceGranted?: Record<string, boolean>;
   // Visual-only background traffic that roams hot-spot to hot-spot. Driven by
   // config.trafficLevel; does not affect routing, lights or incidents.
   trafficAircraft: Aircraft[];

@@ -1,0 +1,19 @@
+/** Shared aviation-surface colors for the Web 3D scene. */
+export const AIRPORT_VISUAL = {
+  runwaySurface: '#3c4246',
+  taxiwaySurface: '#5a6064',
+  closedSurface: '#494c4d',
+  runwayMarking: '#f7f7f2',
+  taxiwayMarking: '#ffc700',
+  runwayEdgeLight: '#ffffff',
+  taxiwayEdgeLight: '#0088ff',
+  ftgCenterline: '#00ff66',
+  stopBar: '#ff1744',
+  stopBarMarking: '#9c282d',
+  standMarking: '#ffc700',
+  holdingMarking: '#ffb74d',
+  vdgsReady: '#58e6a2',
+  signPanel: '#102b43',
+  signText: '#f5f7fa',
+  unlitFixture: '#ebe7df',
+} as const;

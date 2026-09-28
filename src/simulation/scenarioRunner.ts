@@ -1,4 +1,4 @@
-import type { SimulationState, SimulationConfig, AirportGraph, RunwayOccupancyState } from '../types';
+import type { SimulationState, SimulationConfig, AirportGraph, RunwayOccupancyState, FlightMotion } from '../types';
 import {
   getPresetScenarioDefs,
   type ScenarioAircraft,
@@ -9,6 +9,7 @@ import { airportGraphV3 as airportGraph } from '../data/airportGraph.v3';
 import { findPath, routeToEdges } from './pathfinding';
 export { findPath, routeToEdges };
 import { getRunwayCorridor } from './simulator';
+import { createFlightMotion, advanceFlight } from './flightMotion';
 
 export const PIXELS_PER_METER = 1 / 3; // 1 pixel = 3.0 meters (Graph V2 SVG 1200x860)
 export const SEPARATION_TAXIWAY_M = 28; // Standard Taxiway longitudinal separation (28m)
@@ -39,6 +40,7 @@ export function assertNoTwoAircraftOnSameRunway(
   };
 
   for (const ac of aircraftList) {
+    if (ac.flight) continue;
     // Only aircraft actively on the runway (taxiing or holding mid-runway) occupy the active corridor
     if (ac.status !== 'taxiing' && !(ac.status === 'holding' && ac.progressOnEdge > 0)) continue;
     const corridor = getRunwayCorridor(ac.currentEdgeId, ac.currentNodeId);
@@ -158,6 +160,34 @@ function isHoldingPointNode(nodeId: string, graph: AirportGraph): boolean {
   const n = graph.nodes.find(node => node.id === nodeId);
   if (n?.type === 'holding_point') return true;
   return nodeId.startsWith('H0') || nodeId.startsWith('H25') || nodeId.startsWith('HS');
+}
+
+function isLandingNode(nodeId?: string | null, graph?: AirportGraph): boolean {
+  if (!nodeId) return false;
+  if (nodeId === 'v3_line_01_p03' || nodeId === 'STOP_BAR_25R' || nodeId.startsWith('v3_line_01_')) return true;
+  if (graph) {
+    const n = graph.nodes.find(node => node.id === nodeId);
+    const label = (n?.label || '').toUpperCase();
+    if (label.includes('25R') && (label.includes('STOP') || label.includes('BAR'))) return true;
+  }
+  return false;
+}
+
+function getFlightRunwayName(flight?: FlightMotion): string {
+  if (!flight) return '25L';
+  const isEastbound = flight.heading >= 0 && flight.heading < 180;
+  if (flight.corridor === 'NORTH') {
+    return isEastbound ? '07L' : '25R';
+  } else {
+    return isEastbound ? '07R' : '25L';
+  }
+}
+
+function isDepartingAircraft(ac: ScenarioAircraft): boolean {
+  if (ac.callsign === 'BAV315' || ac.callsign === 'HVN123' || ac.callsign === 'RESCUE01') return false;
+  if (ac.callsign === 'HVN216' || ac.callsign === 'BAV456' || ac.callsign === 'THA101' || ac.callsign === 'VJ302') return true;
+  if (ac.callsign?.startsWith('OUT')) return true;
+  return ac.role === 'departing';
 }
 
 export function getAircraftPriority(ac: ScenarioAircraft, graph: AirportGraph): number {
@@ -478,6 +508,7 @@ export function computeScenarioLightStates(
   for (const ac of scenarioAircraft) {
     if (ac.status === 'arrived' || ac.status === 'departed') continue;
     if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
+    if (ac.flight && ac.flight.phase === 'approach') continue;
 
     const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
     // Only illuminate current edge and 1 segment ahead (lookahead = 1), past edges are off
@@ -515,13 +546,19 @@ export function startScenario(scenarioId: string, graph: AirportGraph = airportG
       : (isStand || ac.role === 'pushback' ? SCENARIO_APRON_SPEED_KTS : SCENARIO_TAXI_SPEED_KTS);
     const initialLimit = isStand || ac.role === 'pushback' ? SCENARIO_APRON_SPEED_KTS : SCENARIO_TAXI_SPEED_KTS;
 
+    const isLanding = ac.status === 'taxiing' &&
+      (ac.role === 'arriving' || isLandingNode(ac.assignedRoute?.[0], graph));
+    const initialFlight = ac.flight ?? (isLanding && ac.assignedRoute && ac.assignedRoute.length >= 2 ? createFlightMotion(ac, graph, 'arrival') : undefined);
+
     return {
       ...ac,
-      speedKts: ac.speedKts !== undefined ? ac.speedKts : initialSpeed,
+      flight: initialFlight,
+      speedKts: initialFlight ? 140 : (ac.speedKts !== undefined ? ac.speedKts : initialSpeed),
       speedLimitKts: ac.speedLimitKts !== undefined ? ac.speedLimitKts : initialLimit,
       heldSeconds: 0,
       progressOnEdge: ac.progressOnEdge || 0,
       routeEdgeIndex: ac.routeEdgeIndex || 0,
+      scenarioLabel: initialFlight ? '🛬 TIẾP CẬN ĐƯỜNG BĂNG 25R' : ac.scenarioLabel,
     };
   });
 
@@ -642,7 +679,7 @@ export function scenarioTick(
 
   // Collect occupants
   for (const ac of fleet) {
-    if (ac.status === 'departed' || (ac.releaseAtSeconds !== undefined && state.elapsedSeconds < ac.releaseAtSeconds)) {
+    if (ac.status === 'departed' || ac.flight || (ac.releaseAtSeconds !== undefined && state.elapsedSeconds < ac.releaseAtSeconds)) {
       continue;
     }
     const occ = getAircraftOccupant(ac, graph);
@@ -655,6 +692,7 @@ export function scenarioTick(
     SOUTH: state.runwayOccupancy?.SOUTH || null,
   };
   for (const ac of fleet) {
+    if (ac.flight) continue;
     if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
     const corridor = getRunwayCorridor(ac.currentEdgeId, ac.currentNodeId);
     if (corridor) currentOccupancy[corridor] = ac.id;
@@ -701,6 +739,66 @@ export function scenarioTick(
       continue;
     }
 
+    if (ac.flight) {
+      const isArrival = ac.flight.kind === 'arrival';
+      const advanced = advanceFlight(ac, dt) as ScenarioAircraft;
+      if (!advanced.flight) {
+        if (isArrival) {
+          updatedFleet[idx] = {
+            ...advanced,
+            status: 'taxiing',
+            hidden: false,
+            guidanceVisible: true,
+            scenarioLabel: ac.callsign === 'VN301'
+              ? '25R ➔ W4 ➔ W7A ➔ W7B ➔ HS NS ➔ STAND 17'
+              : ac.callsign === 'HVN123'
+              ? '25R ➔ W6 ➔ W11 ➔ W9B ➔ W7B ➔ STAND 17'
+              : (ac.scenarioLabel || 'LĂN VÀO BẾN ĐỖ'),
+          };
+        } else {
+          updatedFleet[idx] = {
+            ...advanced,
+            status: 'departed',
+            hidden: true,
+            speedKts: 0,
+            speedLimitKts: 0,
+            scenarioLabel: '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI',
+          };
+        }
+      } else {
+        if (isArrival) {
+          const phase = advanced.flight.phase;
+          const rwName = getFlightRunwayName(advanced.flight);
+          const label = phase === 'approach'
+            ? `🛬 TIẾP CẬN ĐƯỜNG BĂNG ${rwName} (${Math.round((advanced.flight.altitudeWorld ?? 0) * 25)}m)`
+            : phase === 'flare'
+            ? `🛬 TIẾP ĐẤT RW ${rwName}`
+            : `🛬 XẢ ĐÀ RW ${rwName} (${Math.round(advanced.speedKts)} kts)`;
+          updatedFleet[idx] = {
+            ...advanced,
+            status: 'taxiing',
+            guidanceVisible: false,
+            scenarioLabel: label,
+          };
+        } else {
+          const phase = advanced.flight.phase;
+          const rwName = getFlightRunwayName(advanced.flight);
+          const label = phase === 'lineup'
+            ? `🛫 VÀO ĐƯỜNG BĂNG ${rwName} (LINE UP)`
+            : phase === 'takeoff-roll'
+            ? `🛫 ĐANG CHẠY ĐÀ RW ${rwName} (${Math.round(advanced.speedKts)} kts)`
+            : `🛫 CẤT CÁNH BAY LÊN (${Math.round((advanced.flight.altitudeWorld ?? 0) * 25)}m)`;
+          updatedFleet[idx] = {
+            ...advanced,
+            status: 'taxiing',
+            guidanceVisible: false,
+            scenarioLabel: label,
+          };
+        }
+      }
+      continue;
+    }
+
     const nextElapsed = state.elapsedSeconds + dt;
     if (ac.releaseAtSeconds !== undefined && nextElapsed < ac.releaseAtSeconds - 1e-4) {
       updatedFleet[idx] = { ...ac, status: 'waiting' };
@@ -710,8 +808,24 @@ export function scenarioTick(
     }
 
     if (ac.status === 'arrived') {
-      // Tàu khởi hành cất cánh (BAV456, THA101) khi chạy lên tới STOP BAR 25L thì chuyển thành departed và biến mất luôn
-      if ((ac.role === 'departing' || ac.callsign === 'BAV456' || ac.callsign === 'THA101') && ac.callsign !== 'BAV315' && ac.callsign !== 'HVN123') {
+      const isDepartingAc = isDepartingAircraft(ac);
+      if (isDepartingAc) {
+        if (!ac.flight) {
+          const destNodeId = ac.targetNodeId || ac.currentNodeId;
+          const flight = createFlightMotion({ ...ac, currentNodeId: destNodeId }, graph, 'departure');
+          if (flight) {
+            updatedFleet[idx] = {
+              ...ac,
+              flight,
+              currentNodeId: destNodeId,
+              currentEdgeId: null,
+              status: 'taxiing',
+              guidanceVisible: false,
+              scenarioLabel: `🛫 VÀO ĐƯỜNG BĂNG ${getFlightRunwayName(flight)} (LINE UP)`,
+            };
+            continue;
+          }
+        }
         const arrivedAt = ac.arrivedAtSeconds ?? state.elapsedSeconds;
         if (state.elapsedSeconds - arrivedAt >= ARRIVAL_HOLD_S) {
           updatedFleet[idx] = { ...ac, status: 'departed', arrivedAtSeconds: arrivedAt };
@@ -740,7 +854,23 @@ export function scenarioTick(
     // ── KINEMATICS & JUNCTION STEP ──
     const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
     if (ac.routeEdgeIndex >= routeEdges.length) {
-      const isDepartingAc = ac.callsign === 'BAV456' || ac.callsign === 'THA101' || (ac.role === 'departing' && ac.callsign !== 'BAV315' && ac.callsign !== 'HVN123' && ac.callsign !== 'RESCUE01');
+      const isDepartingAc = isDepartingAircraft(ac);
+      if (isDepartingAc && !ac.flight) {
+        const destNodeId = ac.targetNodeId || ac.assignedRoute[ac.assignedRoute.length - 1];
+        const flight = createFlightMotion({ ...ac, currentNodeId: destNodeId }, graph, 'departure');
+        if (flight) {
+          updatedFleet[idx] = {
+            ...ac,
+            flight,
+            currentNodeId: destNodeId,
+            currentEdgeId: null,
+            status: 'taxiing',
+            guidanceVisible: false,
+            scenarioLabel: `🛫 VÀO ĐƯỜNG BĂNG ${getFlightRunwayName(flight)} (LINE UP)`,
+          };
+          continue;
+        }
+      }
       updatedFleet[idx] = { ...ac, status: isDepartingAc ? 'departed' : 'arrived', speedKts: 0 };
       continue;
     }
@@ -754,27 +884,32 @@ export function scenarioTick(
       continue;
     }
 
-    // Tàu 3 (BAV456) và Tàu 4 (THA101) chạy tới vạch STOP BAR 25L là biến mất ngay lập tức
-    if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101') && (
+    // Tàu 3 (BAV456) và Tàu 4 (THA101) chạy tới vạch STOP BAR 25L thì cất cánh bay lên
+    if ((ac.callsign === 'BAV456' || ac.callsign === 'THA101') && !ac.flight && (
       ac.currentNodeId === 'v3_line_17_p16' ||
-      (toNode.id === 'v3_line_17_p16' && ac.progressOnEdge >= 0.6) ||
-      (ac.routeEdgeIndex >= routeEdges.length - 1 && ac.progressOnEdge >= 0.6)
+      (toNode.id === 'v3_line_17_p16' && ac.progressOnEdge >= 0.8) ||
+      (ac.routeEdgeIndex >= routeEdges.length - 1 && ac.progressOnEdge >= 0.8)
     )) {
-      updatedFleet[idx] = {
-        ...ac,
-        status: 'departed',
-        speedKts: 0,
-        speedLimitKts: 0,
-        holdReason: undefined,
-      };
-      continue;
+      const flight = createFlightMotion({ ...ac, currentNodeId: 'v3_line_17_p16' }, graph, 'departure');
+      if (flight) {
+        updatedFleet[idx] = {
+          ...ac,
+          flight,
+          currentNodeId: 'v3_line_17_p16',
+          currentEdgeId: null,
+          status: 'taxiing',
+          guidanceVisible: false,
+          scenarioLabel: `🛫 VÀO ĐƯỜNG BĂNG ${getFlightRunwayName(flight)} (LINE UP)`,
+        };
+        continue;
+      }
     }
 
     let steppedAc: ScenarioAircraft = ac;
 
     // Runway corridor protection for entry edge
     const isEmergencyAc = ac.role === 'emergency' || ac.priority === 0 || ac.callsign === 'RESCUE01' || ac.callsign === 'BAV315';
-    const isControlledScenario = state.scenario?.id === 'lvc_peak_runway_direction_change' || state.scenario?.id === 'lvc_hsns_intersection_conflict';
+    const isControlledScenario = !!state.scenario;
     const currentCorridor = getRunwayCorridor(currentEdge.id, fromNode.id);
     const isCorridorOccupiedByOther = currentCorridor && currentOccupancy[currentCorridor] && currentOccupancy[currentCorridor] !== ac.id;
     if (!isEmergencyAc && !isControlledScenario && isCorridorOccupiedByOther && ac.progressOnEdge === 0 && !ac.callsign?.startsWith('INB') && ac.callsign !== 'HVN123') {
@@ -863,13 +998,15 @@ export function scenarioTick(
           };
           continue;
         } else if (ac.status === 'waiting' || ac.hidden || ac.status === 'queued' || ac.status === 'holding') {
+          const flight = createFlightMotion(ac, graph, 'arrival');
           ac = {
             ...ac,
+            flight: flight ?? ac.flight,
             hidden: false,
             status: 'taxiing',
-            speedKts: 20,
+            speedKts: flight ? 140 : 20,
             speedLimitKts: 22,
-            scenarioLabel: '25R ➔ W6 ➔ W11 ➔ W9B ➔ W7B ➔ STAND 17',
+            scenarioLabel: flight ? '🛬 TIẾP CẬN ĐƯỜNG BĂNG 25R' : '25R ➔ W6 ➔ W11 ➔ W9B ➔ W7B ➔ STAND 17',
           };
         }
       }
@@ -1276,20 +1413,51 @@ export function scenarioTick(
 
       if (ac.routeEdgeIndex + 1 >= routeEdges.length) {
         // Arrived at final destination
-        const isDepartingAc = ac.callsign === 'BAV456' || ac.callsign === 'THA101' || (ac.role === 'departing' && ac.callsign !== 'BAV315' && ac.callsign !== 'HVN123' && ac.callsign !== 'RESCUE01');
-        steppedAc = {
-          ...ac,
-          routeEdgeIndex: routeEdges.length - 1,
-          progressOnEdge: 1,
-          currentNodeId: toNode.id,
-          targetNodeId: toNode.id,
-          currentEdgeId: routeEdges[routeEdges.length - 1] ?? null,
-          status: isDepartingAc ? 'departed' : 'arrived',
-          speedKts: 0,
-          speedLimitKts: 0,
-          speedReason: isDepartingAc ? 'Đã cất cánh và rời không phận' : 'Đã đến đích an toàn',
-          holdReason: undefined,
-        };
+        const isDepartingAc = isDepartingAircraft(ac);
+        if (isDepartingAc && !ac.flight) {
+          const flight = createFlightMotion({ ...ac, currentNodeId: toNode.id }, graph, 'departure');
+          if (flight) {
+            steppedAc = {
+              ...ac,
+              flight,
+              currentNodeId: toNode.id,
+              currentEdgeId: null,
+              routeEdgeIndex: routeEdges.length - 1,
+              progressOnEdge: 1,
+              status: 'taxiing',
+              guidanceVisible: false,
+              scenarioLabel: `🛫 VÀO ĐƯỜNG BĂNG ${getFlightRunwayName(flight)} (LINE UP)`,
+            };
+          } else {
+            steppedAc = {
+              ...ac,
+              routeEdgeIndex: routeEdges.length - 1,
+              progressOnEdge: 1,
+              currentNodeId: toNode.id,
+              targetNodeId: toNode.id,
+              currentEdgeId: routeEdges[routeEdges.length - 1] ?? null,
+              status: 'departed',
+              speedKts: 0,
+              speedLimitKts: 0,
+              speedReason: 'Đã cất cánh và rời không phận',
+              holdReason: undefined,
+            };
+          }
+        } else {
+          steppedAc = {
+            ...ac,
+            routeEdgeIndex: routeEdges.length - 1,
+            progressOnEdge: 1,
+            currentNodeId: toNode.id,
+            targetNodeId: toNode.id,
+            currentEdgeId: routeEdges[routeEdges.length - 1] ?? null,
+            status: isDepartingAc ? 'departed' : 'arrived',
+            speedKts: 0,
+            speedLimitKts: 0,
+            speedReason: isDepartingAc ? 'Đã cất cánh và rời không phận' : 'Đã đến đích an toàn',
+            holdReason: undefined,
+          };
+        }
       } else {
         const nextEdgeId = routeEdges[ac.routeEdgeIndex + 1];
         const nextTargetNodeId = ac.assignedRoute[ac.routeEdgeIndex + 2];

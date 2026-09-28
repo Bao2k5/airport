@@ -15,6 +15,7 @@ import {
 import type { AirportGraph, Aircraft, SimulationConfig } from '../types';
 
 interface Props {
+  showPracticeControls?: boolean;
   config: SimulationConfig;
   graph?: AirportGraph;
   manualFleet?: Aircraft[];
@@ -35,9 +36,25 @@ interface Props {
   onToggleAutoIncidents: () => void;
   onTriggerIncident: () => void;
   onClearIncidents: () => void;
+  practiceMode?: boolean;
+  practiceDisabled?: boolean;
+  controllerRole?: 'GND' | 'TWR';
+  selectedController?: 'GND' | 'TWR';
+  controllerByAircraft?: Record<string, 'GND' | 'TWR'>;
+  handoffTo?: 'GND' | 'TWR';
+  selectedHoldReason?: string;
+  readbackConfirmed?: boolean;
+  runwayClearancePending?: boolean;
+  onTogglePractice?: () => void;
+  onSetControllerRole?: (role: 'GND' | 'TWR') => void;
+  onRequestHandoff?: () => void;
+  onAcceptHandoff?: () => void;
+  onClearRunway?: () => void;
+  onConfirmReadback?: () => void;
 }
 
 export default function ControlPanel({
+  showPracticeControls = true,
   config,
   graph = airportGraphV3,
   manualFleet = [],
@@ -58,11 +75,27 @@ export default function ControlPanel({
   onToggleAutoIncidents,
   onTriggerIncident,
   onClearIncidents,
+  practiceMode = false,
+  practiceDisabled = false,
+  controllerRole = 'GND',
+  selectedController = 'GND',
+  controllerByAircraft = {},
+  handoffTo,
+  selectedHoldReason,
+  readbackConfirmed = false,
+  runwayClearancePending = false,
+  onTogglePractice,
+  onSetControllerRole,
+  onRequestHandoff,
+  onAcceptHandoff,
+  onClearRunway,
+  onConfirmReadback,
 }: Props) {
   const { executeAction, getActionState } = useActionLock(2000);
 
 
   const selectedAircraft = manualFleet.find(a => a.id === selectedAircraftId);
+  const controllerMayAct = !practiceMode || controllerRole === selectedController;
   const currentAirlineCode = (selectedAircraft?.airlineCode || config.airlineCode || 'VN') as AirlineCode;
   const currentAirline = AIRLINES[currentAirlineCode] || AIRLINES.VN;
   const currentCallsign = selectedAircraft?.callsign ?? config.callsign;
@@ -245,6 +278,25 @@ export default function ControlPanel({
 
   return (
     <div className="flex flex-col gap-3.5 p-3.5 sm:p-4 bg-white rounded-xl border border-[#E6ECF0] text-sm text-[#172033] shadow-sm">
+      {showPracticeControls && <section className="rounded-xl border border-slate-200 bg-[#F8FAFC] p-3">
+        <div className="flex items-center justify-between gap-2">
+          <div><h3 className="text-xs font-bold uppercase tracking-wide text-[#0C2444]">Thực hành phối hợp KSVKL</h3><p className="mt-0.5 text-[10px] text-slate-600">{practiceMode ? `Đang kiểm soát: ${selectedController}` : 'GND cấp tuyến · TWR xác nhận đường băng'}</p></div>
+          <button type="button" disabled={practiceDisabled} title={practiceDisabled ? 'Chỉ dùng chế độ thực hành khi không chạy kịch bản tự động.' : undefined} onClick={onTogglePractice} className={`min-h-10 rounded-lg px-3 text-[11px] font-bold transition disabled:cursor-not-allowed disabled:opacity-45 ${practiceMode ? 'bg-[#0C2444] text-white shadow-xs' : 'bg-white text-[#0C2444] ring-1 ring-[#0C2444]/30 hover:bg-slate-50'}`}>{practiceMode ? 'Tắt' : practiceDisabled ? 'Tự chạy' : 'Bật'}</button>
+        </div>
+        {practiceMode && <>
+          <div className="mt-2 grid grid-cols-2 gap-2">
+            {(['GND', 'TWR'] as const).map(role => <button key={role} type="button" aria-pressed={controllerRole === role} onClick={() => onSetControllerRole?.(role)} className={`min-h-10 rounded-lg text-xs font-bold transition ${controllerRole === role ? 'bg-[#0C2444] text-white shadow-xs' : 'bg-white text-slate-700 ring-1 ring-slate-200 hover:bg-slate-50'}`}>{role === 'GND' ? 'GND · Mặt đất' : 'TWR · Đường băng'}</button>)}
+          </div>
+          <p className="mt-1 text-[9px] text-slate-600">Đổi góc camera GND/TWR không tự chuyển quyền điều khiển.</p>
+          <p className="mt-2 text-[10px] leading-relaxed text-slate-800">{selectedAircraft?.callsign ?? selectedAircraftId}: quyền điều khiển thuộc <b>{selectedController}</b>{selectedHoldReason?.startsWith('practice-') ? ` · đang giữ tại ${selectedAircraft?.currentNodeId}` : ''}</p>
+          {handoffTo && handoffTo === controllerRole && <button type="button" onClick={onAcceptHandoff} className="mt-2 min-h-10 w-full rounded-lg bg-amber-500 hover:bg-amber-600 px-3 text-xs font-bold text-slate-950 transition">Tiếp nhận bàn giao chuyến bay</button>}
+          {selectedHoldReason === 'practice-handoff-to-twr' && controllerRole === 'GND' && !handoffTo && <button type="button" onClick={onRequestHandoff} className="mt-2 min-h-10 w-full rounded-lg bg-[#0C2444] hover:bg-[#163660] px-3 text-xs font-bold text-white shadow-xs transition">Đề nghị bàn giao cho TWR</button>}
+          {selectedHoldReason === 'practice-handoff-to-gnd' && controllerRole === 'TWR' && !handoffTo && <button type="button" onClick={onRequestHandoff} className="mt-2 min-h-10 w-full rounded-lg bg-[#0C2444] hover:bg-[#163660] px-3 text-xs font-bold text-white shadow-xs transition">Đề nghị bàn giao cho GND</button>}
+          {selectedHoldReason === 'practice-runway-clearance' && controllerRole === 'TWR' && selectedController === 'TWR' && !runwayClearancePending && <button type="button" onClick={onClearRunway} className="mt-2 min-h-10 w-full rounded-lg bg-rose-600 hover:bg-rose-700 px-3 text-xs font-bold text-white transition">TWR cấp phép vào đường băng</button>}
+          {runwayClearancePending && controllerRole === 'TWR' && !readbackConfirmed && <button type="button" onClick={onConfirmReadback} className="mt-2 min-h-10 w-full rounded-lg bg-emerald-700 hover:bg-emerald-800 px-3 text-xs font-bold text-white transition">Xác nhận phi công nhắc lại đúng</button>}
+          {routeStatus === 'accepted' && controllerMayAct && !readbackConfirmed && !runwayClearancePending && selectedAircraft?.status !== 'taxiing' && <button type="button" onClick={onConfirmReadback} className="mt-2 min-h-10 w-full rounded-lg bg-emerald-700 hover:bg-emerald-800 px-3 text-xs font-bold text-white transition">Xác nhận phi công nhắc lại đúng</button>}
+        </>}
+      </section>}
       {/* Cấu hình tàu bay */}
       <Section title={`Cấu hình tàu bay: ${currentCallsign}`}>
         {/* ── Danh sách chọn tàu bay ── */}
@@ -322,6 +374,7 @@ export default function ControlPanel({
                       </span>
                       <span>{badgeText}</span>
                     </div>
+                    {practiceMode && <div className="mt-1 text-[9px] font-bold text-cyan-800">CTRL {controllerByAircraft[ac.id] ?? 'GND'}{handoffTo && selectedAircraftId === ac.id ? ` · → ${handoffTo}` : ''}</div>}
                   </button>
                 );
               })}
@@ -511,7 +564,7 @@ export default function ControlPanel({
           <button
             onClick={() => executeAction('clear_incidents', onClearIncidents)}
             disabled={blockedCount === 0 || getActionState('clear_incidents').isPending}
-            className="text-xs text-[#1C67DA] hover:text-[#0D254C] hover:underline disabled:text-[#94A3B8] disabled:no-underline font-bold py-1 px-2 cursor-pointer"
+            className="text-xs text-[#0C2444] hover:text-[#163660] hover:underline disabled:text-[#94A3B8] disabled:no-underline font-bold py-1 px-2 cursor-pointer"
           >
             {getActionState('clear_incidents').isPending
               ? 'Đang xử lý…'
@@ -553,8 +606,8 @@ export default function ControlPanel({
           <button
             data-testid="accept-route-btn"
             onClick={() => executeAction('accept_route', onAcceptRoute)}
-            disabled={!canStart || getActionState('accept_route').isPending}
-            className="w-full bg-[#0D254C] hover:bg-[#173A73] active:bg-[#091B38] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            disabled={!canStart || (practiceMode && (controllerRole !== 'GND' || selectedController !== 'GND')) || getActionState('accept_route').isPending}
+            className="w-full bg-[#0C2444] hover:bg-[#163660] active:bg-[#08182E] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-xs cursor-pointer"
           >
             <span>{getActionState('accept_route').isPending ? '⏳' : '✓'}</span>
             {getActionState('accept_route').isPending
@@ -566,11 +619,11 @@ export default function ControlPanel({
         )}
 
         {/* Điều khiển hành trình: Cho lăn bánh */}
-        {(!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting') && routeStatus === 'accepted' && (
+        {(!selectedAircraft || selectedAircraft.status === 'parked' || selectedAircraft.status === 'waiting' || (practiceMode && selectedAircraft.status === 'holding')) && routeStatus === 'accepted' && (
           <button
             data-testid="start-aircraft-btn"
             onClick={() => executeAction('start', onStart)}
-            disabled={!canStart || getActionState('start').isPending}
+            disabled={!canStart || !controllerMayAct || getActionState('start').isPending}
             className="w-full bg-[#16845B] hover:bg-[#116646] active:bg-[#0D4D34] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] shadow-md flex items-center justify-center gap-2 cursor-pointer"
           >
             <span>{getActionState('start').isPending ? '⏳' : '▶'}</span>
@@ -603,7 +656,7 @@ export default function ControlPanel({
           <button
             onClick={() => executeAction('pause', onPause)}
             disabled={getActionState('pause').isPending}
-            className="w-full bg-[#1C67DA] hover:bg-[#1558BC] active:bg-[#0F4499] disabled:bg-[#E2E8F0] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-md cursor-pointer"
+            className="w-full bg-[#0C2444] hover:bg-[#163660] active:bg-[#08182E] disabled:bg-[#E2E8F0] text-white font-bold py-3 rounded-xl transition text-sm min-h-[48px] flex items-center justify-center gap-2 shadow-xs cursor-pointer"
           >
             <span>{getActionState('pause').isPending ? '⏳' : '▶'}</span>
             {getActionState('pause').isPending

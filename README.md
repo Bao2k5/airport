@@ -1,5 +1,7 @@
 # 🛫 Tân Sơn Nhất Airport Surface Movement Simulator (TSN V3)
 
+> **Bàn giao Web 3D:** [Đặc tả đầy đủ](docs/ban_giao_web_3d_luna_antigravity.md) · [Prompt giao Luna và Antigravity](docs/prompt_luna_antigravity_web_3d.md). Web 3D là hướng phát triển chính; Unity giữ làm tham khảo. Đây là kế hoạch/yêu cầu, chưa phải tuyên bố hoàn thành triển khai.
+
 [![React](https://img.shields.io/badge/React-19.0-61DAFB?style=flat-square&logo=react&logoColor=black)](https://react.dev/)
 [![TypeScript](https://img.shields.io/badge/TypeScript-5.7-3178C6?style=flat-square&logo=typescript&logoColor=white)](https://www.typescriptlang.org/)
 [![Vite](https://img.shields.io/badge/Vite-6.0-646CFF?style=flat-square&logo=vite&logoColor=white)](https://vitejs.dev/)
@@ -13,6 +15,8 @@
 ## 📌 Tổng quan (Overview)
 
 **Airport Surface Movement Simulator (TSN V3)** là ứng dụng mô phỏng trực quan độ chính xác cao phục vụ nghiên cứu và đào tạo hàng không. Ứng dụng tập trung mô phỏng hệ thống **A-SMGCS (Advanced Surface Movement Guidance and Control System)** kết hợp công nghệ **Follow-the-Green (FTG)**, so sánh trực quan hiệu quả vận hành giữa phương thức dẫn đường tự động hiện đại và phương thức điều hành truyền thống qua thoại vô tuyến (VHF Voice ATC).
+
+Ứng dụng hiện có hai trang làm việc: **`/2d`** cho bản đồ 2D và bảng điều khiển hiện hữu; **`/3d`** cho sa bàn/phòng KSVKL cùng bảng điều khiển 3D riêng. Trên trang 3D có chế độ **kịch bản tự chạy** và **thực hành GND/TWR** để một người chuyển vai. Hai trang dùng chung dữ liệu sân bay và động cơ mô phỏng; giao diện điều khiển được tách theo cách sử dụng của từng trang. [Trạng thái triển khai và giới hạn Web 3D](docs/web_3d_status.md).
 
 ---
 
@@ -106,9 +110,12 @@ npm run dev
 ```
 
 Sau khi chạy lệnh, truy cập các địa chỉ tương ứng trên trình duyệt:
-- **Bộ mô phỏng chính**: [http://localhost:5173/](http://localhost:5173/)
+- **Trang 2D**: [http://localhost:5173/2d](http://localhost:5173/2d) (đường dẫn gốc `/` cũng mở 2D)
+- **Trang 3D**: [http://localhost:5173/3d](http://localhost:5173/3d)
 - **Công cụ hiệu chuẩn Node**: [http://localhost:5173/annotate.html](http://localhost:5173/annotate.html)
 - **Công cụ hiệu chuẩn Giao lộ**: [http://localhost:5173/annotate_junctions.html](http://localhost:5173/annotate_junctions.html)
+
+Trên trang 3D, chọn **Tự chạy** để phát kịch bản hoặc **Thực hành KSVKL** để cấp lệnh và bàn giao giữa GND/TWR. Ở sa bàn, kéo chuột trái để xoay, kéo chuột phải để di chuyển góc nhìn, cuộn để thu phóng; thiết bị cảm ứng dùng thao tác chạm/kéo/chụm. Có thể chọn góc tổng quan, bốn góc nhìn và theo máy bay.
 
 ### 3. Đóng gói ứng dụng (Build Production)
 ```bash

@@ -5,8 +5,10 @@ import { airportGraphV3 } from '../data/airportGraph.v3';
 import { useActionLock } from '../utils/useActionLock';
 import type { AirportGraph, SimulationState } from '../types';
 import { Play, LoaderCircle } from 'lucide-react';
+import { getFtgScenarioDefs } from '../features/airport3d/ftgScenarios';
 
 interface Props {
+  ftgOnly?: boolean;
   state?: SimulationState;
   scenarioState?: ScenarioState | null;
   onStartScenario: (id: string) => void;
@@ -20,6 +22,7 @@ interface Props {
 }
 
 export default function PresetScenariosPanel({
+  ftgOnly = false,
   state,
   scenarioState,
   onStartScenario,
@@ -40,8 +43,8 @@ export default function PresetScenariosPanel({
     ? scenarioState
     : state?.scenario || null;
 
-  const SCENARIO_DEFS = getPresetScenarioDefs(graph);
-  const defs = Object.values(SCENARIO_DEFS);
+  const SCENARIO_DEFS = useMemo(() => ftgOnly ? getFtgScenarioDefs(graph) : getPresetScenarioDefs(graph), [graph, ftgOnly]);
+  const defs = useMemo(() => Object.values(SCENARIO_DEFS), [SCENARIO_DEFS]);
   const activeDef = currentScenarioState
     ? SCENARIO_DEFS[currentScenarioState.id] || defs[0]
     : SCENARIO_DEFS[selectedId] || defs[0];
@@ -137,7 +140,7 @@ export default function PresetScenariosPanel({
                     onClick={() => onSimSpeedChange(spd)}
                     className={`text-xs font-bold px-2.5 py-1 rounded-lg border transition cursor-pointer ${
                       simSpeed === spd
-                        ? 'bg-[#1C67DA] text-white border-[#1C67DA] shadow-xs'
+                        ? 'bg-[#0C2444] text-white border-[#0C2444] shadow-xs'
                         : 'bg-white text-[#475569] border-[#CBD5E1] hover:bg-[#F1F5F9]'
                     }`}
                   >
@@ -204,7 +207,7 @@ export default function PresetScenariosPanel({
             <button
               onClick={() => executeAction('rerun_scenario', () => onStartScenario(currentScenarioState.id))}
               disabled={getActionState('rerun_scenario').isPending}
-              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-[#0D254C] hover:bg-[#173A73] active:bg-[#091B38] disabled:bg-[#E2E8F0] text-white transition shadow-sm min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
+              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-[#0C2444] hover:bg-[#163660] active:bg-[#08182E] disabled:bg-[#E2E8F0] text-white transition shadow-xs min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer"
             >
               <span>{getActionState('rerun_scenario').isPending ? '⏳' : '↺'}</span>
               {getActionState('rerun_scenario').isPending
@@ -216,7 +219,7 @@ export default function PresetScenariosPanel({
             <button
               data-testid="change-scenario-btn"
               onClick={() => setShowList(true)}
-              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:bg-[#F1F5F9] text-[#334155] transition min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
+              className="flex-1 text-xs sm:text-sm font-bold px-3 py-2.5 rounded-xl bg-white border border-[#CBD5E1] hover:border-[#0C2444] hover:text-[#0C2444] text-[#334155] transition min-h-[44px] flex items-center justify-center gap-1.5 cursor-pointer shadow-2xs"
             >
               Đổi kịch bản
             </button>
@@ -284,7 +287,7 @@ export default function PresetScenariosPanel({
             {showList && currentScenarioState && (
               <button
                 onClick={() => setShowList(false)}
-                className="text-xs text-[#1C67DA] hover:underline font-bold cursor-pointer"
+                className="text-xs text-[#0C2444] hover:text-[#163660] hover:underline font-bold cursor-pointer"
               >
                 Trở lại kịch bản đang chạy
               </button>
@@ -305,7 +308,7 @@ export default function PresetScenariosPanel({
                   onClick={() => handleCardClick(def.id)}
                   className={`relative p-3.5 rounded-xl border transition-all duration-200 ease-out cursor-pointer flex flex-col gap-2 group ${
                     isSelected
-                      ? 'bg-white border-[#1C67DA] shadow-md ring-2 ring-[#1C67DA]/30 md:scale-[1.01] z-20'
+                      ? 'bg-white border-[#0C2444] shadow-md ring-2 ring-[#0C2444]/25 md:scale-[1.01] z-20'
                       : 'bg-[#F8FAFC] border-[#E2E8F0] hover:border-[#CBD5E1] hover:bg-white md:hover:scale-[1.01] md:hover:z-10'
                   }`}
                 >
@@ -331,7 +334,7 @@ export default function PresetScenariosPanel({
                           Đang chạy
                         </span>
                       ) : isSelected ? (
-                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#0D254C] text-white font-bold">
+                        <span className="text-[10px] px-2 py-0.5 rounded-md bg-[#0C2444] text-white font-bold">
                           Đang chọn
                         </span>
                       ) : null}
@@ -371,7 +374,7 @@ export default function PresetScenariosPanel({
                             });
                           }}
                           disabled={getActionState('start_scenario').isPending}
-                          className="w-full py-2.5 px-4 rounded-[10px] bg-[#06B6D4] hover:bg-[#22D3EE] active:bg-[#0891B2] disabled:opacity-50 text-white font-bold text-xs sm:text-sm transition-colors shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
+                          className="w-full py-2.5 px-4 rounded-xl bg-[#0C2444] hover:bg-[#163660] active:bg-[#08182E] disabled:bg-[#E2E8F0] disabled:text-[#94A3B8] text-white font-bold text-xs sm:text-sm transition shadow-xs flex items-center justify-center gap-2 cursor-pointer min-h-[44px]"
                         >
                           {getActionState('start_scenario').isPending ? (
                             <LoaderCircle className="w-4 h-4 animate-spin" />

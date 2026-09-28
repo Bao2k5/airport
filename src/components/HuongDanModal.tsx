@@ -97,7 +97,7 @@ export default function HuongDanModal({ onClose }: Props) {
         <div className="flex justify-end px-6 py-3 border-t border-[#E6ECF0] bg-[#F8FAFC] flex-shrink-0">
           <button
             onClick={onClose}
-            className="bg-[#0D254C] hover:bg-[#173A73] text-white text-sm font-bold px-5 py-2 rounded-xl transition cursor-pointer shadow-sm"
+            className="bg-[#0C2444] hover:bg-[#163660] text-white text-sm font-bold px-5 py-2 rounded-xl transition cursor-pointer shadow-xs"
           >
             Đóng hướng dẫn
           </button>

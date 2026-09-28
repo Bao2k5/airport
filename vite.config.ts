@@ -76,6 +76,12 @@ function rawTraceServerPlugin() {
 
 export default defineConfig({
   plugins: [tailwindcss(), react(), rawTraceServerPlugin()],
+  resolve: {
+    dedupe: ['react', 'react-dom'],
+  },
+  optimizeDeps: {
+    include: ['react', 'react-dom', '@react-three/fiber', '@react-three/drei'],
+  },
   build: {
     rollupOptions: {
       input: {

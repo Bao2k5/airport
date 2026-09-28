@@ -1,3 +1,4 @@
+import { createFlightMotion, advanceFlight } from './flightMotion';
 import type {
   Aircraft,
   AirportEdge,
@@ -200,7 +201,7 @@ export function computeLightStates(
 ): Record<string, 'green' | 'red' | 'off'> {
   const lights: Record<string, 'green' | 'red' | 'off'> = {};
 
-  if (!aircraft || !aircraft.assignedRoute || !aircraft.assignedRoute.length) return lights;
+  if (!aircraft || aircraft.flight || !aircraft.assignedRoute || !aircraft.assignedRoute.length) return lights;
 
   const allEdges = graph.edges;
   const routeEdgeIds = routeToEdges(aircraft.assignedRoute, allEdges) ?? [];
@@ -400,6 +401,11 @@ export function sanitizeManualFleet(
     resultFleet = fleet;
   }
 
+  if (hasCorruption) {
+    for (const custom of fleet.filter(a => a?.id?.startsWith('manual-'))) {
+      if (!resultFleet.some(a => a.id === custom.id || a.callsign === custom.callsign) && graph.nodes.some(n => n.id === custom.currentNodeId) && graph.nodes.some(n => n.id === custom.targetNodeId)) resultFleet.push(custom);
+    }
+  }
   // Guaranteed check: ensure VN004 is never left parked at STAND_7
   return resultFleet.map(ac => {
     if (ac && ac.id === 'VN004' && (ac.currentNodeId === 'v3_line_29_p01' || ac.currentNodeId === 'STAND_7') && ac.status !== 'taxiing') {
@@ -448,6 +454,25 @@ export function startManualAircraft(
   aircraftId: string,
   graph: AirportGraph = airportGraph,
 ): SimulationState {
+  const selected = state.manualFleet?.find(a => a.id === aircraftId);
+  if (selected && selected.fullFlight !== false && isLanding25RNode(selected.assignedRoute[0], graph.nodes)) {
+    const arrival = createFlightMotion(selected, graph, 'arrival');
+    if (arrival && state.manualFleet?.some(other => other.id !== aircraftId && (other.flight?.corridor === arrival.corridor || (['taxiing', 'holding'].includes(other.status) && getRunwayCorridor(other.currentEdgeId, other.currentNodeId) === arrival.corridor)))) {
+      return { ...state, warningMessage: 'Runway occupied: wait before clearing the approach.' };
+    }
+  }
+  if (state.practiceMode) {
+    const owner = state.controllerByAircraft?.[aircraftId] ?? 'GND';
+    if ((state.controllerRole ?? 'GND') !== owner) {
+      return { ...state, warningMessage: `${owner} is controlling this flight. Switch to ${owner} before issuing the next instruction.` };
+    }
+    if (state.routeStatus !== 'accepted') {
+      return { ...state, warningMessage: 'Accept the proposed taxi route before starting the aircraft.' };
+    }
+    if (!state.readbackConfirmed?.[aircraftId]) {
+      return { ...state, warningMessage: 'Confirm the pilot readback before starting movement.' };
+    }
+  }
   if (!state.manualFleet || state.manualFleet.length === 0) {
     if (state.aircraft) {
       return {
@@ -481,10 +506,12 @@ export function startManualAircraft(
 
       return {
         ...ac,
+        flight: ac.flight ?? (ac.fullFlight !== false && isNewTrip && isLanding25RNode(route[0], graph.nodes) ? createFlightMotion({ ...ac, assignedRoute: route }, graph, 'arrival') : undefined),
         status: 'taxiing' as const,
         isMoving: true,
         routeVisible: true,
         guidanceVisible: true,
+        holdReason: undefined,
         assignedRoute: route,
         routeEdgeIndex: effectiveIndex,
         progressOnEdge: effectiveProgress,
@@ -587,7 +614,10 @@ export function resetManualAircraft(
 ): SimulationState {
   const sanitizedFleet = sanitizeManualFleet(state.manualFleet, graph);
   const defaultFleet = createDefaultManualFleet(graph);
-  const defaultSpec = defaultFleet.find(a => a.id === aircraftId) || defaultFleet[0];
+  const existing = sanitizedFleet.find(a => a.id === aircraftId);
+  const origin = existing?.assignedRoute[0];
+  const customRoute = existing && origin ? findPath(graph, origin, existing.targetNodeId) ?? [origin] : [];
+  const defaultSpec = defaultFleet.find(a => a.id === aircraftId) || (existing ? { ...existing, flight: undefined, currentNodeId: origin ?? existing.currentNodeId, assignedRoute: customRoute, currentEdgeId: routeToEdges(customRoute, graph.edges)?.[0] ?? null } : defaultFleet[0]);
 
   const updatedFleet = sanitizedFleet.map(ac => {
     if (ac.id === aircraftId) {
@@ -745,7 +775,7 @@ export function simulationTick(
     const prevId = state.runwayOccupancy?.[corridor];
     if (prevId) {
       const occupant = fleet.find(f => f.id === prevId);
-      if (occupant && (occupant.status === 'taxiing' || occupant.status === 'holding')) {
+      if (occupant && ((occupant.status === 'taxiing' || occupant.status === 'holding') && (!occupant.flight || occupant.flight.kind === 'arrival' || occupant.flight.altitudeWorld < 1))) {
         currentOccupancy[corridor] = prevId;
       }
     }
@@ -753,9 +783,10 @@ export function simulationTick(
 
   for (const ac of fleet) {
     if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
-    const corridor = getRunwayCorridor(ac.currentEdgeId, ac.currentNodeId);
+    if (ac.flight?.kind === 'departure' && ac.flight.altitudeWorld >= 1) continue;
+    const corridor = ac.flight?.corridor ?? getRunwayCorridor(ac.currentEdgeId, ac.currentNodeId);
     if (corridor) {
-      currentOccupancy[corridor] = ac.id;
+      if (!currentOccupancy[corridor]) currentOccupancy[corridor] = ac.id;
     }
   }
 
@@ -767,10 +798,19 @@ export function simulationTick(
   }
 
   const updatedFleet = fleet.map(ac => {
+    if (ac.flight) {
+      const occupied = currentOccupancy[ac.flight.corridor];
+      if (occupied && occupied !== ac.id && ac.flight.elapsed === 0) return { ...ac, status: 'holding' as const, speedKts: 0, holdReason: 'runway-occupied' };
+      if (ac.flight.altitudeWorld < 1 || ac.flight.kind === 'arrival') currentOccupancy[ac.flight.corridor] = ac.id;
+      const advanced = advanceFlight(ac, dt);
+      if (advanced.status === 'departed' || (advanced.flight?.kind === 'departure' && advanced.flight.altitudeWorld >= 1)) currentOccupancy[ac.flight.corridor] = null;
+      return advanced;
+    }
     // Only aircraft with status === 'taxiing' or 'holding' are evaluated. Parked stays parked.
     if (ac.status !== 'taxiing' && ac.status !== 'holding') {
       return ac;
     }
+    if (state.practiceMode && ac.status === 'holding' && ac.holdReason?.startsWith('practice-')) return ac;
 
     const effectiveSpeed = effectiveTaxiSpeedKts({
       ...state.config,
@@ -943,12 +983,41 @@ export function simulationTick(
       : 0;
     let newEdgeIndex = ac.routeEdgeIndex;
     let newCurrentNodeId = ac.currentNodeId;
+    let practiceHoldReason: string | undefined;
+    const owner = state.controllerByAircraft?.[ac.id] ?? 'GND';
+    const nextNodeId = ac.assignedRoute[ac.routeEdgeIndex + 1];
+    // The V3 departure route has no node typed holding_point. Stop GND before
+    // the takeoff entry anyway so the flight cannot enter without TWR handoff.
+    if (state.practiceMode && owner === 'GND' && isTakeoffRunwayNode(nextNodeId, graph.nodes) && newProgress >= 1) {
+      return { ...ac, progressOnEdge: 0.999, speedKts: 0, status: 'holding' as const, holdReason: 'practice-handoff-to-twr' };
+    }
+    if (state.practiceMode && owner === 'TWR' && !state.runwayClearanceGranted?.[ac.id] && isTakeoffRunwayNode(nextNodeId, graph.nodes) && newProgress >= 1) {
+      return { ...ac, progressOnEdge: 0.999, speedKts: 0, status: 'holding' as const, holdReason: 'practice-runway-clearance' };
+    }
 
     while (newProgress >= 1 && newEdgeIndex < routeEdgeIds.length) {
       newProgress -= 1;
       newEdgeIndex++;
       if (newEdgeIndex < routeEdgeIds.length) {
         newCurrentNodeId = ac.assignedRoute[newEdgeIndex];
+        if (state.practiceMode) {
+          const node = graph.nodes.find(candidate => candidate.id === newCurrentNodeId);
+          const owner = state.controllerByAircraft?.[ac.id] ?? 'GND';
+          if (node?.type === 'holding_point' && owner === 'GND') {
+            practiceHoldReason = 'practice-handoff-to-twr';
+            newProgress = 0;
+            break;
+          }
+          const previousEdge = edges.find(edge => edge.id === routeEdgeIds[newEdgeIndex - 1]);
+          const upcomingEdge = edges.find(edge => edge.id === routeEdgeIds[newEdgeIndex]);
+          const runwayVacated = previousEdge?.type === 'runway' && upcomingEdge?.type !== 'runway';
+          if (owner === 'TWR' && isLanding25RNode(ac.assignedRoute[0], graph.nodes)
+            && (node?.type === 'holding_point' || runwayVacated)) {
+            practiceHoldReason = 'practice-handoff-to-gnd';
+            newProgress = 0;
+            break;
+          }
+        }
       } else {
         newCurrentNodeId = ac.assignedRoute[ac.assignedRoute.length - 1];
         newProgress = 1;
@@ -987,6 +1056,10 @@ export function simulationTick(
         ac.targetNodeId === 'STOP_BAR_25L' ||
         ac.targetNodeId === 'W11_07R';
 
+      if (isTakeoff && ac.fullFlight !== false) {
+        const flight = createFlightMotion({ ...ac, currentNodeId: newCurrentNodeId }, graph, 'departure');
+        if (flight) return { ...ac, flight, currentNodeId: newCurrentNodeId, currentEdgeId: null, routeEdgeIndex: newEdgeIndex, progressOnEdge: 1, status: 'taxiing' as const, guidanceVisible: false };
+      }
       finalStatus = isTakeoff ? 'departed' : 'arrived';
 
       // Giải phóng ngay lập tức hành lang đường băng khi máy bay cất cánh hoặc đã cập bến
@@ -1021,13 +1094,17 @@ export function simulationTick(
       currentNodeId: newCurrentNodeId,
       currentEdgeId: newEdgeIndex < routeEdgeIds.length ? routeEdgeIds[newEdgeIndex] : null,
       speedKts: isArrived ? 0 : effectiveSpeed,
-      status: isArrived ? finalStatus : ('taxiing' as const),
-      holdReason: undefined,
+      status: isArrived ? finalStatus : (practiceHoldReason ? 'holding' as const : 'taxiing' as const),
+      holdReason: practiceHoldReason,
     };
   });
 
   const selectedId = state.selectedAircraftId || 'VN001';
   const activeSelected = updatedFleet.find(a => a.id === selectedId) || updatedFleet[0] || null;
+  const runwayClearanceGranted = { ...state.runwayClearanceGranted };
+  for (const aircraft of updatedFleet) {
+    if (aircraft.status === 'departed' || aircraft.status === 'arrived') delete runwayClearanceGranted[aircraft.id];
+  }
 
   return {
     ...state,
@@ -1035,6 +1112,7 @@ export function simulationTick(
     manualFleet: updatedFleet,
     elapsedSeconds: state.elapsedSeconds + dt,
     runwayOccupancy: currentOccupancy,
+    runwayClearanceGranted,
     lightStates: computeLightStates(activeSelected || state.aircraft!, state.blockedEdgeIds, graph),
     liveEventLog: tickLogs,
   };
@@ -1086,6 +1164,14 @@ export function acceptRoute(
   graph: AirportGraph = airportGraph,
 ): SimulationState {
   const selectedId = state.selectedAircraftId || 'VN001';
+  if (state.practiceMode) {
+    const owner = state.controllerByAircraft?.[selectedId] ?? 'GND';
+    const selected = state.manualFleet?.find(ac => ac.id === selectedId);
+    const isInboundFromRunway = !!selected && isLanding25RNode(selected.currentNodeId, graph.nodes) && isStandNode(selected.targetNodeId, graph.nodes);
+    if ((state.controllerRole ?? 'GND') !== owner || (owner !== 'GND' && !isInboundFromRunway)) {
+      return { ...state, warningMessage: isInboundFromRunway ? 'TWR controls the aircraft until it has vacated the runway.' : 'GND controls taxi-route acceptance for this movement.' };
+    }
+  }
 
 
   // Multiple aircraft can run simultaneously - accept route for any aircraft regardless of others
@@ -1107,6 +1193,8 @@ export function acceptRoute(
   return {
     ...state,
     routeStatus: 'accepted',
+    readbackConfirmed: state.practiceMode ? { ...state.readbackConfirmed, [selectedId]: false } : state.readbackConfirmed,
+    runwayClearanceGranted: state.practiceMode ? { ...state.runwayClearanceGranted, [selectedId]: false } : state.runwayClearanceGranted,
     manualFleet: updatedFleet,
     aircraft: activeAc || null,
     lightStates: activeAc ? computeLightStates(activeAc, state.blockedEdgeIds, graph) : {},

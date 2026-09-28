@@ -1,4 +1,9 @@
-@import "tailwindcss";
+/* Scan application code, not binary model archives or generated Blender files. */
+@import "tailwindcss" source(none);
+@source "./";
+@source "../index.html";
+@source "../annotate.html";
+@source "../annotate_junctions.html";
 
 :root {
   --app-bg: #090D16;

@@ -1,4 +1,4 @@
-import type { AircraftStatus, AirportGraph, AirlineCode, AircraftType } from '../../types';
+import type { AircraftStatus, AirportGraph, AirlineCode, AircraftType, FlightMotion } from '../../types';
 import { airportGraphV3 } from '../airportGraph.v3';
 import { getAirlineDef } from '../airlineTypes';
 import { findPath, routeToEdges } from '../../simulation/pathfinding';
@@ -37,6 +37,8 @@ export interface ScenarioAircraft {
   isMoving?: boolean;
   hidden?: boolean;
   isFireExtinguished?: boolean;
+  fullFlight?: boolean;
+  flight?: FlightMotion;
 }
 
 export interface ScenarioEvent {
