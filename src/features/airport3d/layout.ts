@@ -6,7 +6,7 @@ export const LAYOUT_VERSION = 8;
 export interface LayoutObject {
   id: string;
   name: string;
-  kind: 'tower' | 'mast' | 'terminal' | 'hangar' | 'vehicle' | 'equipment';
+  kind: 'tower' | 'mast' | 'terminal' | 'hangar' | 'vehicle' | 'equipment' | 'sign';
   position: [number, number, number];
   rotationY: number;
   scale: number;
@@ -36,6 +36,7 @@ export function createDefaultLayout(_graph?: AirportGraph): AirportLayout {
   return [
     { id: 'tower', name: 'Đài kiểm soát không lưu', kind: 'tower', position: [22.84, 0, 9.31], rotationY: 0.7853981633974483, scale: 1, color: '#9eaeb9' },
     { id: 'terminal_zone', name: 'Khu nhà ga & Ống lồng', kind: 'terminal', position: [32.06, 0, 28.74], rotationY: 3.1415926535897936, scale: 1.2, color: '#303c43' },
+    { id: 'vaa_banner_plaque', name: 'Biển hiệu mô hình VAA (SGN)', kind: 'sign', position: [0, 0.03, -42], rotationY: 0, scale: 1, color: '#0d1f36' },
     { id: 'apron_light_1', name: 'Đèn sân đỗ 1', kind: 'mast', position: [10.31, 0, 9.58], rotationY: 1.5707963267948963, scale: 1, color: '#fff0bf' },
     { id: 'apron_light_2', name: 'Đèn sân đỗ 2', kind: 'mast', position: [25.94, 0, 6.97], rotationY: 0.2617993877991494, scale: 1, color: '#fff0bf' },
     { id: 'apron_light_3', name: 'Đèn sân đỗ 3', kind: 'mast', position: [9.94, 0, 18.71], rotationY: 1.5707963267948963, scale: 1, color: '#fff0bf' },
@@ -68,9 +69,9 @@ export function validateLayoutImport(value: unknown, defaults: AirportLayout): A
     if (Math.abs(Number(x)) > 150 || Math.abs(Number(y)) > 25 || Math.abs(Number(z)) > 150) continue;
 
     const rotationY = Number.isFinite(item.rotationY) ? Number(item.rotationY) : 0;
-    const scale = Number.isFinite(item.scale) ? Math.max(0.2, Math.min(4.0, Number(item.scale))) : 1;
+    const scale = Number.isFinite(item.scale) ? Math.max(0.1, Math.min(6.0, Number(item.scale))) : 1;
     const color = typeof item.color === 'string' && /^#[0-9a-f]{6}$/i.test(item.color) ? item.color : '#fff0bf';
-    const kind = item.kind && ['tower', 'mast', 'terminal', 'hangar', 'vehicle', 'equipment'].includes(item.kind)
+    const kind = item.kind && ['tower', 'mast', 'terminal', 'hangar', 'vehicle', 'equipment', 'sign'].includes(item.kind)
       ? item.kind
       : 'mast';
     const name = typeof item.name === 'string' && item.name.trim() ? item.name : `Vật thể ${item.id}`;
@@ -86,10 +87,10 @@ export function validateLayoutImport(value: unknown, defaults: AirportLayout): A
     });
   }
 
-  // Ensure essential objects (tower & terminal) exist if missing
-  for (const base of defaults.filter(d => d.id === 'tower' || d.id === 'terminal_zone')) {
+  // Ensure essential objects (tower, terminal & banner) exist if missing
+  for (const base of defaults.filter(d => d.id === 'tower' || d.id === 'terminal_zone' || d.id === 'vaa_banner_plaque')) {
     if (!result.some(r => r.id === base.id)) {
-      result.unshift(base);
+      result.push(base);
     }
   }
 

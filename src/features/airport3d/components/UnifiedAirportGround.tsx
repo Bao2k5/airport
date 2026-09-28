@@ -15,13 +15,13 @@ export default memo(function UnifiedAirportGround({ graph, layout }: { graph: Ai
       <planeGeometry args={[1200, 1200]} />
       <meshStandardMaterial color="#a6aaad" roughness={0.95} />
     </mesh>
-    <mesh position={[0, -0.37, 0]} receiveShadow castShadow>
-      <boxGeometry args={[bounds.side, 0.72, bounds.side]} />
-      <meshStandardMaterial color="#424649" roughness={0.7} />
+    <mesh position={[0, -0.40, 0]} receiveShadow castShadow>
+      <boxGeometry args={[bounds.side, 0.76, bounds.side]} />
+      <meshStandardMaterial color="#73797e" roughness={0.85} />
     </mesh>
-    <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+    <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, 0, 0]} receiveShadow>
       <planeGeometry args={[bounds.side, bounds.side]} />
-      <meshStandardMaterial map={concrete} color="#adb1b2" roughness={0.9} polygonOffset polygonOffsetFactor={1} polygonOffsetUnits={1} />
+      <meshStandardMaterial map={concrete} color="#adb1b2" roughness={0.9} />
     </mesh>
   </group>;
 });

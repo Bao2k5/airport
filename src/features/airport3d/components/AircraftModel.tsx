@@ -17,6 +17,7 @@ function AircraftAsset({ color }: { color: string }) {
         object.material = Array.isArray(object.material) ? object.material.map(replace) : replace(object.material);
         object.castShadow = true;
         object.receiveShadow = true;
+        object.renderOrder = 2;
       }
     });
     return clone;
@@ -37,13 +38,13 @@ export default function AircraftModel({ aircraft, graph, selected, onSelect, sho
   const { position, yaw, pitch } = pose;
 
   return (
-    <group position={[position[0], position[1] + 0.04, position[2]]} rotation={[0, yaw, 0]} onClick={onSelect ? (event) => { event.stopPropagation(); onSelect(aircraft.id); } : undefined}>
+    <group position={[position[0], position[1] + 0.045, position[2]]} rotation={[0, yaw, 0]} onClick={onSelect ? (event) => { event.stopPropagation(); onSelect(aircraft.id); } : undefined}>
       <group rotation={[pitch, 0, 0]}><AircraftAsset color={color} /></group>
       {selected && <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
       <ringGeometry args={[1.7, 1.82, 48]} /><meshBasicMaterial color="#ffd166" transparent opacity={0.82} />
       </mesh>}
-      {showLabel && <Html position={[0, 1.45, 0]} center distanceFactor={13} style={{ pointerEvents: onSelect ? 'auto' : 'none' }}>
-        <div style={{ borderLeft: `3px solid ${color}` }} className={`whitespace-nowrap rounded px-1.5 py-0.5 font-mono text-[9px] font-bold shadow ${selected ? 'bg-amber-300 text-slate-950' : 'bg-[#07111aee] text-white'}`}>{aircraft.callsign}</div>
+      {showLabel && <Html position={[0, 1.6, 0]} center distanceFactor={18} style={{ pointerEvents: onSelect ? 'auto' : 'none' }}>
+        <div style={{ borderLeft: `3.5px solid ${color}` }} className={`whitespace-nowrap rounded px-2 py-0.5 font-mono text-[11px] sm:text-[12px] font-bold shadow-md select-none tracking-wide ${selected ? 'bg-amber-300 text-slate-950 ring-2 ring-amber-400' : 'bg-[#07111af2] text-white border border-slate-700/60'}`}>{aircraft.callsign}</div>
       </Html>}
     </group>
   );

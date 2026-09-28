@@ -15,7 +15,7 @@ export default function DecorativeTerminal({
   selected?: boolean;
 }) {
   return (
-    <group position={[0, 0.025, 0]}>
+    <group position={[0, 0.05, 0]}>
       {DECORATIVE_MODELS.filter(c => detailed || !c.detailOnly).map(config => (
         <ModelBoundary key={config.id}>
           <Suspense fallback={null}>

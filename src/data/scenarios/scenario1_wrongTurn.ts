@@ -76,7 +76,7 @@ export const scenario1WrongTurn: PresetScenarioDef = {
     const observations: ScenarioObservation[] = [
       {
         id: 'obs_1_1',
-        text: '[PUSHBACK_LINE12] HVN216 từ STAND_10 đẩy lùi quẹo phải ra Line 12 và lăn về phía Bắc hướng đến HS NS.',
+        text: 'HVN216 đẩy lùi từ STAND 10 và nhập vệt lăn Line 12 hướng về HS NS.',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
@@ -92,7 +92,7 @@ export const scenario1WrongTurn: PresetScenarioDef = {
       },
       {
         id: 'obs_1_2',
-        text: '[HS_NS_E6_E4] HVN216 qua ngã tư HS NS, quẹo phải hướng ra E6/E4 và tiếp tục tới E6.',
+        text: 'HVN216 qua nút giao HS NS và tiếp tục theo dải đèn xanh ra E6.',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
@@ -101,14 +101,14 @@ export const scenario1WrongTurn: PresetScenarioDef = {
         check: (s) => {
           const ac = s.scenarioAircraft?.find((a: any) => a.callsign === 'HVN216');
           if (ac && ac.routeEdgeIndex >= 15) {
-            return { pass: true, evidence: `HVN216 đã qua HS NS và quẹo phải sang E6/E4 thành công` };
+            return { pass: true, evidence: `HVN216 đã qua HS NS ra nhánh E6/E4` };
           }
           return { pass: false };
         },
       },
       {
         id: 'obs_1_3',
-        text: '[REACH_STOP_BAR_25L] HVN216 di chuyển an toàn và đến dừng tại vạch chờ STOP BAR 25L.',
+        text: 'HVN216 di chuyển an toàn và đến dừng tại vạch chờ STOP BAR 25L.',
         required: true,
         status: 'pending',
         checkedAtSeconds: null,
@@ -134,38 +134,6 @@ export const scenario1WrongTurn: PresetScenarioDef = {
               {
                 atSeconds: state.elapsedSeconds,
                 message: '📻 [ATC CLEARANCE] "HVN216 taxi to holding point runway 25L via NS and E6 taxiways"',
-                severity: 'info',
-              },
-            ];
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 15,
-        apply: (state: any) => {
-          if (state.scenario) {
-            state.scenario.events = [
-              ...state.scenario.events,
-              {
-                atSeconds: state.elapsedSeconds,
-                message: '[FTG_GUIDANCE] Đèn xanh dẫn hướng HVN216 qua HS NS và quẹo phải ra E6/E4',
-                severity: 'info',
-              },
-            ];
-          }
-          return state;
-        },
-      },
-      {
-        atSeconds: 30,
-        apply: (state: any) => {
-          if (state.scenario) {
-            state.scenario.events = [
-              ...state.scenario.events,
-              {
-                atSeconds: state.elapsedSeconds,
-                message: '[CLEARANCE_25L] HVN216 tiếp tục qua E6 đến vạch chờ cất cánh STOP BAR 25L',
                 severity: 'info',
               },
             ];

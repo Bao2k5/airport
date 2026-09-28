@@ -10,6 +10,7 @@ import AircraftModel from './AircraftModel';
 import { lazy, Suspense, memo, useMemo, useRef } from 'react';
 import type { Group } from 'three';
 const DecorativeTerminal = lazy(() => import('../assets/DecorativeTerminal'));
+const AirportBannerPlaque = lazy(() => import('./AirportBannerPlaque'));
 import { Html, TransformControls } from '@react-three/drei';
 import type { AirportLayout, LayoutObject, CameraPose } from '../layout';
 import type { Props, CameraPreset, SceneMode } from '../viewTypes';
@@ -70,12 +71,17 @@ function AirportProp({
           <pointLight position={[0, 6.4, 0]} color={item.color} intensity={item.scale * 25} distance={35} decay={2} />
         </>}
         {item.kind === 'vehicle' && <group scale={1.1}><ServiceVehicle kind={0} /></group>}
+        {item.kind === 'sign' && (
+          <Suspense fallback={null}>
+            <AirportBannerPlaque color={item.color} selected={selected} editing={editing} />
+          </Suspense>
+        )}
         {item.kind === 'terminal' && modelsEnabled && (
           <Suspense fallback={null}>
             <DecorativeTerminal detailed={modelDetail} editing={editing} selected={selected} />
           </Suspense>
         )}
-        {editing && item.kind !== 'terminal' && <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        {editing && item.kind !== 'terminal' && item.kind !== 'sign' && <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[item.kind === 'tower' ? 1.4 : 0.6, item.kind === 'tower' ? 1.7 : 0.85, 40]} />
           <meshBasicMaterial color={selected ? '#28d8ff' : '#e6b85c'} side={2} />
         </mesh>}

@@ -29,7 +29,7 @@ export default function LayoutInspector({
   onSetValue: (field: 'x' | 'y' | 'z' | 'rotationY' | 'scale', value: number) => void;
   onColor: (color: string) => void;
   onRename?: (id: string, name: string) => void;
-  onAddObject?: (kind: 'mast' | 'vehicle') => void;
+  onAddObject?: (kind: 'mast' | 'vehicle' | 'sign') => void;
   onDeleteObject?: (id: string) => void;
   onSave: () => void;
   onClose: () => void;
@@ -93,6 +93,13 @@ export default function LayoutInspector({
             >
               <span>🚜</span> + Xe phục vụ
             </button>
+            <button
+              type="button"
+              onClick={() => onAddObject?.('sign')}
+              className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-500/15 py-1.5 px-2 text-center text-[11px] font-bold text-sky-200 transition hover:bg-sky-500/25 cursor-pointer shadow-xs"
+            >
+              <span>🏷️</span> + Biển hiệu VAA (Sa bàn)
+            </button>
           </div>
         </div>
 
@@ -103,7 +110,7 @@ export default function LayoutInspector({
           </div>
           <div className="max-h-36 overflow-y-auto space-y-1 rounded-lg border border-white/10 bg-black/20 p-1.5 pr-1">
             {objects.map(item => {
-              const icon = item.kind === 'mast' ? '💡' : item.kind === 'terminal' ? '🏢' : item.kind === 'tower' ? '🗼' : '🚜';
+              const icon = item.kind === 'mast' ? '💡' : item.kind === 'terminal' ? '🏢' : item.kind === 'tower' ? '🗼' : item.kind === 'sign' ? '🏷️' : '🚜';
               const isSelected = current?.id === item.id;
               return (
                 <button
@@ -186,7 +193,7 @@ export default function LayoutInspector({
             {/* Màu sắc & Ánh sáng */}
             <div className="rounded-lg border border-white/10 bg-white/[0.04] p-2.5 space-y-2">
               <div className="flex items-center justify-between text-[11px] text-slate-300">
-                <span>{current.kind === 'mast' ? 'Màu ánh sáng đèn' : 'Màu vật liệu'}</span>
+                <span>{current.kind === 'mast' ? 'Màu ánh sáng đèn' : current.kind === 'sign' ? 'Màu viền biển hiệu' : 'Màu vật liệu'}</span>
                 <input aria-label="Màu vật liệu" type="color" value={current.color} onChange={event => onColor(event.target.value)} className="h-7 w-10 cursor-pointer rounded border-0 bg-transparent" />
               </div>
               {current.kind === 'mast' && (
@@ -194,6 +201,13 @@ export default function LayoutInspector({
                   <button type="button" onClick={() => onColor('#fff0bf')} className="flex-1 rounded py-1 bg-[#fff0bf]/20 border border-[#fff0bf]/40 text-[#fff0bf] font-medium cursor-pointer">Vàng ấm</button>
                   <button type="button" onClick={() => onColor('#ffffff')} className="flex-1 rounded py-1 bg-white/20 border border-white/40 text-white font-medium cursor-pointer">Trắng</button>
                   <button type="button" onClick={() => onColor('#ffb74d')} className="flex-1 rounded py-1 bg-[#ffb74d]/20 border border-[#ffb74d]/40 text-[#ffb74d] font-medium cursor-pointer">Vàng cam</button>
+                </div>
+              )}
+              {current.kind === 'sign' && (
+                <div className="flex gap-1.5 text-[10px]">
+                  <button type="button" onClick={() => onColor('#0d1f36')} className="flex-1 rounded py-1 bg-[#0d1f36] border border-sky-400/40 text-sky-200 font-medium cursor-pointer">Xanh VAA</button>
+                  <button type="button" onClick={() => onColor('#1f2937')} className="flex-1 rounded py-1 bg-[#1f2937] border border-slate-400/40 text-slate-200 font-medium cursor-pointer">Xám đen</button>
+                  <button type="button" onClick={() => onColor('#78350f')} className="flex-1 rounded py-1 bg-[#78350f] border border-amber-400/40 text-amber-200 font-medium cursor-pointer">Gỗ / Đồng</button>
                 </div>
               )}
             </div>

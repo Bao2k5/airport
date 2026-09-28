@@ -18,6 +18,6 @@ export default memo(function AirportPavement({ graph }: { graph: AirportGraph })
   useSafeDispose(texture);
   return <mesh rotation={[-Math.PI / 2, 0, 0]} position={[0, SURFACE_SIZE.elevation, 0]} receiveShadow>
     <planeGeometry args={[SURFACE_SIZE.width, SURFACE_SIZE.depth]} />
-    <meshStandardMaterial map={texture} transparent alphaTest={0.1} roughness={0.92} metalness={0} />
+    <meshStandardMaterial map={texture} transparent alphaTest={0.05} roughness={0.92} metalness={0} />
   </mesh>;
 });

@@ -563,9 +563,9 @@ function AirportMap({
           const labelColor = isSelected ? '#38bdf8' : (aDef.accentColor || '#fbbf24');
           const planeScale = (aircraftScale ?? (renderMode !== 'normal' ? 1.5 : 1.1)) * liftScaleFactor;
           const isFacingSouth = pos.heading > 135 && pos.heading < 225;
-          const callsignOffset = 26 * planeScale;
+          const callsignOffset = 27 * planeScale;
           const callsignY = isFacingSouth ? pos.y + callsignOffset : pos.y - callsignOffset;
-          const labelFontSize = 8.5 * Math.min(1.3, planeScale);
+          const labelFontSize = 10.5 * Math.min(1.3, planeScale);
 
           return (
             <g

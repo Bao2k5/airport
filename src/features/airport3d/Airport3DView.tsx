@@ -156,10 +156,10 @@ export default function Airport3DView(props: Props) {
     rememberLayout(layout.map(item => {
       if (item.id !== selectedLayoutId) return item;
       if (field === 'rotationY') return { ...item, rotationY: item.rotationY + amount };
-      if (field === 'scale') return { ...item, scale: Math.max(0.35, Math.min(2.5, Number((item.scale + amount).toFixed(2)))) };
+      if (field === 'scale') return { ...item, scale: Math.max(0.1, Math.min(5.0, Number((item.scale + amount).toFixed(2)))) };
       const position = [...item.position] as [number, number, number];
       const axis = field === 'x' ? 0 : field === 'y' ? 1 : 2;
-      position[axis] = Math.max(axis === 1 ? -5 : -100, Math.min(axis === 1 ? 12 : 100, Number((position[axis] + amount).toFixed(2))));
+      position[axis] = Math.max(axis === 1 ? -5 : -120, Math.min(axis === 1 ? 15 : 120, Number((position[axis] + amount).toFixed(2))));
       return { ...item, position };
     }));
   };
@@ -168,10 +168,10 @@ export default function Airport3DView(props: Props) {
     rememberLayout(layout.map(item => {
       if (item.id !== selectedLayoutId) return item;
       if (field === 'rotationY') return { ...item, rotationY: value * Math.PI / 180 };
-      if (field === 'scale') return { ...item, scale: Math.max(0.35, Math.min(2.5, Number(value.toFixed(2)))) };
+      if (field === 'scale') return { ...item, scale: Math.max(0.1, Math.min(5.0, Number(value.toFixed(2)))) };
       const position = [...item.position] as [number, number, number];
       const axis = field === 'x' ? 0 : field === 'y' ? 1 : 2;
-      position[axis] = Math.max(axis === 1 ? -5 : -100, Math.min(axis === 1 ? 12 : 100, Number(value.toFixed(2))));
+      position[axis] = Math.max(axis === 1 ? -5 : -120, Math.min(axis === 1 ? 15 : 120, Number(value.toFixed(2))));
       return { ...item, position };
     }));
   };
@@ -185,17 +185,17 @@ export default function Airport3DView(props: Props) {
   const handleRenameObject = (id: string, name: string) => {
     rememberLayout(layout.map(item => item.id === id ? { ...item, name } : item));
   };
-  const handleAddObject = (kind: 'mast' | 'vehicle') => {
+  const handleAddObject = (kind: 'mast' | 'vehicle' | 'sign') => {
     const id = `${kind}_${Date.now()}`;
     const count = layout.filter(o => o.kind === kind).length + 1;
-    const defaultName = kind === 'mast' ? `Đèn sân đỗ ${count}` : `Xe phục vụ ${count}`;
+    const defaultName = kind === 'mast' ? `Đèn sân đỗ ${count}` : kind === 'sign' ? 'Biển hiệu VAA (SGN)' : `Xe phục vụ ${count}`;
 
     // Place near current camera target or current selected object
-    const anchor = layout.find(o => o.id === selectedLayoutId)?.position ?? cameraPose.target ?? [20, 0, 10];
+    const anchor = kind === 'sign' ? [0, 0.03, -42] : (layout.find(o => o.id === selectedLayoutId)?.position ?? cameraPose.target ?? [20, 0, 10]);
     const newPos: [number, number, number] = [
-      Number((anchor[0] + (Math.random() * 4 - 2)).toFixed(1)),
-      0,
-      Number((anchor[2] + (Math.random() * 4 - 2)).toFixed(1)),
+      Number((anchor[0] + (kind === 'sign' ? 0 : (Math.random() * 4 - 2))).toFixed(1)),
+      kind === 'sign' ? 0.03 : 0,
+      Number((anchor[2] + (kind === 'sign' ? 0 : (Math.random() * 4 - 2))).toFixed(1)),
     ];
 
     const newObj: LayoutObject = {
@@ -205,7 +205,7 @@ export default function Airport3DView(props: Props) {
       position: newPos,
       rotationY: 0,
       scale: 1,
-      color: kind === 'mast' ? '#fff0bf' : '#303c43',
+      color: kind === 'mast' ? '#fff0bf' : kind === 'sign' ? '#0d1f36' : '#303c43',
     };
 
     rememberLayout([...layout, newObj]);
@@ -310,7 +310,7 @@ export default function Airport3DView(props: Props) {
       </AirportToolbar>
       {unlockOpen && <LayoutUnlockDialog onClose={() => setUnlockOpen(false)} onUnlock={() => { setEditing(true); setUnlockOpen(false); }} />}
       <div className="relative min-h-0 flex-1">
-      <Canvas key={sceneMode} shadows={scenePreferences.shadows} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
+      <Canvas key={sceneMode} shadows={scenePreferences.shadows} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: inAirport ? 0.5 : 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
         <ResponsiveCameraAdjuster baseFov={inAirport ? 43 : sceneMode === 'room' ? 52 : 47} />
         <WebGLContextWatcher />
         <Suspense fallback={null}>
