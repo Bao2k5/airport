@@ -156,7 +156,7 @@ export const scenario2EmergencyFire: PresetScenarioDef = {
         routeEdgeIndex: 0,
         role: 'arriving',
         priority: 1,
-        scenarioLabel: '25R ➔ W6 ➔ W11 ➔ W9B ➔ W7B ➔ STAND 17',
+        scenarioLabel: '25R ➔ W6 ➔ CROSS 25L ➔ W11 ➔ W9B ➔ STAND 17',
         clearedRoute: hvn123Route,
         routeVisible: true,
       },

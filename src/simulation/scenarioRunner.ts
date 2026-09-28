@@ -752,7 +752,7 @@ export function scenarioTick(
             scenarioLabel: ac.callsign === 'VN301'
               ? '25R ➔ W4 ➔ W7A ➔ W7B ➔ HS NS ➔ STAND 17'
               : ac.callsign === 'HVN123'
-              ? '25R ➔ W6 ➔ W11 ➔ W9B ➔ W7B ➔ STAND 17'
+              ? '25R ➔ W6 ➔ CROSS 25L ➔ W11 ➔ W9B ➔ STAND 17'
               : (ac.scenarioLabel || 'LĂN VÀO BẾN ĐỖ'),
           };
         } else {
@@ -762,7 +762,7 @@ export function scenarioTick(
             hidden: true,
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI',
+            scenarioLabel: '✓ ĐÃ CẤT CÁNH',
           };
         }
       } else {
@@ -773,6 +773,10 @@ export function scenarioTick(
             ? `🛬 TIẾP CẬN ĐƯỜNG BĂNG ${rwName} (${Math.round((advanced.flight.altitudeWorld ?? 0) * 25)}m)`
             : phase === 'flare'
             ? `🛬 TIẾP ĐẤT RW ${rwName}`
+            : ac.callsign === 'HVN401'
+            ? `25R ➔W4 ➔W7A➔W7B➔ W3 ➔ HS_W7 ➔ STAND 16`
+            : ac.callsign === 'BAV315'
+            ? `25R ➔ W4`
             : `🛬 XẢ ĐÀ RW ${rwName} (${Math.round(advanced.speedKts)} kts)`;
           updatedFleet[idx] = {
             ...advanced,
@@ -1006,7 +1010,7 @@ export function scenarioTick(
             status: 'taxiing',
             speedKts: flight ? 140 : 20,
             speedLimitKts: 22,
-            scenarioLabel: flight ? '🛬 TIẾP CẬN ĐƯỜNG BĂNG 25R' : '25R ➔ W6 ➔ W11 ➔ W9B ➔ W7B ➔ STAND 17',
+            scenarioLabel: flight ? '🛬 TIẾP CẬN ĐƯỜNG BĂNG 25R' : '25R ➔ W6 ➔ CROSS 25L ➔ W11 ➔ W9B ➔ STAND 17',
           };
         }
       }

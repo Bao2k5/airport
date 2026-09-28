@@ -133,7 +133,7 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
         hidden: true,
         speedKts: 0,
         speedLimitKts: 0,
-        scenarioLabel: '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI',
+        scenarioLabel: '✓ ĐÃ CẤT CÁNH',
       };
     }
 
@@ -171,7 +171,7 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
       hidden: true,
       speedKts: 0,
       speedLimitKts: 0,
-      scenarioLabel: '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI',
+      scenarioLabel: '✓ ĐÃ CẤT CÁNH',
     };
   };
 

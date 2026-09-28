@@ -35,12 +35,6 @@ export default memo(function FodObstacle3D({
       {/* Flashing Amber/Red Emergency Hazard Beacon on top */}
       <pointLight position={[0, 1.8, 0]} color="#ff3b00" intensity={25} distance={30} decay={2} />
 
-      {/* Pulsing Red Hazard Ring on ground */}
-      <mesh position={[0, 0.03, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-        <ringGeometry args={[3.2, 3.6, 32]} />
-        <meshBasicMaterial color="#ef4444" opacity={0.8} transparent />
-      </mesh>
-
       {/* 3D Warning Tag Label */}
       <Html position={[0, 3.2, 0]} center distanceFactor={28} style={{ pointerEvents: 'none' }}>
         <div className="flex items-center gap-1.5 rounded-lg border border-rose-500 bg-[#25080cee] px-2.5 py-1 font-mono text-[10px] font-bold text-rose-200 shadow-xl select-none whitespace-nowrap">

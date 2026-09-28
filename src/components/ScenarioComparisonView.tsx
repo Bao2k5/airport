@@ -739,7 +739,7 @@ export default function Scenario5ComparisonView({
               hidden: finished,
               speedKts: 0,
               speedLimitKts: 0,
-              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
             };
           }
           return {
@@ -812,7 +812,7 @@ export default function Scenario5ComparisonView({
               hidden: finished,
               speedKts: 0,
               speedLimitKts: 0,
-              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
             };
           }
 
@@ -873,7 +873,7 @@ export default function Scenario5ComparisonView({
               hidden: finished,
               speedKts: 0,
               speedLimitKts: 0,
-              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
             };
           }
 
@@ -948,7 +948,7 @@ export default function Scenario5ComparisonView({
               hidden: finished,
               speedKts: 0,
               speedLimitKts: 0,
-              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
             };
           }
 
@@ -1024,7 +1024,7 @@ export default function Scenario5ComparisonView({
               hidden: finished,
               speedKts: 0,
               speedLimitKts: 0,
-              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+              scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
             };
           }
 
@@ -1183,7 +1183,7 @@ export default function Scenario5ComparisonView({
             hidden: finished,
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
           };
         }
         const reachedE6 = ac.routeEdgeIndex >= 12 || ac.currentNodeId === 'v3_line_17_p12' || ac.currentNodeId === 'v3_line_17_p13';
@@ -1268,7 +1268,7 @@ export default function Scenario5ComparisonView({
             hidden: finished,
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
           };
         }
 
@@ -1333,7 +1333,7 @@ export default function Scenario5ComparisonView({
             hidden: finished,
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
           };
         }
         if (stage3StartSecRef.current !== null && stage3Elapsed >= 1.0) {
@@ -1396,7 +1396,7 @@ export default function Scenario5ComparisonView({
             hidden: finished,
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
           };
         }
         if (stage3StartSecRef.current !== null && stage3Elapsed >= 3.0) {
@@ -1459,7 +1459,7 @@ export default function Scenario5ComparisonView({
             hidden: finished,
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH & RỜI VÙNG TRỜI' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
+            scenarioLabel: finished ? '✓ ĐÃ CẤT CÁNH' : '🛫 ĐANG CHẠY ĐÀ CẤT CÁNH RW 07R',
           };
         }
         if (stage3StartSecRef.current !== null && stage3Elapsed >= 5.0) {

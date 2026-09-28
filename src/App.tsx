@@ -4,7 +4,6 @@ import { AlertTriangle, X } from 'lucide-react';
 import AirportMap from './components/AirportMap';
 import ControlPanel from './components/ControlPanel';
 import StatusPanel from './components/StatusPanel';
-import ScenarioPanel from './components/ScenarioPanel';
 import HuongDanModal from './components/HuongDanModal';
 import PathInspectorModal from './components/PathInspectorModal';
 import VaaLogo from './components/VaaLogo';
@@ -771,6 +770,7 @@ export default function App() {
       next.selectedAircraftId = selected?.id;
     }
     setSimState(next);
+    setDesktopTab('scenarios');
     setMobileTab('status');
     setSheetExpanded(true);
   }, [currentGraph, selectedGraphId, mapView]);
@@ -1074,7 +1074,6 @@ export default function App() {
                     onConfirmReadback={handleConfirmReadback}
                   />
                   <StatusPanel state={simState} graph={currentGraph} />
-                  <ScenarioPanel state={simState} graph={currentGraph} />
                 </>
               ) : (
                 <>
@@ -1251,7 +1250,6 @@ export default function App() {
                         onClearRunway={handleClearRunway}
                         onConfirmReadback={handleConfirmReadback}
                       />
-                      <ScenarioPanel state={simState} graph={currentGraph} />
                     </>
                   )}
 
