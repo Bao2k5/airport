@@ -58,7 +58,7 @@ export function distanceToSegment(point: Point, segment: Segment) {
   return Math.hypot(point.x - segment.a.x - dx * t, point.z - segment.a.z - dz * t);
 }
 
-export function samplePaths(paths: PathPart[][], spacing: number, visit: (point: Point, tangent: Point, segment: Segment, distance: number) => void) {
+export function samplePaths(paths: PathPart[][], spacing: number, visit: (point: Point, tangent: Point, segment: Segment, distance: number, index: number, count: number) => void) {
   for (const path of paths) {
     const total = path.reduce((sum, part) => sum + part.segment.length, 0);
     const count = Math.max(1, Math.floor(total / spacing));
@@ -69,7 +69,7 @@ export function samplePaths(paths: PathPart[][], spacing: number, visit: (point:
       for (const part of path) {
         if (remaining > part.segment.length) { remaining -= part.segment.length; continue; }
         const tangent = { x: (part.b.x - part.a.x) / part.segment.length, z: (part.b.z - part.a.z) / part.segment.length };
-        visit({ x: part.a.x + tangent.x * remaining, z: part.a.z + tangent.z * remaining }, tangent, part.segment, distance);
+        visit({ x: part.a.x + tangent.x * remaining, z: part.a.z + tangent.z * remaining }, tangent, part.segment, distance, index, count);
         break;
       }
     }
