@@ -1,5 +1,4 @@
-import type { AirportGraph, AirportNode } from '../../types';
-import { getAssetZone } from './assets/assetPlacement';
+import type { AirportGraph } from '../../types';
 
 export const LAYOUT_STORAGE_KEY = 'tsn-airport-3d-layout-v8';
 export const LAYOUT_VERSION = 8;
@@ -33,33 +32,16 @@ export function validateCameraPose(value: unknown): CameraPose | null {
   };
 }
 
-const toWorld = (node: AirportNode): [number, number, number] => [
-  (node.x - 600) * 0.075,
-  0,
-  (node.y - 430) * 0.075,
-];
-
-export function createDefaultLayout(graph: AirportGraph): AirportLayout {
-  const stands = graph.nodes.filter(node => /^STAND[_ -]?\d+/i.test(node.label));
-  const anchorNodes = stands.length ? stands : graph.nodes.filter(node => node.type === 'apron');
-  const anchor = anchorNodes.length
-    ? anchorNodes.reduce((sum, node) => {
-        const p = toWorld(node);
-        return [sum[0] + p[0] / anchorNodes.length, 0, sum[2] + p[2] / anchorNodes.length] as [number, number, number];
-      }, [0, 0, 0] as [number, number, number])
-    : [24, 0, 13] as [number, number, number];
-
-  const zone = getAssetZone(graph);
-
+export function createDefaultLayout(_graph?: AirportGraph): AirportLayout {
   return [
-    { id: 'tower', name: 'Đài kiểm soát không lưu', kind: 'tower', position: [9.5, 0, 1.0], rotationY: 0, scale: 1, color: '#9eaeb9' },
-    { id: 'terminal_zone', name: 'Khu nhà ga & Ống lồng', kind: 'terminal', position: [Number(zone[0].toFixed(1)), 0, Number(zone[2].toFixed(1))], rotationY: 0, scale: 1, color: '#303c43' },
-    { id: 'apron_light_1', name: 'Đèn sân đỗ 1', kind: 'mast', position: [anchor[0] - 8, 0, anchor[2] - 6], rotationY: 0, scale: 1, color: '#fff0bf' },
-    { id: 'apron_light_2', name: 'Đèn sân đỗ 2', kind: 'mast', position: [anchor[0] + 6, 0, anchor[2] - 6], rotationY: 0, scale: 1, color: '#fff0bf' },
-    { id: 'apron_light_3', name: 'Đèn sân đỗ 3', kind: 'mast', position: [anchor[0] - 8, 0, anchor[2] + 4], rotationY: 0, scale: 1, color: '#fff0bf' },
-    { id: 'apron_light_4', name: 'Đèn sân đỗ 4', kind: 'mast', position: [anchor[0] + 6, 0, anchor[2] + 4], rotationY: 0, scale: 1, color: '#fff0bf' },
-    { id: 'apron_light_5', name: 'Đèn sân đỗ 5', kind: 'mast', position: [anchor[0] - 8, 0, anchor[2] + 14], rotationY: 0, scale: 1, color: '#fff0bf' },
-    { id: 'apron_light_6', name: 'Đèn sân đỗ 6', kind: 'mast', position: [anchor[0] + 6, 0, anchor[2] + 14], rotationY: 0, scale: 1, color: '#fff0bf' },
+    { id: 'tower', name: 'Đài kiểm soát không lưu', kind: 'tower', position: [22.84, 0, 9.31], rotationY: 0.7853981633974483, scale: 1, color: '#9eaeb9' },
+    { id: 'terminal_zone', name: 'Khu nhà ga & Ống lồng', kind: 'terminal', position: [32.06, 0, 28.74], rotationY: 3.1415926535897936, scale: 1.2, color: '#303c43' },
+    { id: 'apron_light_1', name: 'Đèn sân đỗ 1', kind: 'mast', position: [10.31, 0, 9.58], rotationY: 1.5707963267948963, scale: 1, color: '#fff0bf' },
+    { id: 'apron_light_2', name: 'Đèn sân đỗ 2', kind: 'mast', position: [25.94, 0, 6.97], rotationY: 0.2617993877991494, scale: 1, color: '#fff0bf' },
+    { id: 'apron_light_3', name: 'Đèn sân đỗ 3', kind: 'mast', position: [9.94, 0, 18.71], rotationY: 1.5707963267948963, scale: 1, color: '#fff0bf' },
+    { id: 'apron_light_4', name: 'Đèn sân đỗ 4', kind: 'mast', position: [31.34, 0, 4.96], rotationY: 0.2617993877991494, scale: 1, color: '#fff0bf' },
+    { id: 'apron_light_5', name: 'Đèn sân đỗ 5', kind: 'mast', position: [9.79, 0, 26.97], rotationY: 1.5707963267948963, scale: 1, color: '#fff0bf' },
+    { id: 'apron_light_6', name: 'Đèn sân đỗ 6', kind: 'mast', position: [36.46, 0, 2.76], rotationY: 0.2617993877991494, scale: 1, color: '#fff0bf' },
   ];
 }
 

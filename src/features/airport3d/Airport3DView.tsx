@@ -50,9 +50,9 @@ export default function Airport3DView(props: Props) {
     try {
       const saved = localStorage.getItem(LAYOUT_STORAGE_KEY);
       const pose = saved ? validateCameraPose((JSON.parse(saved) as { cameraPose?: unknown }).cameraPose) : null;
-      return pose ?? { position: [0, 66, 56], target: [0, 0, 0] };
+      return pose ?? { position: [80.09, 16.75, 51.77], target: [0, 0, 0] };
     } catch {
-      return { position: [0, 66, 56], target: [0, 0, 0] };
+      return { position: [80.09, 16.75, 51.77], target: [0, 0, 0] };
     }
   });
   const [editing, setEditing] = useState(false);
