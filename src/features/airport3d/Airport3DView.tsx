@@ -1,7 +1,7 @@
 import { getAssetZone } from './assets/assetPlacement';
-import { Suspense, useEffect, useMemo, useRef, useState } from 'react';
-import { Canvas } from '@react-three/fiber';
-import { ACESFilmicToneMapping } from 'three';
+import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import { Canvas, useThree } from '@react-three/fiber';
+import { ACESFilmicToneMapping, PerspectiveCamera } from 'three';
 import { createDefaultLayout, LAYOUT_STORAGE_KEY, LAYOUT_VERSION, validateCameraPose, validateLayoutImport, type AirportLayout, type CameraPose, type LayoutObject } from './layout';
 import type { Aircraft } from '../../types';
 import { getCurrentWorldPosition } from './sceneCoordinates';
@@ -13,6 +13,45 @@ import LayoutInspector from './components/LayoutInspector';
 import SurfaceLegend from './surface/SurfaceLegend';
 import AirportToolbar from './components/AirportToolbar';
 import LayoutUnlockDialog from './components/LayoutUnlockDialog';
+
+function ResponsiveCameraAdjuster({ baseFov = 43 }: { baseFov?: number }) {
+  const { camera, size } = useThree();
+  useLayoutEffect(() => {
+    if (camera instanceof PerspectiveCamera && size.width > 0 && size.height > 0) {
+      const aspect = size.width / size.height;
+      if (aspect < 1.0) {
+        const rad = (baseFov * Math.PI) / 360;
+        const targetTan = Math.tan(rad) * Math.min(2.1, 1.25 / Math.max(aspect, 0.45));
+        camera.fov = (Math.atan(targetTan) * 360) / Math.PI;
+      } else {
+        camera.fov = baseFov;
+      }
+      camera.updateProjectionMatrix();
+    }
+  }, [camera, size.width, size.height, baseFov]);
+  return null;
+}
+
+function WebGLContextWatcher() {
+  const { gl } = useThree();
+  useEffect(() => {
+    const canvas = gl.domElement;
+    const handleContextLost = (e: Event) => {
+      e.preventDefault();
+      console.warn('[WebGL] Context lost. Waiting for restore...');
+    };
+    const handleContextRestored = () => {
+      console.info('[WebGL] Context restored.');
+    };
+    canvas.addEventListener('webglcontextlost', handleContextLost, false);
+    canvas.addEventListener('webglcontextrestored', handleContextRestored, false);
+    return () => {
+      canvas.removeEventListener('webglcontextlost', handleContextLost);
+      canvas.removeEventListener('webglcontextrestored', handleContextRestored);
+    };
+  }, [gl]);
+  return null;
+}
 
 const PRESETS: { id: CameraPreset; label: string; position: [number, number, number] }[] = [
   { id: 'overview', label: 'Tổng quan', position: [0, 92, 78] },
@@ -271,7 +310,9 @@ export default function Airport3DView(props: Props) {
       </AirportToolbar>
       {unlockOpen && <LayoutUnlockDialog onClose={() => setUnlockOpen(false)} onUnlock={() => { setEditing(true); setUnlockOpen(false); }} />}
       <div className="relative min-h-0 flex-1">
-      <Canvas key={sceneMode} shadows={scenePreferences.shadows} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, 1.25]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
+      <Canvas key={sceneMode} shadows={scenePreferences.shadows} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
+        <ResponsiveCameraAdjuster baseFov={inAirport ? 43 : sceneMode === 'room' ? 52 : 47} />
+        <WebGLContextWatcher />
         <Suspense fallback={null}>
           <AirportScene
             {...props}

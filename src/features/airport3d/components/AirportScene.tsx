@@ -106,7 +106,13 @@ const AirportMarkers = memo(function AirportMarkers({ graph }: { graph: AirportG
       const operationalLabel = stand || node.type === 'holding_point' || node.type === 'runway_entry' || /^STOP BAR/i.test(node.label);
       return (
         <group key={node.id}>
-          {node.label && operationalLabel && <Html position={[p[0], 0.76, p[2]]} center distanceFactor={16} style={{ pointerEvents: 'none' }}><span className={`whitespace-nowrap rounded-sm border px-1 py-0.5 font-mono text-[8px] font-bold ${stand ? 'border-amber-300/50 bg-[#211c0de8] text-amber-200' : 'border-red-300/40 bg-[#200c10dd] text-rose-100'}`}>{node.label}</span></Html>}
+          {node.label && operationalLabel && (
+            <Html position={[p[0], 0.76, p[2]]} center distanceFactor={22} style={{ pointerEvents: 'none' }}>
+              <span className={`whitespace-nowrap rounded-xs border px-1.5 py-0.5 font-mono text-[9px] sm:text-[10px] font-bold shadow-xs select-none ${stand ? 'border-amber-300/50 bg-[#211c0de8] text-amber-200' : 'border-red-300/40 bg-[#200c10dd] text-rose-100'}`}>
+                {node.label}
+              </span>
+            </Html>
+          )}
         </group>
       );
     })}

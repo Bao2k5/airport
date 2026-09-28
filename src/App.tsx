@@ -137,11 +137,12 @@ export default function App() {
     return base;
   });
   
-  // Desktop tabs: 'control' | 'scenarios'
-  const [desktopTab, setDesktopTab] = useState<'control' | 'scenarios'>('control');
-  
-  // Mobile tabs: 'control' | 'status' | 'scenarios'
-  const [mobileTab, setMobileTab] = useState<'control' | 'status' | 'scenarios'>('control');
+  // Unified responsive tabs: 'control' | 'status' | 'scenarios'
+  const [activeTab, setActiveTab] = useState<'control' | 'status' | 'scenarios'>('control');
+  const desktopTab = activeTab === 'scenarios' ? 'scenarios' : 'control';
+  const mobileTab = activeTab;
+  const setDesktopTab = (tab: 'control' | 'scenarios') => setActiveTab(tab);
+  const setMobileTab = (tab: 'control' | 'status' | 'scenarios') => setActiveTab(tab);
   const [sheetExpanded, setSheetExpanded] = useState(true);
   const [showGuide, setShowGuide] = useState(false);
   const [autoIncidents, setAutoIncidents] = useState(false);
@@ -975,9 +976,9 @@ export default function App() {
         </div>
 
         {/* ── 3. Bố Cục Chính Hợp Nhất (Chỉ 1 Bản Đồ Duy Nhất Cho Mọi Viewport) ── */}
-        <main className="flex-1 flex flex-col md:flex-row gap-0 md:gap-2.5 lg:gap-3 p-0 md:p-2 lg:p-3 overflow-hidden min-h-0 relative">
+        <main className="flex-1 flex flex-col lg:flex-row gap-0 lg:gap-2.5 xl:gap-3 p-0 lg:p-2 xl:p-3 overflow-hidden min-h-0 relative">
           {/* Bản đồ sân bay tương tác chính — Duy nhất trong toàn bộ DOM */}
-          <div className="flex-1 w-full min-w-0 min-h-[220px] md:min-h-0 relative bg-[#070B13] md:rounded-[10px] md:border md:border-[#1E293B] shadow-xs flex flex-col overflow-hidden">
+          <div className="flex-1 w-full min-w-0 min-h-[220px] lg:min-h-0 relative bg-[#070B13] lg:rounded-[10px] lg:border lg:border-[#1E293B] shadow-xs flex flex-col overflow-hidden">
             {/* Viewport Bản đồ 100% Thông Thoáng — Không bị che bởi thanh thông báo */}
             <div className="flex-1 relative w-full h-full min-h-0 overflow-hidden">
               {mapView === '2d' ? (
@@ -1010,7 +1011,7 @@ export default function App() {
 
           <>
           {/* ── 3A. Bảng Điều Khiển Desktop & Laptop Các Loại Kích Cỡ ── */}
-          <aside className="hidden md:flex w-72 lg:w-80 xl:w-96 flex-shrink-0 flex-col gap-2.5 lg:gap-3 overflow-y-auto">
+          <aside className="hidden lg:flex w-80 xl:w-96 flex-shrink-0 flex-col gap-2.5 lg:gap-3 overflow-y-auto">
             <ErrorBoundary
               name="Thanh điều khiển bên phải"
               fallbackTitle="Lỗi bảng điều khiển"
@@ -1110,8 +1111,8 @@ export default function App() {
             </ErrorBoundary>
           </aside>
 
-          {/* ── 3B. Thanh Bảng Điều Khiển Mobile (< 768px) ── */}
-          <aside className="flex md:hidden w-full bg-white border-t border-[#E4E4E7] flex-col z-30 shadow-2xl flex-shrink-0">
+          {/* ── 3B. Thanh Bảng Điều Khiển Mobile & Tablet Dọc (< 1024px) ── */}
+          <aside className="flex lg:hidden w-full bg-white border-t border-[#E4E4E7] flex-col z-30 shadow-2xl flex-shrink-0">
             {/* Header Tab Bar của Mobile Bottom Sheet */}
             <div className="flex items-center justify-between p-1.5 bg-[#F8FAFC] border-b border-[#E4E4E7]">
               <div className="flex flex-1 gap-1">
@@ -1219,7 +1220,7 @@ export default function App() {
 
             {/* Nội dung Tab Panel */}
             {sheetExpanded && (
-              <div className="max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F8FAFC]">
+              <div className="max-h-[46vh] sm:max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F8FAFC]">
                 <ErrorBoundary
                   name="Bảng điều khiển Mobile"
                   fallbackTitle="Lỗi bảng điều khiển"
