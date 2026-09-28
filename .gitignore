@@ -36,12 +36,25 @@ Thumbs.db
 # Temporary, Cache & Tool folders
 .vercel
 scratch/
+artifacts/
 test_screenshots/
 *.backup*
 *.tmp
 .eslintcache
 
-# Office & Thesis documents
+# Test files & test scripts
+tests/
+test/
+src/tests/
+scripts/
+*.test.*
+*.spec.*
+coverage/
+playwright-report/
+test-results/
+
+# Documentation & Guidelines
+docs/
 *.docx
 *.doc
 *.pdf
@@ -54,3 +67,4 @@ CHUONG_*.md
 # Root temporary raw traces & junction JSON files
 /v3_junctions.confirmed.json
 /v3_raw_traces_manual.json
+
