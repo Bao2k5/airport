@@ -11,6 +11,7 @@ import { lazy, Suspense, memo, useMemo, useRef } from 'react';
 import type { Group } from 'three';
 const DecorativeTerminal = lazy(() => import('../assets/DecorativeTerminal'));
 const AirportBannerPlaque = lazy(() => import('./AirportBannerPlaque'));
+const FodObstacle3D = lazy(() => import('./FodObstacle3D'));
 import { Html, TransformControls } from '@react-three/drei';
 import type { AirportLayout, LayoutObject, CameraPose } from '../layout';
 import type { Props, CameraPreset, SceneMode } from '../viewTypes';
@@ -76,12 +77,17 @@ function AirportProp({
             <AirportBannerPlaque color={item.color} selected={selected} editing={editing} />
           </Suspense>
         )}
+        {item.kind === 'equipment' && (
+          <Suspense fallback={null}>
+            <FodObstacle3D scale={item.scale * 0.22} />
+          </Suspense>
+        )}
         {item.kind === 'terminal' && modelsEnabled && (
           <Suspense fallback={null}>
             <DecorativeTerminal detailed={modelDetail} editing={editing} selected={selected} />
           </Suspense>
         )}
-        {editing && item.kind !== 'terminal' && item.kind !== 'sign' && <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        {editing && item.kind !== 'terminal' && item.kind !== 'sign' && item.kind !== 'equipment' && <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[item.kind === 'tower' ? 1.4 : 0.6, item.kind === 'tower' ? 1.7 : 0.85, 40]} />
           <meshBasicMaterial color={selected ? '#28d8ff' : '#e6b85c'} side={2} />
         </mesh>}
@@ -171,6 +177,11 @@ export default function AirportScene({ graph, state, onSelectAircraft, layout, e
       <AirportPavement graph={graph} />
       <AirportLights graph={graph} state={state} lightScale={lightScale} />
       <AirportRestrictions graph={graph} state={state} />
+      {(state.scenario?.id === 'lvc_w7a_sudden_closure' || state.blockedEdgeIds?.has('E_v3_line_18_p01_v3_line_18_p02')) && (
+        <Suspense fallback={null}>
+          <FodObstacle3D position={[-26.4, 0.04, 17.4]} rotationY={0.4} scale={0.22} />
+        </Suspense>
+      )}
       {!towerMode && <AirportMarkers graph={graph} />}
       {!towerMode && <StandDisplays graph={graph} state={state} />}
       {layout.map(item => (

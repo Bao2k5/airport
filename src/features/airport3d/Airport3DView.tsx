@@ -10,7 +10,6 @@ import AirportScene from './components/AirportScene';
 import AirportMap from '../../components/AirportMap';
 import SceneSettings, { DEFAULT_SCENE_PREFERENCES } from './components/SceneSettings';
 import LayoutInspector from './components/LayoutInspector';
-import SurfaceLegend from './surface/SurfaceLegend';
 import AirportToolbar from './components/AirportToolbar';
 import LayoutUnlockDialog from './components/LayoutUnlockDialog';
 
@@ -344,7 +343,6 @@ export default function Airport3DView(props: Props) {
         </div>
         <div className="relative min-h-0 flex-1"><AirportMap graph={props.graph} state={props.state} renderMode="ftg" onSelectAircraft={props.onSelectAircraft} /></div>
       </div>}
-      {inAirport && !editing && <SurfaceLegend state={props.state} />}
       {editing && inAirport && <LayoutInspector
         objects={layout}
         selectedId={selectedLayoutId}

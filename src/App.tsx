@@ -282,22 +282,7 @@ export default function App() {
       if (simState.isRunning && !simState.isPaused && !document.hidden) {
         const timeSinceLastTick = Date.now() - lastTickTimeRef.current;
         if (timeSinceLastTick > 2000) {
-          console.warn(`[Simulation-Watchdog] No tick in ${timeSinceLastTick}ms. Attempting safe loop restart...`);
-          
-          setSimState(prev => {
-            const warningText = 'Cảnh báo Watchdog: Vòng lặp mô phỏng bị gián đoạn (>2s). Đang tự động khôi phục animation loop...';
-            const logItem = {
-              id: `wd-${Date.now()}`,
-              atSeconds: prev.elapsedSeconds,
-              message: warningText,
-              severity: 'warning' as const,
-            };
-            return {
-              ...prev,
-              warningMessage: warningText,
-              liveEventLog: [logItem, ...prev.liveEventLog.slice(0, 49)],
-            };
-          });
+          console.warn(`[Simulation-Watchdog] No tick in ${timeSinceLastTick}ms. Attempting silent loop restart...`);
 
           // Restart animation loop safely
           if (rafRef.current) cancelAnimationFrame(rafRef.current);

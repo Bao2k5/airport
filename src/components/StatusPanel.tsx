@@ -94,7 +94,7 @@ export default function StatusPanel({ state, graph = airportGraphV3 }: Props) {
         )}
       </div>
 
-      {warningMessage && (
+      {warningMessage && !warningMessage.toLowerCase().includes('watchdog') && !warningMessage.toLowerCase().includes('gián đoạn') && (
         <div className="bg-[#FEF2F2] border border-[#FCA5A5] text-[#991B1B] rounded-xl px-3.5 py-2.5 text-xs font-semibold leading-relaxed flex items-start gap-2 shadow-2xs">
           <span className="w-2 h-2 rounded-full bg-[#D32F2F] mt-1.5 shrink-0" />
           <span>{warningMessage}</span>

@@ -655,7 +655,7 @@ export default function Scenario5ComparisonView({
               status: 'holding',
               speedKts: 0,
               speedLimitKts: 0,
-              scenarioLabel: 'STAND 12 (CHỜ TÀU 2 LĂN TRƯỚC)',
+              scenarioLabel: 'STAND 12 ➔ HS NS ➔ E6 ➔ RW 25L',
             };
           }
           const atNS2 = ac.currentNodeId === 'v3_line_05_p04' || ac.currentNodeId === 'v3_line_12_p01' || (ac.routeEdgeIndex >= 28 && ac.progressOnEdge >= 0.2) || distToOut1 < 75;
@@ -784,7 +784,7 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: 'stop-bar',
-              scenarioLabel: '🛑 W11/07R (CHỜ TÀU 2 CẤT CÁNH BIẾN MẤT)',
+              scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
             };
           }
 
@@ -838,7 +838,7 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: undefined,
-              scenarioLabel: 'STAND 8 (CHỜ HUẤN LỆNH KSVKL)',
+              scenarioLabel: 'STAND 8 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
             };
           }
 
@@ -856,7 +856,7 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: 'stop-bar',
-              scenarioLabel: '🛑 W11/07R (CHỜ TÀU 3 CẤT CÁNH BIẾN MẤT)',
+              scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
             };
           }
 
@@ -897,7 +897,7 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: undefined,
-              scenarioLabel: 'STAND 11 (CHỜ HUẤN LỆNH KSVKL)',
+              scenarioLabel: 'STAND 11 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
             };
           }
 
@@ -920,7 +920,7 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: 'stop-bar',
-              scenarioLabel: '🛑 W11/07R (CHỜ TÀU 4 CẤT CÁNH BIẾN MẤT)',
+              scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
             };
           }
 
@@ -952,7 +952,7 @@ export default function Scenario5ComparisonView({
             };
           }
 
-          const targetSpeed = (!tradOut3Finished && distToOut3 < 95) ? 12 : 18;
+          const targetSpeed = (!tradOut3Finished && distToOut3 < 95) ? 12 : 16;
           return {
             ...ac,
             status: 'taxiing',
@@ -973,7 +973,7 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: undefined,
-              scenarioLabel: 'STAND 4 (CHỜ HUẤN LỆNH KSVKL)',
+              scenarioLabel: 'STAND 4 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
             };
           }
 
@@ -996,7 +996,7 @@ export default function Scenario5ComparisonView({
               speedKts: 0,
               speedLimitKts: 0,
               holdReason: 'stop-bar',
-              scenarioLabel: '🛑 W11/07R (CHỜ TÀU 5 CẤT CÁNH BIẾN MẤT)',
+              scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
             };
           }
 
@@ -1154,7 +1154,7 @@ export default function Scenario5ComparisonView({
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
-            scenarioLabel: '🛑 W7A MID (CHỜ TÀU 2 & 3 CẤT CÁNH 07R)',
+            scenarioLabel: 'W7A ➔ DỪNG CHỜ NHƯỜNG TÀU 2 & 3',
           };
         }
 
@@ -1165,7 +1165,7 @@ export default function Scenario5ComparisonView({
           speedKts: 20,
           speedLimitKts: 20,
           holdReason: undefined,
-          scenarioLabel: isRollout ? 'HẠ CÁNH XẢ ĐÀ 25R ➔ THOÁT W4' : 'RW 25R ➔ W4 ➔ CROSS 25L ➔ HS NS ➔ STAND 17',
+          scenarioLabel: isRollout ? 'HẠ CÁNH XẢ ĐÀ 25R ➔ THOÁT W4' : 'RW 25R ➔ W4 ➔ CROSS 25L ➔ W7A ➔ HS NS ➔ STAND 17',
         };
       }
 
@@ -1203,7 +1203,7 @@ export default function Scenario5ComparisonView({
             status: 'taxiing',
             speedKts: 20,
             speedLimitKts: 20,
-            scenarioLabel: '🔄 RUNWAY CHANGE 07R ➔ RA RW 07R',
+            scenarioLabel: 'E6 ➔ RW 25L ➔ NS2 ➔ HS NS ➔ W7B ➔ W11 ➔ RW 07R',
           };
         }
         if (currentSec < 0.8 && ac.routeEdgeIndex === 0) {
@@ -1212,7 +1212,7 @@ export default function Scenario5ComparisonView({
             status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: 'STAND 9 (CHỜ HUẤN LỆNH KSVKL)',
+            scenarioLabel: 'STAND 9 ➔ HS NS ➔ E6 ➔ RW 25L',
           };
         }
         return {
@@ -1220,7 +1220,7 @@ export default function Scenario5ComparisonView({
           status: 'taxiing',
           speedKts: 20,
           speedLimitKts: 20,
-          scenarioLabel: 'STAND 9 ➔ HS NS ➔ E6',
+          scenarioLabel: 'STAND 9 ➔ HS NS ➔ E6 ➔ RW 25L',
         };
       }
 
@@ -1232,7 +1232,7 @@ export default function Scenario5ComparisonView({
             status: 'holding',
             speedKts: 0,
             speedLimitKts: 0,
-            scenarioLabel: 'STAND 12 (CHỜ TÀU 2 LĂN TRƯỚC)',
+            scenarioLabel: 'STAND 12 ➔ HS NS ➔ E6 ➔ RW 25L',
           };
         }
         // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R (v3_line_16_p01) NẾU TÀU 2 (OUT01) CHƯA BIẾN MẤT HOÀN TOÀN
@@ -1251,7 +1251,7 @@ export default function Scenario5ComparisonView({
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
-            scenarioLabel: '🛑 W11/07R (CHỜ TÀU 2 CẤT CÁNH BIẾN MẤT)',
+            scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
           };
         }
 
@@ -1282,7 +1282,7 @@ export default function Scenario5ComparisonView({
             status: 'taxiing',
             speedKts: 20,
             speedLimitKts: 20,
-            scenarioLabel: '🔄 RUNWAY CHANGE 07R ➔ NỐI ĐUÔI TÀU 2 RA 07R',
+            scenarioLabel: 'E6 ➔ RW 25L ➔ NS2 ➔ HS NS ➔ W7B ➔ W11 ➔ RW 07R',
           };
         }
         return {
@@ -1290,7 +1290,7 @@ export default function Scenario5ComparisonView({
           status: 'taxiing',
           speedKts: 17.5,
           speedLimitKts: 17.5,
-          scenarioLabel: 'STAND 12 ➔ NỐI ĐUÔI TÀU 2 ➔ E6',
+          scenarioLabel: 'STAND 12 ➔ HS NS ➔ E6 ➔ RW 25L',
         };
       }
 
@@ -1300,7 +1300,7 @@ export default function Scenario5ComparisonView({
 
       // 4. OUT03: Stand 8 -> Pushback ra RW 07R (Bắt đầu Giai đoạn 3 sau khi Tàu 1, 2, 3 kết thúc)
       if (ac.callsign === 'OUT03') {
-        // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 3 (OUT02) CHƯA BIẾN MẤT HOÀN TOÀN
+        // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 3 (OUT02) CHƯA CẤT CÁNH
         const at07R_Hold = !out2Finished && (
           ac.currentNodeId === 'v3_line_16_p01' ||
           ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2
@@ -1316,7 +1316,7 @@ export default function Scenario5ComparisonView({
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
-            scenarioLabel: '🛑 W11/07R (CHỜ TÀU 3 CẤT CÁNH BIẾN MẤT)',
+            scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
           };
         }
 
@@ -1345,7 +1345,7 @@ export default function Scenario5ComparisonView({
             status: 'taxiing',
             speedKts: 20,
             speedLimitKts: 20,
-            scenarioLabel: 'STAND 8 ➔ PUSHBACK RA RW 07R',
+            scenarioLabel: 'STAND 8 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
           };
         }
         return {
@@ -1357,13 +1357,13 @@ export default function Scenario5ComparisonView({
           speedKts: 0,
           speedLimitKts: 0,
           holdReason: undefined,
-          scenarioLabel: 'STAND 8 (CHỜ TÀU 1, 2, 3 HOÀN TẤT)',
+          scenarioLabel: 'STAND 8 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
         };
       }
 
       // 5. OUT04: Stand 11 -> Pushback ra RW 07R (Cách Tàu 4 thêm một khoảng an toàn)
       if (ac.callsign === 'OUT04') {
-        // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 4 (OUT03) CHƯA BIẾN MẤT HOÀN TOÀN
+        // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 4 (OUT03) CHƯA CẤT CÁNH
         const at07R_Hold = !out3Finished && (
           ac.currentNodeId === 'v3_line_16_p01' ||
           ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2
@@ -1379,7 +1379,7 @@ export default function Scenario5ComparisonView({
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
-            scenarioLabel: '🛑 W11/07R (CHỜ TÀU 4 CẤT CÁNH BIẾN MẤT)',
+            scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
           };
         }
 
@@ -1408,7 +1408,7 @@ export default function Scenario5ComparisonView({
             status: 'taxiing',
             speedKts: 18,
             speedLimitKts: 18,
-            scenarioLabel: 'STAND 11 ➔ NỐI ĐUÔI TÀU 4 RA 07R',
+            scenarioLabel: 'STAND 11 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
           };
         }
         return {
@@ -1420,13 +1420,13 @@ export default function Scenario5ComparisonView({
           speedKts: 0,
           speedLimitKts: 0,
           holdReason: undefined,
-          scenarioLabel: 'STAND 11 (CHỜ TÀU 1, 2, 3 HOÀN TẤT)',
+          scenarioLabel: 'STAND 11 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
         };
       }
 
       // 6. OUT05: Stand 4 -> Pushback ra RW 07R (Cách Tàu 5 thêm 2 giây)
       if (ac.callsign === 'OUT05') {
-        // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 5 (OUT04) CHƯA BIẾN MẤT HOÀN TOÀN
+        // BẮT BUỘC DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 5 (OUT04) CHƯA CẤT CÁNH
         const at07R_Hold = !out4Finished && (
           ac.currentNodeId === 'v3_line_16_p01' ||
           ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2
@@ -1442,7 +1442,7 @@ export default function Scenario5ComparisonView({
             speedKts: 0,
             speedLimitKts: 0,
             holdReason: 'stop-bar',
-            scenarioLabel: '🛑 W11/07R (CHỜ TÀU 5 CẤT CÁNH BIẾN MẤT)',
+            scenarioLabel: 'W11 ➔ DỪNG CHỜ CẤT CÁNH RW 07R',
           };
         }
 
@@ -1471,7 +1471,7 @@ export default function Scenario5ComparisonView({
             status: 'taxiing',
             speedKts: 16.5,
             speedLimitKts: 16.5,
-            scenarioLabel: 'STAND 4 ➔ NỐI ĐUÔI TÀU 5 RA 07R',
+            scenarioLabel: 'STAND 4 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
           };
         }
         return {
@@ -1483,7 +1483,7 @@ export default function Scenario5ComparisonView({
           speedKts: 0,
           speedLimitKts: 0,
           holdReason: undefined,
-          scenarioLabel: 'STAND 4 (CHỜ TÀU 1, 2, 3 HOÀN TẤT)',
+          scenarioLabel: 'STAND 4 ➔ HS NS ➔ W7 ➔ W11 ➔ RW 07R',
         };
       }
 
