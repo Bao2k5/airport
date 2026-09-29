@@ -174,6 +174,13 @@ export default function App() {
     }, 4500);
   }, []);
 
+  // Khi kịch bản đang chạy, luôn giữ tab desktop ở "Kịch bản mẫu"
+  useEffect(() => {
+    if (simState.scenario) {
+      setDesktopTab('scenarios');
+    }
+  }, [simState.scenario]);
+
   const navigatePage = useCallback((view: '2d' | '3d') => {
     if (mapView === '3d' && view === '2d' && simState.scenario) {
       showTabWarning('Bạn phải thoát kịch bản đang chạy');
