@@ -36,7 +36,7 @@ export function createDefaultLayout(_graph?: AirportGraph): AirportLayout {
   return [
     { id: 'tower', name: 'Đài kiểm soát không lưu', kind: 'tower', position: [22.84, 0, 9.31], rotationY: 0.7853981633974483, scale: 1, color: '#9eaeb9' },
     { id: 'terminal_zone', name: 'Khu nhà ga & Ống lồng', kind: 'terminal', position: [32.06, 0, 28.74], rotationY: 3.1415926535897936, scale: 1.2, color: '#303c43' },
-    { id: 'vaa_banner_plaque', name: 'Biển hiệu mô hình VAA (SGN)', kind: 'sign', position: [0, 0.03, -42], rotationY: 0, scale: 1, color: '#0d1f36' },
+    { id: 'vaa_banner_plaque', name: 'Biển hiệu mô hình VAA (SGN)', kind: 'sign', position: [-0.1, 0.03, -39.95], rotationY: 0, scale: 2.3, color: '#0d1f36' },
     { id: 'apron_light_1', name: 'Đèn sân đỗ 1', kind: 'mast', position: [10.31, 0, 9.58], rotationY: 1.5707963267948963, scale: 1, color: '#fff0bf' },
     { id: 'apron_light_2', name: 'Đèn sân đỗ 2', kind: 'mast', position: [25.94, 0, 6.97], rotationY: 0.2617993877991494, scale: 1, color: '#fff0bf' },
     { id: 'apron_light_3', name: 'Đèn sân đỗ 3', kind: 'mast', position: [9.94, 0, 18.71], rotationY: 1.5707963267948963, scale: 1, color: '#fff0bf' },
