@@ -5,10 +5,10 @@ export const FLIGHT_ANIMATION = {
   approachSeconds: 28,
   flareSeconds: 6,
   rolloutSeconds: 14,
-  lineupSeconds: 2,
-  rollSeconds: 16,
-  rotateSeconds: 4,
-  climbSeconds: 16,
+  lineupSeconds: 1,
+  rollSeconds: 12,
+  rotateSeconds: 3,
+  climbSeconds: 12,
   approachDistanceSvg: 300,
   flareDistanceSvg: 45,
   cruiseHeightWorld: 12
@@ -21,10 +21,11 @@ export function createFlightMotion(aircraft: Aircraft, graph: AirportGraph, kind
   if (!node) return;
   const segments = graph.edges.filter(e => e.type === 'runway').flatMap(edge => {
     const a = graph.nodes.find(n => n.id === edge.fromNodeId), b = graph.nodes.find(n => n.id === edge.toNodeId);
-    if (!a || !b || Math.hypot(b.x - a.x, b.y - a.y) < 0.01) return [];
+    if (!a || !b) return [];
     return [{ edge, a, b }];
   });
-  const closest = segments.sort((u, v) => Math.min(Math.hypot(u.a.x - node.x, u.a.y - node.y), Math.hypot(u.b.x - node.x, u.b.y - node.y)) - Math.min(Math.hypot(v.a.x - node.x, v.a.y - node.y), Math.hypot(v.b.x - node.x, v.b.y - node.y)))[0];
+  const nonZeroSegments = segments.filter(s => Math.hypot(s.b.x - s.a.x, s.b.y - s.a.y) >= 0.01);
+  const closest = (nonZeroSegments.length > 0 ? nonZeroSegments : segments).sort((u, v) => Math.min(Math.hypot(u.a.x - node.x, u.a.y - node.y), Math.hypot(u.b.x - node.x, u.b.y - node.y)) - Math.min(Math.hypot(v.a.x - node.x, v.a.y - node.y), Math.hypot(v.b.x - node.x, v.b.y - node.y)))[0];
   if (!closest) return;
   const connected = new Set([closest.a.id, closest.b.id]);
   let changed = true;
@@ -101,8 +102,8 @@ export function advanceFlight(aircraft: Aircraft, dt: number): Aircraft {
     if (t < c.rollSeconds) {
       const p = t / c.rollSeconds;
       f.phase = 'takeoff-roll';
-      along = length * 0.55 * p * p;
-      speed = lerp(15, 140, p);
+      along = length * 0.55 * (0.25 * p + 0.75 * p * p);
+      speed = lerp(35, 145, p);
     } else if ((t -= c.rollSeconds) < c.rotateSeconds) {
       const p = t / c.rotateSeconds;
       f.phase = 'rotate';

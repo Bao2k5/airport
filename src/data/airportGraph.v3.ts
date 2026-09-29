@@ -1026,7 +1026,7 @@ export const airportGraphV3: AirportGraph = {
         "toNodeId": "v3_line_04_p04",
         "lengthMeters": 9.5,
         "maxSpeedKts": 15,
-        "type": "taxiway",
+        "type": "runway",
         "bidirectional": true,
         "status": "open",
         "trafficLevel": "low"
@@ -1037,7 +1037,7 @@ export const airportGraphV3: AirportGraph = {
         "toNodeId": "v3_line_04_p05",
         "lengthMeters": 1,
         "maxSpeedKts": 15,
-        "type": "taxiway",
+        "type": "runway",
         "bidirectional": true,
         "status": "open",
         "trafficLevel": "low"

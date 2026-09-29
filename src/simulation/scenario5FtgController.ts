@@ -100,6 +100,15 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
     return false;
   };
 
+  const isPlaneAirborneOrGone = (callsign: string) => {
+    const target = stateToTick.scenarioAircraft?.find(a => a.callsign === callsign);
+    if (!target) return true;
+    if (target.hidden || target.status === 'departed') return true;
+    if (progress.departures[callsign] !== undefined && !target.flight) return true;
+    if (target.flight && (target.flight.phase === 'rotate' || target.flight.phase === 'climb')) return true;
+    return false;
+  };
+
   const isPlaneAtRunway07R = (callsign: string): boolean => {
     const target = stateToTick.scenarioAircraft?.find(a => a.callsign === callsign);
     if (!target) return false;
@@ -114,8 +123,6 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
 
   const out1Finished = isPlaneGone('OUT01');
   const out2Finished = isPlaneGone('OUT02');
-  const out3Finished = isPlaneGone('OUT03');
-  const out4Finished = isPlaneGone('OUT04');
 
   // Giai đoạn 3 chỉ bắt đầu KHI CẢ 3 TÀU BAY 1, 2, 3 ĐÃ KẾT THÚC GIAI ĐOẠN 1 & 2
   const stage1And2AllFinished = inb1Finished && out1Finished && out2Finished;
@@ -289,7 +296,7 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
       }
 
       // DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 2 (OUT01) CHƯA CẤT CÁNH
-      const at07R_Hold = !out1Finished && (
+      const at07R_Hold = !isPlaneAirborneOrGone('OUT01') && (
         ac.currentNodeId === 'v3_line_16_p01' ||
         ac.currentNodeId === 'v3_line_16_p00' ||
         ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2 ||
@@ -346,7 +353,7 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
     // 4. OUT03: Stand 8 -> Pushback ra RW 07R (Bắt đầu Giai đoạn 3 sau khi Tàu 1, 2, 3 kết thúc)
     if (ac.callsign === 'OUT03') {
       // DỪNG CHỜ TẠI VẠCH W11/07R NẾU TÀU 3 (OUT02) CHƯA CẤT CÁNH
-      const at07R_Hold = !out2Finished && (
+      const at07R_Hold = !isPlaneAirborneOrGone('OUT02') && (
         ac.currentNodeId === 'v3_line_16_p01' ||
         ac.currentNodeId === 'v3_line_16_p00' ||
         ac.routeEdgeIndex >= (ac.assignedRoute?.length ?? 1) - 2 ||
@@ -401,7 +408,7 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
 
     // 5. OUT04: Stand 11 -> Pushback ra RW 07R (Xếp hàng sau Tàu 4 với khoảng cách an toàn)
     if (ac.callsign === 'OUT04') {
-      if (!out3Finished) {
+      if (!isPlaneAirborneOrGone('OUT03')) {
         const out3OnRunway = isPlaneAtRunway07R('OUT03');
         const reachedQueue = ac.currentNodeId === 'v3_line_16_p01' ||
           ac.currentNodeId === 'v3_line_16_p00' ||
@@ -482,9 +489,9 @@ export function prepareScenario5FtgTick(prev: SimulationState, graph: AirportGra
 
     // 6. OUT05: Stand 4 -> Pushback ra RW 07R (Xếp hàng sau Tàu 5 với khoảng cách an toàn)
     if (ac.callsign === 'OUT05') {
-      if (!out4Finished) {
+      if (!isPlaneAirborneOrGone('OUT04')) {
         const out4OnRunway = isPlaneAtRunway07R('OUT04');
-        const out3Gone = out3Finished;
+        const out3Gone = isPlaneAirborneOrGone('OUT03');
         const out4AtPos1 = out3Gone && !out4OnRunway; // Tàu 4 đang ở Vị trí 1 sát vạch W11/07R
         const out4AtPos2 = !out3Gone && !out4OnRunway; // Tàu 4 đang ở Vị trí 2 (vì Tàu 3 đang ở Vị trí 1 hoặc trên đường băng)
 
