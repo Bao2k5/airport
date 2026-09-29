@@ -298,6 +298,9 @@ export default function Airport3DView(props: Props) {
       <AirportToolbar sceneMode={sceneMode} preset={preset} presets={PRESETS} editing={editing}
         onScene={chooseSceneMode} onPreset={setPreset} onWorkstation={() => setWorkstation('gnd')}
         onEditor={() => editing ? setEditing(false) : setUnlockOpen(true)}
+        aircraftList={visibleFlights.map(ac => ({ id: ac.id, callsign: (ac as any).callsign ?? ac.id }))}
+        selectedAircraftId={props.state.selectedAircraftId ?? visibleFlights[0]?.id}
+        onSelectAircraft={props.onSelectAircraft}
         onTerminal={() => {
           const terminalObj = layout.find(item => item.kind === 'terminal');
           const target: [number, number, number] = terminalObj ? terminalObj.position : getAssetZone(props.graph);
