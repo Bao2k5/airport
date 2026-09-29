@@ -1,7 +1,7 @@
 import { getAssetZone } from './assets/assetPlacement';
 import { Suspense, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import { Canvas, useThree } from '@react-three/fiber';
-import { ACESFilmicToneMapping, PerspectiveCamera } from 'three';
+import { ACESFilmicToneMapping, PCFShadowMap, PerspectiveCamera } from 'three';
 import { createDefaultLayout, LAYOUT_STORAGE_KEY, LAYOUT_VERSION, validateCameraPose, validateLayoutImport, type AirportLayout, type CameraPose, type LayoutObject } from './layout';
 import type { Aircraft } from '../../types';
 import { getCurrentWorldPosition } from './sceneCoordinates';
@@ -309,7 +309,7 @@ export default function Airport3DView(props: Props) {
       </AirportToolbar>
       {unlockOpen && <LayoutUnlockDialog onClose={() => setUnlockOpen(false)} onUnlock={() => { setEditing(true); setUnlockOpen(false); }} />}
       <div className="relative min-h-0 flex-1">
-      <Canvas key={sceneMode} shadows={scenePreferences.shadows} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: inAirport ? 0.5 : 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
+      <Canvas key={sceneMode} shadows={scenePreferences.shadows ? { type: PCFShadowMap } : false} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: inAirport ? 0.5 : 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
         <ResponsiveCameraAdjuster baseFov={inAirport ? 43 : sceneMode === 'room' ? 52 : 47} />
         <WebGLContextWatcher />
         <Suspense fallback={null}>
