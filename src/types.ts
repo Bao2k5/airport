@@ -124,6 +124,14 @@ export interface FlightMotion {
   entry: [number, number];
   resumeIndex: number;
   corridor: 'NORTH' | 'SOUTH';
+  /** Tim đường băng thật (near -> far), dùng cho các pha bay trên không
+   * (approach/flare) để hướng bay không lệch khỏi đường băng khi điểm
+   * touchdown (start) không trùng ngưỡng đường băng. */
+  runwayAxis?: [number, number];
+  /** Đoạn route (from -> to) chứa điểm chạm bánh; rollout nằm trên đoạn này để
+   * chuyển sang lăn liền mạch, không giật lùi. */
+  resumeSegment?: [[number, number], [number, number]];
+  resumeEdgeId?: string | null;
 }
 
 export interface SimulationConfig {

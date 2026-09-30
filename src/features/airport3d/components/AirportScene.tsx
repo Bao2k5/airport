@@ -177,7 +177,8 @@ export default function AirportScene({ graph, state, onSelectAircraft, layout, e
       <AirportPavement graph={graph} />
       <AirportLights graph={graph} state={state} lightScale={lightScale} />
       <AirportRestrictions graph={graph} state={state} />
-      {(state.scenario?.id === 'lvc_w7a_sudden_closure' || state.blockedEdgeIds?.has('E_v3_line_18_p01_v3_line_18_p02')) && (
+      {/* FOD chỉ hiện khi mô phỏng đã phát hiện và đóng W7A (không hiện ngay từ đầu kịch bản 4) */}
+      {state.blockedEdgeIds?.has('E_v3_line_18_p01_v3_line_18_p02') && (
         <Suspense fallback={null}>
           <FodObstacle3D position={[-26.4, 0.04, 17.4]} rotationY={0.4} scale={0.22} />
         </Suspense>

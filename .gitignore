@@ -40,6 +40,7 @@ artifacts/
 test_screenshots/
 *.backup*
 *.tmp
+tmp_*
 .eslintcache
 
 # Test files & test scripts

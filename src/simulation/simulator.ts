@@ -19,19 +19,19 @@ import { isStandNode, isTakeoffRunwayNode, isLanding25RNode } from '../data/v3Op
 /** Apply weather speed penalty (fraction of max speed to use) */
 export function weatherSpeedFactor(config: SimulationConfig): number {
   switch (config.weather) {
-    case 'fog':          return 0.45;
+    case 'fog': return 0.45;
     case 'thunderstorm': return 0.35;
-    case 'rain':         return 0.70;
-    default:             return 1.00;
+    case 'rain': return 0.70;
+    default: return 1.00;
   }
 }
 
 /** Apply traffic speed penalty */
 export function trafficSpeedFactor(config: SimulationConfig): number {
   switch (config.trafficLevel) {
-    case 'high':   return 0.55;
+    case 'high': return 0.55;
     case 'medium': return 0.75;
-    default:       return 1.00;
+    default: return 1.00;
   }
 }
 
@@ -59,9 +59,9 @@ function bgAvoid(graph: AirportGraph, ...extra: Set<string>[]): Set<string> {
 
 function backgroundTrafficCount(level: TrafficLevel): number {
   switch (level) {
-    case 'high':   return 2;
+    case 'high': return 2;
     case 'medium': return 1;
-    default:       return 0;
+    default: return 0;
   }
 }
 
@@ -201,7 +201,9 @@ export function computeLightStates(
 ): Record<string, 'green' | 'red' | 'off'> {
   const lights: Record<string, 'green' | 'red' | 'off'> = {};
 
-  if (!aircraft || aircraft.flight || !aircraft.assignedRoute || !aircraft.assignedRoute.length) return lights;
+  // Đang bay (approach/flare/cất cánh) thì tắt đèn; khi đã chạm bánh (rollout)
+  // máy bay đã gắn vào route nên bật FTG ngay.
+  if (!aircraft || (aircraft.flight && aircraft.flight.phase !== 'rollout') || !aircraft.assignedRoute || !aircraft.assignedRoute.length) return lights;
 
   const allEdges = graph.edges;
   const routeEdgeIds = routeToEdges(aircraft.assignedRoute, allEdges) ?? [];
@@ -239,13 +241,13 @@ export const CANONICAL_FLEET_SPECS: {
   startId: string;
   destId: string;
 }[] = [
-  { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'v3_line_37_p00', destId: 'v3_line_05_p07' }, // STAND_1 -> STOP BAR 25L (via E6)
-  { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'v3_line_31_p00', destId: 'v3_line_05_p07' }, // STAND_12 -> STOP BAR 25L (via E6)
-  { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'v3_line_32_p00', destId: 'v3_line_05_p07' }, // STAND_11 -> STOP BAR 25L (via E6)
-  { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'v3_line_28_p01', destId: 'v3_line_05_p07' }, // STAND_8 -> STOP BAR 25L (via E6)
-  { id: 'VN005', callsign: 'VN005', airlineCode: 'SQ', type: 'A350', startId: 'v3_line_22_p01', destId: 'v3_line_05_p07' }, // STAND_17 -> STOP BAR 25L (via E6)
-  { id: 'VN006', callsign: 'VN006', airlineCode: 'TG', type: 'A350', startId: 'v3_line_26_p04', destId: 'v3_line_05_p07' }, // STAND_22 -> STOP BAR 25L (via E6)
-];
+    { id: 'VN001', callsign: 'VN001', airlineCode: 'VJ', type: 'A321', startId: 'v3_line_37_p00', destId: 'v3_line_05_p07' }, // STAND_1 -> STOP BAR 25L (via E6)
+    { id: 'VN002', callsign: 'VN002', airlineCode: 'VN', type: 'A321', startId: 'v3_line_31_p00', destId: 'v3_line_05_p07' }, // STAND_12 -> STOP BAR 25L (via E6)
+    { id: 'VN003', callsign: 'VN003', airlineCode: 'QH', type: 'B737', startId: 'v3_line_32_p00', destId: 'v3_line_05_p07' }, // STAND_11 -> STOP BAR 25L (via E6)
+    { id: 'VN004', callsign: 'VN004', airlineCode: 'VU', type: 'A321', startId: 'v3_line_28_p01', destId: 'v3_line_05_p07' }, // STAND_8 -> STOP BAR 25L (via E6)
+    { id: 'VN005', callsign: 'VN005', airlineCode: 'SQ', type: 'A350', startId: 'v3_line_22_p01', destId: 'v3_line_05_p07' }, // STAND_17 -> STOP BAR 25L (via E6)
+    { id: 'VN006', callsign: 'VN006', airlineCode: 'TG', type: 'A350', startId: 'v3_line_26_p04', destId: 'v3_line_05_p07' }, // STAND_22 -> STOP BAR 25L (via E6)
+  ];
 
 export function createDefaultManualFleet(
   graph: AirportGraph = airportGraph,
@@ -372,8 +374,8 @@ export function sanitizeManualFleet(
       // Chỉ clamp về STOP BAR 25L khi máy bay ở Stand (cất cánh)
       // KHÔNG clamp nếu đang ở STOP BAR 25R (hạ cánh → phải về Stand)
       if (isStandNode(safeCurrentNode, graph.nodes)
-          && !isLanding25RNode(safeCurrentNode, graph.nodes)
-          && !isTakeoffRunwayNode(safeTargetNode, graph.nodes)) {
+        && !isLanding25RNode(safeCurrentNode, graph.nodes)
+        && !isTakeoffRunwayNode(safeTargetNode, graph.nodes)) {
         safeTargetNode = spec.destId;
       }
 

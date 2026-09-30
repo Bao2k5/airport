@@ -1,10 +1,12 @@
 import { useMemo } from 'react';
-import { Html, useGLTF } from '@react-three/drei';
+import { useGLTF } from '@react-three/drei';
 import { Mesh, MeshStandardMaterial } from 'three';
 import { getAirlineDef } from '../../../data/airlineTypes';
 import { useSafeDispose } from '../hooks/useSafeDispose';
 import type { Aircraft, AirportGraph } from '../../../types';
 import { getAircraftWorldPose } from '../sceneCoordinates';
+import FireEffect from './FireEffect';
+import AircraftTag from './AircraftTag';
 function AircraftAsset({ color }: { color: string }) {
   const { scene } = useGLTF('/models/Aircraft_A321_Illustrative.glb');
   const livery = useMemo(() => new MeshStandardMaterial({ color, metalness: 0.22, roughness: 0.38 }), [color]);
@@ -37,15 +39,32 @@ export default function AircraftModel({ aircraft, graph, selected, onSelect, sho
   if (!pose || aircraft.hidden || aircraft.status === 'departed') return null;
   const { position, yaw, pitch } = pose;
 
+  // Kiểm tra xem có phải BAV315 trong kịch bản cháy động cơ không
+  const isEmergencyFire = aircraft.callsign === 'BAV315' && ('role' in aircraft && aircraft.role === 'emergency');
+
   return (
     <group position={[position[0], position[1] + 0.045, position[2]]} rotation={[0, yaw, 0]} onClick={onSelect ? (event) => { event.stopPropagation(); onSelect(aircraft.id); } : undefined}>
       <group rotation={[pitch, 0, 0]}><AircraftAsset color={color} /></group>
+
+      {/* Hiệu ứng lửa cho BAV315 cháy động cơ — gắn ở đuôi máy bay */}
+      {isEmergencyFire && (
+        <FireEffect
+          position={[0, 2, 1.5]}
+          scale={0.9}
+        />
+      )}
+
       {selected && <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
-      <ringGeometry args={[1.7, 1.82, 48]} /><meshBasicMaterial color="#ffd166" transparent opacity={0.82} />
+        <ringGeometry args={[1.7, 1.82, 48]} /><meshBasicMaterial color="#ffd166" transparent opacity={0.82} />
       </mesh>}
-      {showLabel && <Html position={[0, 1.6, 0]} center distanceFactor={18} style={{ pointerEvents: onSelect ? 'auto' : 'none' }}>
-        <div style={{ borderLeft: `3.5px solid ${color}` }} className={`whitespace-nowrap rounded px-2 py-0.5 font-mono text-[11px] sm:text-[12px] font-bold shadow-md select-none tracking-wide ${selected ? 'bg-amber-300 text-slate-950 ring-2 ring-amber-400' : 'bg-[#07111af2] text-white border border-slate-700/60'}`}>{aircraft.callsign}</div>
-      </Html>}
+      {showLabel && <AircraftTag
+        aircraft={aircraft}
+        worldPosition={position}
+        accentColor={color}
+        selected={selected}
+        emergency={isEmergencyFire}
+        onSelect={onSelect}
+      />}
     </group>
   );
 }

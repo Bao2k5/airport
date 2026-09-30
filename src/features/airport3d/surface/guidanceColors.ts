@@ -14,7 +14,9 @@ export function guidanceColors(fixtures: Fixture[], graph: AirportGraph, state: 
   const fleet: Aircraft[] = state.scenarioAircraft?.length ? state.scenarioAircraft : state.manualFleet?.length ? state.manualFleet : state.aircraft ? [state.aircraft] : [];
   const scenario = !!state.scenario;
   for (const aircraft of fleet) {
-    if (aircraft.flight || aircraft.hidden || ['arrived', 'departed', 'waiting'].includes(aircraft.status) || aircraft.guidanceVisible === false || (aircraft.status === 'parked' && !aircraft.routeVisible)) continue;
+    // Đã chạm bánh (rollout) thì máy bay đã gắn vào route, bật FTG ngay; còn
+    // đang bay (approach/flare/cất cánh) thì chưa.
+    if ((aircraft.flight && aircraft.flight.phase !== 'rollout') || aircraft.hidden || ['arrived', 'departed', 'waiting'].includes(aircraft.status) || aircraft.guidanceVisible === false || (aircraft.status === 'parked' && !aircraft.routeVisible)) continue;
     if (aircraft.releaseAtSeconds !== undefined && aircraft.releaseAtSeconds > state.elapsedSeconds) continue;
     const initial = !aircraft.routeEdgeIndex && (['pushback', 'departing'].includes(aircraft.role ?? '') || aircraft.status === 'queued' || aircraft.scenarioLabel?.toUpperCase().includes('STAND'));
     if (initial && aircraft.status === 'holding') continue;

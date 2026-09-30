@@ -508,11 +508,21 @@ export function computeScenarioLightStates(
   for (const ac of scenarioAircraft) {
     if (ac.status === 'arrived' || ac.status === 'departed') continue;
     if (ac.status !== 'taxiing' && ac.status !== 'holding') continue;
-    if (ac.flight && ac.flight.phase === 'approach') continue;
+    // Chưa chạm bánh (approach/flare) thì chưa bật đèn; từ lúc rollout máy bay
+    // đã được gắn vào đoạn route phía trước điểm chạm bánh.
+    if (ac.flight && ac.flight.phase !== 'rollout') continue;
 
     const routeEdges = routeToEdges(ac.assignedRoute, graph.edges) ?? [];
     // Only illuminate current edge and 1 segment ahead (lookahead = 1), past edges are off
-    const lookaheadLimit = Math.min(routeEdges.length, ac.routeEdgeIndex + 2);
+    let lookaheadLimit = Math.min(routeEdges.length, ac.routeEdgeIndex + 2);
+    if (ac.flight?.phase === 'rollout') {
+      // Đang xả đà trên đường băng: bật tiếp tới hết đoạn taxiway thoát đầu tiên
+      // để đèn FTG nối từ vị trí máy bay vào đường lăn.
+      const edgeType = new Map(graph.edges.map(e => [e.id, e.type]));
+      let exit = ac.routeEdgeIndex;
+      while (exit < routeEdges.length && edgeType.get(routeEdges[exit]) === 'runway') exit++;
+      lookaheadLimit = Math.min(routeEdges.length, Math.max(lookaheadLimit, exit + 1));
+    }
     for (let i = ac.routeEdgeIndex; i < lookaheadLimit; i++) {
       const edgeId = routeEdges[i];
       if (lights[edgeId] !== 'red') {
@@ -752,8 +762,8 @@ export function scenarioTick(
             scenarioLabel: ac.callsign === 'VN301'
               ? '25R ➔ W4 ➔ W7A ➔ W7B ➔ HS NS ➔ STAND 17'
               : ac.callsign === 'HVN123'
-              ? '25R ➔ W6 ➔ CROSS 25L ➔ W11 ➔ W9B ➔ STAND 17'
-              : (ac.scenarioLabel || 'LĂN VÀO BẾN ĐỖ'),
+                ? '25R ➔ W6 ➔ CROSS 25L ➔ W11 ➔ W9B ➔ STAND 17'
+                : (ac.scenarioLabel || 'LĂN VÀO BẾN ĐỖ'),
           };
         } else {
           updatedFleet[idx] = {
@@ -772,16 +782,16 @@ export function scenarioTick(
           const label = phase === 'approach'
             ? `🛬 TIẾP CẬN ĐƯỜNG BĂNG ${rwName} (${Math.round((advanced.flight.altitudeWorld ?? 0) * 25)}m)`
             : phase === 'flare'
-            ? `🛬 TIẾP ĐẤT RW ${rwName}`
-            : ac.callsign === 'HVN401'
-            ? `25R ➔W4 ➔W7A➔W7B➔ W3 ➔ HS_W7 ➔ STAND 16`
-            : ac.callsign === 'BAV315'
-            ? `25R ➔ W4`
-            : `🛬 XẢ ĐÀ RW ${rwName} (${Math.round(advanced.speedKts)} kts)`;
+              ? `🛬 TIẾP ĐẤT RW ${rwName}`
+              : ac.callsign === 'HVN401'
+                ? `25R ➔W4 ➔W7A➔W7B➔ W3 ➔ HS_W7 ➔ STAND 16`
+                : ac.callsign === 'BAV315'
+                  ? `25R ➔ W4`
+                  : `🛬 XẢ ĐÀ RW ${rwName} (${Math.round(advanced.speedKts)} kts)`;
           updatedFleet[idx] = {
             ...advanced,
             status: 'taxiing',
-            guidanceVisible: false,
+            guidanceVisible: phase === 'rollout',
             scenarioLabel: label,
           };
         } else {
@@ -790,8 +800,8 @@ export function scenarioTick(
           const label = phase === 'lineup'
             ? `🛫 VÀO ĐƯỜNG BĂNG ${rwName} (LINE UP)`
             : phase === 'takeoff-roll'
-            ? `🛫 ĐANG CHẠY ĐÀ RW ${rwName} (${Math.round(advanced.speedKts)} kts)`
-            : `🛫 CẤT CÁNH BAY LÊN (${Math.round((advanced.flight.altitudeWorld ?? 0) * 25)}m)`;
+              ? `🛫 ĐANG CHẠY ĐÀ RW ${rwName} (${Math.round(advanced.speedKts)} kts)`
+              : `🛫 CẤT CÁNH BAY LÊN (${Math.round((advanced.flight.altitudeWorld ?? 0) * 25)}m)`;
           updatedFleet[idx] = {
             ...advanced,
             status: 'taxiing',
@@ -1171,10 +1181,28 @@ export function scenarioTick(
 
     // Kịch bản 4: Phát hiện FOD tại W7A khi HVN401 vừa lăn vào W4 -> Dừng trước 25L, đàm thoại đổi đường, chuyển hướng qua W3 và HS_W7
     if (state.scenario?.id === 'lvc_w7a_sudden_closure' && ac.callsign === 'HVN401') {
-      const isAtW4 = ac.currentNodeId.includes('04_p') || ac.currentNodeId === 'v3_line_05_p01' || ac.routeEdgeIndex >= 4;
+      // FOD chỉ xuất hiện sau khi HVN401 đã hạ cánh xong, nhận huấn lệnh 1 và
+      // lăn được một đoạn trên W4 theo tuyến ban đầu (qua khỏi W4/25R, edge
+      // 04_p01 -> 04_p02 được 40%). Trước đó tàu lăn bình thường theo FTG.
+      const FOD_TRIGGER_EDGE = 5; // v3_line_04_p01 (W4/25R) -> v3_line_04_p02
+      const isAtW4 = !ac.flight && ac.status === 'taxiing' && (
+        ac.routeEdgeIndex > FOD_TRIGGER_EDGE ||
+        (ac.routeEdgeIndex === FOD_TRIGGER_EDGE && ac.progressOnEdge >= 0.4)
+      );
+      const fodAlreadyActive = state.blockedEdgeIds.has('E_v3_line_18_p01_v3_line_18_p02');
       const isAlreadyRerouted = Boolean((ac as any).isRerouted) || ac.assignedRoute?.includes('v3_line_05_p02') || ac.assignedRoute?.includes('v3_line_19_p00') || ac.assignedRoute?.includes('v3_line_17_p01');
 
-      if (isAtW4 && !isAlreadyRerouted) {
+      if ((isAtW4 || fodAlreadyActive) && !isAlreadyRerouted) {
+        if (!fodAlreadyActive && state.scenario) {
+          state.scenario.events = [
+            ...state.scenario.events,
+            {
+              atSeconds: state.elapsedSeconds,
+              message: '⚠️ [A-SMGCS] Phát hiện FOD tại W7A MID — đóng W7A, thu hồi đèn FTG trên W7A.',
+              severity: 'critical',
+            },
+          ];
+        }
         // 1. Khóa và đóng đường lăn W7A (FOD xuất hiện tại W7A MID)
         blockedEdgeIds.add('E_v3_line_18_p01_v3_line_18_p02');
         blockedEdgeIds.add('E_v3_line_18_p00_v3_line_18_p01');
