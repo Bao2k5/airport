@@ -2,6 +2,7 @@
 
 import { useEffect, type ReactNode } from 'react';
 import VaaLogo from './VaaLogo';
+import { BRANDING } from '../config/branding';
 
 interface Props {
   onClose: () => void;
@@ -34,7 +35,7 @@ export default function HuongDanModal({ onClose }: Props) {
             <div>
               <h2 className="text-base sm:text-lg font-bold">Hướng dẫn sử dụng hệ thống</h2>
               <p className="text-xs text-[#CBD5E1] mt-0.5">
-                Học viện Hàng không Việt Nam — Mô phỏng di chuyển mặt đất (Follow-the-Green)
+                {BRANDING.guideSubtitle}
               </p>
             </div>
           </div>

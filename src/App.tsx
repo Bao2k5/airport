@@ -8,6 +8,7 @@ import HuongDanModal from './components/HuongDanModal';
 import PathInspectorModal from './components/PathInspectorModal';
 import VaaLogo from './components/VaaLogo';
 import ErrorBoundary from './components/ErrorBoundary';
+import { BRANDING } from './config/branding';
 import {
   initSimulation,
   simulationTick,
@@ -49,18 +50,18 @@ import { isStandNode, isTakeoffRunwayNode, isLanding25RNode } from './data/v3Ope
 const Airport3DView = lazy(() => import('./features/airport3d/Airport3DView'));
 
 const DEFAULT_CONFIG: SimulationConfig = {
-  startNodeId:       'v3_line_37_p00', // STAND_1
+  startNodeId: 'v3_line_37_p00', // STAND_1
   destinationNodeId: 'v3_line_05_p07', // STOP BAR 25L (via E6)
-  callsign:          'VN001',
-  airlineCode:       'VJ',
-  aircraftType:      'A321',
-  weather:           'clear',
-  timeOfDay:         'morning',
-  trafficLevel:      'low',
-  taxiSpeedKts:      15,
-  incident:          'none',
-  incidentEdgeId:    null,
-  autoReroute:       true,
+  callsign: 'VN001',
+  airlineCode: 'VJ',
+  aircraftType: 'A321',
+  weather: 'clear',
+  timeOfDay: 'morning',
+  trafficLevel: 'low',
+  taxiSpeedKts: 15,
+  incident: 'none',
+  incidentEdgeId: null,
+  autoReroute: true,
 };
 
 function appendPracticeEvent(state: SimulationState, message: string, callsign?: string): SimulationState {
@@ -135,7 +136,7 @@ export default function App() {
     }
     return base;
   });
-  
+
   // Unified responsive tabs: 'control' | 'status' | 'scenarios'
   const [activeTab, setActiveTab] = useState<'control' | 'status' | 'scenarios'>('control');
   const desktopTab = activeTab === 'scenarios' ? 'scenarios' : 'control';
@@ -320,8 +321,8 @@ export default function App() {
         let safeDest = selectedAc.targetNodeId;
         // Chỉ clamp về 25L khi tàu bay ở Stand (cất cánh), KHÔNG clamp khi đang ở STOP BAR 25R (hạ cánh)
         if (isStandNode(selectedAc.currentNodeId, currentGraph.nodes)
-            && !isLanding25RNode(selectedAc.currentNodeId, currentGraph.nodes)
-            && !isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
+          && !isLanding25RNode(selectedAc.currentNodeId, currentGraph.nodes)
+          && !isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
           const stopBar25L = currentGraph.nodes.find(n => n.label === 'STOP BAR 25L' || n.id === 'v3_line_17_p16' || n.id === 'v3_line_05_p07');
           safeDest = stopBar25L ? stopBar25L.id : 'v3_line_05_p07';
         }
@@ -351,8 +352,8 @@ export default function App() {
           let safeDest = ac.targetNodeId;
           // Chỉ clamp về 25L khi tàu bay ở Stand (cất cánh), KHÔNG clamp khi đang ở STOP BAR 25R (hạ cánh)
           if (isStandNode(ac.currentNodeId, currentGraph.nodes)
-              && !isLanding25RNode(ac.currentNodeId, currentGraph.nodes)
-              && !isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
+            && !isLanding25RNode(ac.currentNodeId, currentGraph.nodes)
+            && !isTakeoffRunwayNode(safeDest, currentGraph.nodes)) {
             const stopBar25L = currentGraph.nodes.find(n => n.label === 'STOP BAR 25L' || n.id === 'v3_line_17_p16' || n.id === 'v3_line_05_p07');
             safeDest = stopBar25L ? stopBar25L.id : 'v3_line_05_p07';
           }
@@ -414,8 +415,8 @@ export default function App() {
             // Nếu tàu bay ở Stand (cất cánh): mặc định chỉ đi 25L qua E6 (hoặc 07R khi có sự cố đổi chiều)
             // KHÔNG áp dụng nếu điểm xuất phát là STOP BAR 25R (máy bay đang hạ cánh → phải về Stand)
             if (isStandNode(newStart, currentGraph.nodes)
-                && !isLanding25RNode(newStart, currentGraph.nodes)
-                && !isTakeoffRunwayNode(newDest, currentGraph.nodes)) {
+              && !isLanding25RNode(newStart, currentGraph.nodes)
+              && !isTakeoffRunwayNode(newDest, currentGraph.nodes)) {
               const stopBar25L = currentGraph.nodes.find(n => n.label === 'STOP BAR 25L' || n.id === 'v3_line_17_p16' || n.id === 'v3_line_05_p07');
               newDest = stopBar25L ? stopBar25L.id : 'v3_line_05_p07';
               next.destinationNodeId = newDest;
@@ -816,7 +817,7 @@ export default function App() {
 
         {/* ── 1. Cảnh báo giáo dục VAA ── */}
         <header className="bg-[#08182E] border-b border-[#0C2444] text-[#93C5FD] text-center py-1 px-3 text-[11px] sm:text-xs font-semibold tracking-wide flex-shrink-0 flex items-center justify-center">
-          <span>HỌC VIỆN HÀNG KHÔNG VIỆT NAM — MÔ PHỎNG GIÁO DỤC (KHÔNG DÙNG TRONG HOẠT ĐỘNG THỰC TẾ)</span>
+          <span>{BRANDING.appWarningHeader}</span>
         </header>
 
         {/* ── Watchdog Recovery Bar (Khi loop bị nghẽn) ── */}
@@ -887,7 +888,7 @@ export default function App() {
                 </span>
               </div>
               <span className="text-[10px] text-[#CBD5E1] truncate hidden sm:block font-medium">
-                Học viện Hàng không Việt Nam · Hệ thống huấn luyện A-SMGCS & Follow-the-Green
+                {BRANDING.appSubtitle}
               </span>
             </div>
           </div>
@@ -927,9 +928,8 @@ export default function App() {
               <button
                 data-testid="toggle-overlay-v3"
                 onClick={() => setShowGraphV3Overlay(v => !v)}
-                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
-                  showGraphV3Overlay ? 'bg-[#0C2444] text-white shadow-xs border border-[#38BDF8]' : 'text-[#94A3B8] hover:text-white'
-                }`}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${showGraphV3Overlay ? 'bg-[#0C2444] text-white shadow-xs border border-[#38BDF8]' : 'text-[#94A3B8] hover:text-white'
+                  }`}
                 title="Bật/tắt lớp overlay Graph V3 (Nét đứt xanh dương sáng) để đối chiếu"
               >
                 Overlay V3
@@ -937,9 +937,8 @@ export default function App() {
               <button
                 data-testid="toggle-grid"
                 onClick={() => setShowGrid(v => !v)}
-                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
-                  showGrid ? 'bg-[#0C2444] text-white shadow-xs border border-[#3B82F6]/50' : 'text-[#94A3B8] hover:text-white'
-                }`}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${showGrid ? 'bg-[#0C2444] text-white shadow-xs border border-[#3B82F6]/50' : 'text-[#94A3B8] hover:text-white'
+                  }`}
                 title="Bật/tắt lưới tọa độ"
               >
                 Grid
@@ -947,9 +946,8 @@ export default function App() {
               <button
                 data-testid="toggle-paths"
                 onClick={() => setShowPaths(v => !v)}
-                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${
-                  showPaths ? 'bg-[#0C2444] text-white shadow-xs border border-[#F59E0B]/50' : 'text-[#94A3B8] hover:text-white'
-                }`}
+                className={`text-[11px] font-bold px-2 py-0.5 rounded transition cursor-pointer ${showPaths ? 'bg-[#0C2444] text-white shadow-xs border border-[#F59E0B]/50' : 'text-[#94A3B8] hover:text-white'
+                  }`}
                 title="Bật/tắt hiển thị path & Edge ID của máy bay hiện tại"
               >
                 Paths
@@ -1002,271 +1000,88 @@ export default function App() {
           </div>
 
           <>
-          {/* ── 3A. Bảng Điều Khiển Desktop & Laptop Các Loại Kích Cỡ ── */}
-          <aside className="hidden lg:flex w-80 xl:w-96 flex-shrink-0 flex-col gap-2.5 lg:gap-3 overflow-y-auto">
-            <ErrorBoundary
-              name="Thanh điều khiển bên phải"
-              fallbackTitle="Lỗi bảng điều khiển"
-              onReset={() => setSimState(prev => resetToManualMode(prev, currentGraph))}
-            >
-              {/* Tab Switcher */}
-              <div className="flex bg-[#E4E4E7]/60 p-1 rounded-[10px]">
-                <button
-                  data-testid="control-tab"
-                  onClick={() => {
-                    if (simState.scenario) {
-                      setSimState(prev => resetToManualMode(prev, currentGraph));
-                    }
-                    setDesktopTab('control');
-                  }}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
-                    desktopTab === 'control'
+            {/* ── 3A. Bảng Điều Khiển Desktop & Laptop Các Loại Kích Cỡ ── */}
+            <aside className="hidden lg:flex w-80 xl:w-96 flex-shrink-0 flex-col gap-2.5 lg:gap-3 overflow-y-auto">
+              <ErrorBoundary
+                name="Thanh điều khiển bên phải"
+                fallbackTitle="Lỗi bảng điều khiển"
+                onReset={() => setSimState(prev => resetToManualMode(prev, currentGraph))}
+              >
+                {/* Tab Switcher */}
+                <div className="flex bg-[#E4E4E7]/60 p-1 rounded-[10px]">
+                  <button
+                    data-testid="control-tab"
+                    onClick={() => {
+                      if (simState.scenario) {
+                        setSimState(prev => resetToManualMode(prev, currentGraph));
+                      }
+                      setDesktopTab('control');
+                    }}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${desktopTab === 'control'
                       ? 'bg-[#0C2444] text-white shadow-xs'
                       : 'text-[#475569] hover:text-[#0C2444]'
-                  }`}
-                >
-                  Điều khiển
-                </button>
-                <button
-                  data-testid="scenario-tab"
-                  onClick={() => setDesktopTab('scenarios')}
-                  className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${
-                    desktopTab === 'scenarios'
+                      }`}
+                  >
+                    Điều khiển
+                  </button>
+                  <button
+                    data-testid="scenario-tab"
+                    onClick={() => setDesktopTab('scenarios')}
+                    className={`flex-1 py-2 text-xs font-bold rounded-lg transition cursor-pointer ${desktopTab === 'scenarios'
                       ? 'bg-[#0C2444] text-white shadow-xs'
                       : 'text-[#475569] hover:text-[#0C2444]'
-                  }`}
-                >
-                  Kịch bản mẫu
-                </button>
-              </div>
-
-              {desktopTab === 'control' ? (
-                <>
-                  <ControlPanel
-                    showPracticeControls={false}
-                    config={config}
-                    graph={currentGraph}
-                    manualFleet={simState.manualFleet}
-                    selectedAircraftId={simState.selectedAircraftId}
-                    onSelectAircraft={handleSelectAircraft}
-                    onConfigChange={handleConfigChange}
-                    onAcceptRoute={handleAcceptRoute}
-                    onStart={handleStart}
-                    onPause={handlePause}
-                    onReset={handleReset}
-                    onResetAll={handleResetAll}
-                    routeStatus={simState.routeStatus}
-                    isRunning={simState.isRunning}
-                    isPaused={simState.isPaused}
-                    canStart={!!simState.aircraft || (simState.manualFleet?.length ?? 0) > 0}
-                    blockedCount={simState.blockedEdgeIds.size}
-                    autoIncidents={autoIncidents}
-                    onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
-                    onTriggerIncident={handleTriggerIncident}
-                    onClearIncidents={handleClearIncidents}
-                    practiceMode={simState.practiceMode}
-                    practiceDisabled={!!simState.scenario}
-                    controllerRole={simState.controllerRole}
-                    selectedController={simState.controllerByAircraft?.[simState.selectedAircraftId ?? ''] ?? 'GND'}
-                    controllerByAircraft={simState.controllerByAircraft}
-                    handoffTo={simState.handoffRequests?.[simState.selectedAircraftId ?? '']}
-                    selectedHoldReason={simState.manualFleet?.find(ac => ac.id === simState.selectedAircraftId)?.holdReason}
-                    readbackConfirmed={simState.readbackConfirmed?.[simState.selectedAircraftId ?? '']}
-                    runwayClearancePending={simState.runwayClearancePending?.[simState.selectedAircraftId ?? '']}
-                    onTogglePractice={handleTogglePractice}
-                    onSetControllerRole={handleSetControllerRole}
-                    onRequestHandoff={handleRequestHandoff}
-                    onAcceptHandoff={handleAcceptHandoff}
-                    onClearRunway={handleClearRunway}
-                    onConfirmReadback={handleConfirmReadback}
-                  />
-                  <StatusPanel state={simState} graph={currentGraph} />
-                </>
-              ) : (
-                <>
-                  <PresetScenariosPanel
-                    ftgOnly={mapView === '3d'}
-                    state={simState}
-                    graph={currentGraph}
-                    onStartScenario={handleStartScenario}
-                    onExitScenario={handleExitScenario}
-                    onPause={handlePause}
-                    isPaused={simState.isPaused}
-                    onSimSpeedChange={setSimSpeed}
-                    onAircraftSpeedChange={handleAircraftSpeedChange}
-                    simSpeed={simSpeed}
-                  />
-                  <StatusPanel state={simState} graph={currentGraph} />
-                </>
-              )}
-            </ErrorBoundary>
-          </aside>
-
-          {/* ── 3B. Thanh Bảng Điều Khiển Mobile & Tablet Dọc (< 1024px) ── */}
-          <aside className="flex lg:hidden w-full bg-white border-t border-[#E4E4E7] flex-col z-30 shadow-2xl flex-shrink-0">
-            {/* Header Tab Bar của Mobile Bottom Sheet */}
-            <div className="flex items-center justify-between p-1.5 bg-[#F8FAFC] border-b border-[#E4E4E7]">
-              <div className="flex flex-1 gap-1">
-                <button
-                  data-testid="mobile-tab-control"
-                  onClick={() => {
-                    if (simState.scenario) {
-                      setSimState(prev => resetToManualMode(prev, currentGraph));
-                    }
-                    setMobileTab('control');
-                    setSheetExpanded(true);
-                  }}
-                  className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
-                    mobileTab === 'control' && sheetExpanded
-                      ? 'bg-[#0C2444] text-white shadow-xs'
-                      : 'text-[#64748B] hover:text-[#0C2444]'
-                  }`}
-                >
-                  Điều khiển
-                </button>
-                <button
-                  data-testid="mobile-tab-status"
-                  onClick={() => {
-                    setMobileTab('status');
-                    setSheetExpanded(true);
-                  }}
-                  className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
-                    mobileTab === 'status' && sheetExpanded
-                      ? 'bg-[#0C2444] text-white shadow-xs'
-                      : 'text-[#64748B] hover:text-[#0C2444]'
-                  }`}
-                >
-                  Trực tiếp
-                  {simState.isRunning && (
-                    <span className="w-2 h-2 rounded-full bg-[#00A544] animate-ping ml-1" />
-                  )}
-                </button>
-                <button
-                  data-testid="mobile-tab-scenarios"
-                  onClick={() => {
-                    setMobileTab('scenarios');
-                    setSheetExpanded(true);
-                  }}
-                  className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${
-                    mobileTab === 'scenarios' && sheetExpanded
-                      ? 'bg-[#0C2444] text-white shadow-xs'
-                      : 'text-[#64748B] hover:text-[#0C2444]'
-                  }`}
-                >
-                  Kịch bản mẫu
-                </button>
-              </div>
-
-              {/* Mobile Debug Toggles */}
-              <div className="flex items-center gap-0.5 ml-1 mr-1">
-                <button
-                  onClick={() => setShowGrid(v => !v)}
-                  className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${
-                    showGrid ? 'bg-[#3B82F6] text-white' : 'bg-slate-200 text-slate-700'
-                  }`}
-                  title="Grid"
-                >
-                  Grid
-                </button>
-                <button
-                  onClick={() => setShowPaths(v => !v)}
-                  className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${
-                    showPaths ? 'bg-[#F59E0B] text-white' : 'bg-slate-200 text-slate-700'
-                  }`}
-                  title="Paths"
-                >
-                  Paths
-                </button>
-              </div>
-
-              {/* Nút Thu gọn / Mở rộng Bottom Sheet */}
-              <button
-                onClick={() => setSheetExpanded(v => !v)}
-                className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] text-[#202224] text-xs font-bold border border-[#E4E4E7] transition flex items-center gap-1 cursor-pointer shadow-2xs"
-                title={sheetExpanded ? 'Thu gọn bảng điều khiển' : 'Mở rộng bảng điều khiển'}
-                aria-label={sheetExpanded ? 'Thu gọn' : 'Mở rộng'}
-              >
-                <span>{sheetExpanded ? '▼ Ẩn' : '▲ Mở'}</span>
-              </button>
-            </div>
-
-            {/* Peek Mini Bar khi Thu Gọn */}
-            {!sheetExpanded && (
-              <div
-                onClick={() => setSheetExpanded(true)}
-                className="flex items-center justify-between px-3 py-2 bg-[#F8FAFC] cursor-pointer hover:bg-[#F1F5F9] transition"
-              >
-                <div className="flex items-center gap-2 font-mono text-xs">
-                  <span className="text-[#0C2444] font-bold">{activeAircraft?.callsign || 'VN001'}</span>
-                  <span className="text-[#E4E4E7]">|</span>
-                  <span className="text-[#00A544] font-bold">{activeAircraft?.speedKts.toFixed(0) || 0} kts</span>
-                  <span className="text-[#E4E4E7]">|</span>
-                  <span className="text-[#E6AF31] font-bold uppercase">{activeAircraft?.status || 'PARKED'}</span>
+                      }`}
+                  >
+                    Kịch bản mẫu
+                  </button>
                 </div>
-                <span className="text-xs text-[#155DFC] font-bold flex items-center gap-1">
-                  Chạm để mở rộng ▲
-                </span>
-              </div>
-            )}
 
-            {/* Nội dung Tab Panel */}
-            {sheetExpanded && (
-              <div className="max-h-[46vh] sm:max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F8FAFC]">
-                <ErrorBoundary
-                  name="Bảng điều khiển Mobile"
-                  fallbackTitle="Lỗi bảng điều khiển"
-                  onReset={() => setSimState(prev => resetToManualMode(prev, currentGraph))}
-                >
-                  {mobileTab === 'control' && (
-                    <>
-                      <ControlPanel
-                    showPracticeControls={false}
-                        config={config}
-                        graph={currentGraph}
-                        manualFleet={simState.manualFleet}
-                        selectedAircraftId={simState.selectedAircraftId}
-                        onSelectAircraft={handleSelectAircraft}
-                        onConfigChange={handleConfigChange}
-                        onAcceptRoute={handleAcceptRoute}
-                        onStart={handleStart}
-                        onPause={handlePause}
-                        onReset={handleReset}
-                        onResetAll={handleResetAll}
-                        routeStatus={simState.routeStatus}
-                        isRunning={simState.isRunning}
-                        isPaused={simState.isPaused}
-                        canStart={!!simState.aircraft || (simState.manualFleet?.length ?? 0) > 0}
-                        blockedCount={simState.blockedEdgeIds.size}
-                        autoIncidents={autoIncidents}
-                        onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
-                        onTriggerIncident={handleTriggerIncident}
-                        onClearIncidents={handleClearIncidents}
-                        practiceMode={simState.practiceMode}
-                        practiceDisabled={!!simState.scenario}
-                        controllerRole={simState.controllerRole}
-                        selectedController={simState.controllerByAircraft?.[simState.selectedAircraftId ?? ''] ?? 'GND'}
-                        controllerByAircraft={simState.controllerByAircraft}
-                        handoffTo={simState.handoffRequests?.[simState.selectedAircraftId ?? '']}
-                        selectedHoldReason={simState.manualFleet?.find(ac => ac.id === simState.selectedAircraftId)?.holdReason}
-                        readbackConfirmed={simState.readbackConfirmed?.[simState.selectedAircraftId ?? '']}
-                        runwayClearancePending={simState.runwayClearancePending?.[simState.selectedAircraftId ?? '']}
-                        onTogglePractice={handleTogglePractice}
-                        onSetControllerRole={handleSetControllerRole}
-                        onRequestHandoff={handleRequestHandoff}
-                        onAcceptHandoff={handleAcceptHandoff}
-                        onClearRunway={handleClearRunway}
-                        onConfirmReadback={handleConfirmReadback}
-                      />
-                    </>
-                  )}
-
-                  {mobileTab === 'status' && (
+                {desktopTab === 'control' ? (
+                  <>
+                    <ControlPanel
+                      showPracticeControls={false}
+                      config={config}
+                      graph={currentGraph}
+                      manualFleet={simState.manualFleet}
+                      selectedAircraftId={simState.selectedAircraftId}
+                      onSelectAircraft={handleSelectAircraft}
+                      onConfigChange={handleConfigChange}
+                      onAcceptRoute={handleAcceptRoute}
+                      onStart={handleStart}
+                      onPause={handlePause}
+                      onReset={handleReset}
+                      onResetAll={handleResetAll}
+                      routeStatus={simState.routeStatus}
+                      isRunning={simState.isRunning}
+                      isPaused={simState.isPaused}
+                      canStart={!!simState.aircraft || (simState.manualFleet?.length ?? 0) > 0}
+                      blockedCount={simState.blockedEdgeIds.size}
+                      autoIncidents={autoIncidents}
+                      onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
+                      onTriggerIncident={handleTriggerIncident}
+                      onClearIncidents={handleClearIncidents}
+                      practiceMode={simState.practiceMode}
+                      practiceDisabled={!!simState.scenario}
+                      controllerRole={simState.controllerRole}
+                      selectedController={simState.controllerByAircraft?.[simState.selectedAircraftId ?? ''] ?? 'GND'}
+                      controllerByAircraft={simState.controllerByAircraft}
+                      handoffTo={simState.handoffRequests?.[simState.selectedAircraftId ?? '']}
+                      selectedHoldReason={simState.manualFleet?.find(ac => ac.id === simState.selectedAircraftId)?.holdReason}
+                      readbackConfirmed={simState.readbackConfirmed?.[simState.selectedAircraftId ?? '']}
+                      runwayClearancePending={simState.runwayClearancePending?.[simState.selectedAircraftId ?? '']}
+                      onTogglePractice={handleTogglePractice}
+                      onSetControllerRole={handleSetControllerRole}
+                      onRequestHandoff={handleRequestHandoff}
+                      onAcceptHandoff={handleAcceptHandoff}
+                      onClearRunway={handleClearRunway}
+                      onConfirmReadback={handleConfirmReadback}
+                    />
                     <StatusPanel state={simState} graph={currentGraph} />
-                  )}
-
-                  {mobileTab === 'scenarios' && (
+                  </>
+                ) : (
+                  <>
                     <PresetScenariosPanel
-                    ftgOnly={mapView === '3d'}
+                      ftgOnly={mapView === '3d'}
                       state={simState}
                       graph={currentGraph}
                       onStartScenario={handleStartScenario}
@@ -1277,17 +1092,193 @@ export default function App() {
                       onAircraftSpeedChange={handleAircraftSpeedChange}
                       simSpeed={simSpeed}
                     />
-                  )}
-                </ErrorBoundary>
+                    <StatusPanel state={simState} graph={currentGraph} />
+                  </>
+                )}
+              </ErrorBoundary>
+            </aside>
+
+            {/* ── 3B. Thanh Bảng Điều Khiển Mobile & Tablet Dọc (< 1024px) ── */}
+            <aside className="flex lg:hidden w-full bg-white border-t border-[#E4E4E7] flex-col z-30 shadow-2xl flex-shrink-0">
+              {/* Header Tab Bar của Mobile Bottom Sheet */}
+              <div className="flex items-center justify-between p-1.5 bg-[#F8FAFC] border-b border-[#E4E4E7]">
+                <div className="flex flex-1 gap-1">
+                  <button
+                    data-testid="mobile-tab-control"
+                    onClick={() => {
+                      if (simState.scenario) {
+                        setSimState(prev => resetToManualMode(prev, currentGraph));
+                      }
+                      setMobileTab('control');
+                      setSheetExpanded(true);
+                    }}
+                    className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${mobileTab === 'control' && sheetExpanded
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0C2444]'
+                      }`}
+                  >
+                    Điều khiển
+                  </button>
+                  <button
+                    data-testid="mobile-tab-status"
+                    onClick={() => {
+                      setMobileTab('status');
+                      setSheetExpanded(true);
+                    }}
+                    className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${mobileTab === 'status' && sheetExpanded
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0C2444]'
+                      }`}
+                  >
+                    Trực tiếp
+                    {simState.isRunning && (
+                      <span className="w-2 h-2 rounded-full bg-[#00A544] animate-ping ml-1" />
+                    )}
+                  </button>
+                  <button
+                    data-testid="mobile-tab-scenarios"
+                    onClick={() => {
+                      setMobileTab('scenarios');
+                      setSheetExpanded(true);
+                    }}
+                    className={`flex-1 py-2 px-1 text-xs font-bold rounded-lg transition flex items-center justify-center gap-1 cursor-pointer ${mobileTab === 'scenarios' && sheetExpanded
+                      ? 'bg-[#0C2444] text-white shadow-xs'
+                      : 'text-[#64748B] hover:text-[#0C2444]'
+                      }`}
+                  >
+                    Kịch bản mẫu
+                  </button>
+                </div>
+
+                {/* Mobile Debug Toggles */}
+                <div className="flex items-center gap-0.5 ml-1 mr-1">
+                  <button
+                    onClick={() => setShowGrid(v => !v)}
+                    className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${showGrid ? 'bg-[#3B82F6] text-white' : 'bg-slate-200 text-slate-700'
+                      }`}
+                    title="Grid"
+                  >
+                    Grid
+                  </button>
+                  <button
+                    onClick={() => setShowPaths(v => !v)}
+                    className={`text-[10px] font-bold px-1.5 py-1 rounded transition ${showPaths ? 'bg-[#F59E0B] text-white' : 'bg-slate-200 text-slate-700'
+                      }`}
+                    title="Paths"
+                  >
+                    Paths
+                  </button>
+                </div>
+
+                {/* Nút Thu gọn / Mở rộng Bottom Sheet */}
+                <button
+                  onClick={() => setSheetExpanded(v => !v)}
+                  className="px-2.5 py-1.5 rounded-lg bg-white hover:bg-[#F1F5F9] text-[#202224] text-xs font-bold border border-[#E4E4E7] transition flex items-center gap-1 cursor-pointer shadow-2xs"
+                  title={sheetExpanded ? 'Thu gọn bảng điều khiển' : 'Mở rộng bảng điều khiển'}
+                  aria-label={sheetExpanded ? 'Thu gọn' : 'Mở rộng'}
+                >
+                  <span>{sheetExpanded ? '▼ Ẩn' : '▲ Mở'}</span>
+                </button>
               </div>
-            )}
-          </aside>
+
+              {/* Peek Mini Bar khi Thu Gọn */}
+              {!sheetExpanded && (
+                <div
+                  onClick={() => setSheetExpanded(true)}
+                  className="flex items-center justify-between px-3 py-2 bg-[#F8FAFC] cursor-pointer hover:bg-[#F1F5F9] transition"
+                >
+                  <div className="flex items-center gap-2 font-mono text-xs">
+                    <span className="text-[#0C2444] font-bold">{activeAircraft?.callsign || 'VN001'}</span>
+                    <span className="text-[#E4E4E7]">|</span>
+                    <span className="text-[#00A544] font-bold">{activeAircraft?.speedKts.toFixed(0) || 0} kts</span>
+                    <span className="text-[#E4E4E7]">|</span>
+                    <span className="text-[#E6AF31] font-bold uppercase">{activeAircraft?.status || 'PARKED'}</span>
+                  </div>
+                  <span className="text-xs text-[#155DFC] font-bold flex items-center gap-1">
+                    Chạm để mở rộng ▲
+                  </span>
+                </div>
+              )}
+
+              {/* Nội dung Tab Panel */}
+              {sheetExpanded && (
+                <div className="max-h-[46vh] sm:max-h-[52vh] overflow-y-auto p-3 flex flex-col gap-3 bg-[#F8FAFC]">
+                  <ErrorBoundary
+                    name="Bảng điều khiển Mobile"
+                    fallbackTitle="Lỗi bảng điều khiển"
+                    onReset={() => setSimState(prev => resetToManualMode(prev, currentGraph))}
+                  >
+                    {mobileTab === 'control' && (
+                      <>
+                        <ControlPanel
+                          showPracticeControls={false}
+                          config={config}
+                          graph={currentGraph}
+                          manualFleet={simState.manualFleet}
+                          selectedAircraftId={simState.selectedAircraftId}
+                          onSelectAircraft={handleSelectAircraft}
+                          onConfigChange={handleConfigChange}
+                          onAcceptRoute={handleAcceptRoute}
+                          onStart={handleStart}
+                          onPause={handlePause}
+                          onReset={handleReset}
+                          onResetAll={handleResetAll}
+                          routeStatus={simState.routeStatus}
+                          isRunning={simState.isRunning}
+                          isPaused={simState.isPaused}
+                          canStart={!!simState.aircraft || (simState.manualFleet?.length ?? 0) > 0}
+                          blockedCount={simState.blockedEdgeIds.size}
+                          autoIncidents={autoIncidents}
+                          onToggleAutoIncidents={() => setAutoIncidents(v => !v)}
+                          onTriggerIncident={handleTriggerIncident}
+                          onClearIncidents={handleClearIncidents}
+                          practiceMode={simState.practiceMode}
+                          practiceDisabled={!!simState.scenario}
+                          controllerRole={simState.controllerRole}
+                          selectedController={simState.controllerByAircraft?.[simState.selectedAircraftId ?? ''] ?? 'GND'}
+                          controllerByAircraft={simState.controllerByAircraft}
+                          handoffTo={simState.handoffRequests?.[simState.selectedAircraftId ?? '']}
+                          selectedHoldReason={simState.manualFleet?.find(ac => ac.id === simState.selectedAircraftId)?.holdReason}
+                          readbackConfirmed={simState.readbackConfirmed?.[simState.selectedAircraftId ?? '']}
+                          runwayClearancePending={simState.runwayClearancePending?.[simState.selectedAircraftId ?? '']}
+                          onTogglePractice={handleTogglePractice}
+                          onSetControllerRole={handleSetControllerRole}
+                          onRequestHandoff={handleRequestHandoff}
+                          onAcceptHandoff={handleAcceptHandoff}
+                          onClearRunway={handleClearRunway}
+                          onConfirmReadback={handleConfirmReadback}
+                        />
+                      </>
+                    )}
+
+                    {mobileTab === 'status' && (
+                      <StatusPanel state={simState} graph={currentGraph} />
+                    )}
+
+                    {mobileTab === 'scenarios' && (
+                      <PresetScenariosPanel
+                        ftgOnly={mapView === '3d'}
+                        state={simState}
+                        graph={currentGraph}
+                        onStartScenario={handleStartScenario}
+                        onExitScenario={handleExitScenario}
+                        onPause={handlePause}
+                        isPaused={simState.isPaused}
+                        onSimSpeedChange={setSimSpeed}
+                        onAircraftSpeedChange={handleAircraftSpeedChange}
+                        simSpeed={simSpeed}
+                      />
+                    )}
+                  </ErrorBoundary>
+                </div>
+              )}
+            </aside>
           </>
         </main>
 
         {/* ── 4. Modals (Hướng Dẫn & Path Inspector) ── */}
         {showGuide && <HuongDanModal onClose={() => setShowGuide(false)} />}
-        
+
         {inspectingPathAircraftId && (
           <PathInspectorModal
             isOpen={!!inspectingPathAircraftId}

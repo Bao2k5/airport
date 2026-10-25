@@ -12,6 +12,7 @@ import SceneSettings, { DEFAULT_SCENE_PREFERENCES } from './components/SceneSett
 import LayoutInspector from './components/LayoutInspector';
 import AirportToolbar from './components/AirportToolbar';
 import LayoutUnlockDialog from './components/LayoutUnlockDialog';
+import { BRANDING } from '../../config/branding';
 
 function ResponsiveCameraAdjuster({ baseFov = 43 }: { baseFov?: number }) {
   const { camera, size } = useThree();
@@ -187,7 +188,7 @@ export default function Airport3DView(props: Props) {
   const handleAddObject = (kind: 'mast' | 'vehicle' | 'sign') => {
     const id = `${kind}_${Date.now()}`;
     const count = layout.filter(o => o.kind === kind).length + 1;
-    const defaultName = kind === 'mast' ? `Đèn sân đỗ ${count}` : kind === 'sign' ? 'Biển hiệu VAA (SGN)' : `Xe phục vụ ${count}`;
+    const defaultName = kind === 'mast' ? `Đèn sân đỗ ${count}` : kind === 'sign' ? BRANDING.newSignName : `Xe phục vụ ${count}`;
 
     // Place near current camera target or current selected object
     const anchor = kind === 'sign' ? [0, 0.03, -42] : (layout.find(o => o.id === selectedLayoutId)?.position ?? cameraPose.target ?? [20, 0, 10]);
@@ -312,64 +313,64 @@ export default function Airport3DView(props: Props) {
       </AirportToolbar>
       {unlockOpen && <LayoutUnlockDialog onClose={() => setUnlockOpen(false)} onUnlock={() => { setEditing(true); setUnlockOpen(false); }} />}
       <div className="relative min-h-0 flex-1">
-      <Canvas key={sceneMode} shadows={scenePreferences.shadows ? { type: PCFShadowMap } : false} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: inAirport ? 0.5 : 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
-        <ResponsiveCameraAdjuster baseFov={inAirport ? 43 : sceneMode === 'room' ? 52 : 47} />
-        <WebGLContextWatcher />
-        <Suspense fallback={null}>
-          <AirportScene
-            {...props}
-            layout={layout}
-            editing={editing}
-            selectedLayoutId={selectedLayoutId}
-            onSelectLayout={setSelectedLayoutId}
-            onMoveLayout={handleMoveLayout}
-            preset={preset}
-            cameraPosition={airportCameraPosition}
-            cameraTarget={airportCameraTarget}
-            cameraPose={cameraPose}
-            onCameraPoseChange={handleCameraPoseChange}
-            towerMode={inAirport ? undefined : sceneMode}
-            showPeople={scenePreferences.people}
-            vehicles={scenePreferences.vehicles}
-            density={scenePreferences.quality === 'low' ? Math.min(2, scenePreferences.density) : scenePreferences.density}
-            reflections={scenePreferences.reflections}
-            modelsEnabled={scenePreferences.modelsEnabled}
-            lightScale={scenePreferences.lightScale}
-            onWorkstation={undefined}
-          />
-        </Suspense>
-      </Canvas>
-      {workstation && <div className="absolute inset-8 md:inset-12 z-20 flex flex-col overflow-hidden rounded-xl border border-cyan-700 bg-slate-950 shadow-2xl">
-        <div className="flex items-center justify-between bg-[#102849] px-4 py-2.5 text-white">
-          <span className="font-bold text-xs tracking-wider">MÀN HÌNH {workstation.toUpperCase()} / THEO DÕI HỆ THỐNG FTG</span>
-          <button type="button" onClick={() => setWorkstation(null)} className="rounded border border-slate-500 bg-slate-800/80 hover:bg-red-800 px-3 py-1 text-xs font-bold transition cursor-pointer" aria-label="Close workstation">✕ Đóng</button>
+        <Canvas key={sceneMode} shadows={scenePreferences.shadows ? { type: PCFShadowMap } : false} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: inAirport ? 0.5 : 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
+          <ResponsiveCameraAdjuster baseFov={inAirport ? 43 : sceneMode === 'room' ? 52 : 47} />
+          <WebGLContextWatcher />
+          <Suspense fallback={null}>
+            <AirportScene
+              {...props}
+              layout={layout}
+              editing={editing}
+              selectedLayoutId={selectedLayoutId}
+              onSelectLayout={setSelectedLayoutId}
+              onMoveLayout={handleMoveLayout}
+              preset={preset}
+              cameraPosition={airportCameraPosition}
+              cameraTarget={airportCameraTarget}
+              cameraPose={cameraPose}
+              onCameraPoseChange={handleCameraPoseChange}
+              towerMode={inAirport ? undefined : sceneMode}
+              showPeople={scenePreferences.people}
+              vehicles={scenePreferences.vehicles}
+              density={scenePreferences.quality === 'low' ? Math.min(2, scenePreferences.density) : scenePreferences.density}
+              reflections={scenePreferences.reflections}
+              modelsEnabled={scenePreferences.modelsEnabled}
+              lightScale={scenePreferences.lightScale}
+              onWorkstation={undefined}
+            />
+          </Suspense>
+        </Canvas>
+        {workstation && <div className="absolute inset-8 md:inset-12 z-20 flex flex-col overflow-hidden rounded-xl border border-cyan-700 bg-slate-950 shadow-2xl">
+          <div className="flex items-center justify-between bg-[#102849] px-4 py-2.5 text-white">
+            <span className="font-bold text-xs tracking-wider">MÀN HÌNH {workstation.toUpperCase()} / THEO DÕI HỆ THỐNG FTG</span>
+            <button type="button" onClick={() => setWorkstation(null)} className="rounded border border-slate-500 bg-slate-800/80 hover:bg-red-800 px-3 py-1 text-xs font-bold transition cursor-pointer" aria-label="Close workstation">✕ Đóng</button>
+          </div>
+          <div className="relative min-h-0 flex-1"><AirportMap graph={props.graph} state={props.state} renderMode="ftg" onSelectAircraft={props.onSelectAircraft} /></div>
+        </div>}
+        {editing && inAirport && <LayoutInspector
+          objects={layout}
+          selectedId={selectedLayoutId}
+          onSelect={setSelectedLayoutId}
+          onAdjust={adjustSelected}
+          onSetValue={setSelectedValue}
+          onColor={setSelectedColor}
+          onRename={handleRenameObject}
+          onAddObject={handleAddObject}
+          onDeleteObject={handleDeleteObject}
+          onSave={saveLayout}
+          onClose={() => setEditing(false)}
+          onReset={resetLayout}
+          onUndo={undoLayout}
+          onRedo={redoLayout}
+          canUndo={historyState.canUndo}
+          canRedo={historyState.canRedo}
+          onExport={exportLayout}
+          onImport={importLayout}
+          message={editorMessage}
+        />}
+        <div className="absolute bottom-2 left-2 rounded bg-[#07111de8] px-2.5 py-1.5 text-[10px] text-slate-200 pointer-events-none">
+          {inAirport ? 'Chuột trái: xoay · Cuộn: thu phóng · Chuột phải: di chuyển · Chạm/kéo: xoay · Chụm: thu phóng' : `PHIÊN ${props.state.scenario?.name ?? 'MÔ PHỎNG'} · ${props.state.isRunning ? props.state.isPaused ? 'TẠM DỪNG' : 'ĐANG CHẠY' : 'SẴN SÀNG'} · ${Math.floor(props.state.elapsedSeconds)} giây`}
         </div>
-        <div className="relative min-h-0 flex-1"><AirportMap graph={props.graph} state={props.state} renderMode="ftg" onSelectAircraft={props.onSelectAircraft} /></div>
-      </div>}
-      {editing && inAirport && <LayoutInspector
-        objects={layout}
-        selectedId={selectedLayoutId}
-        onSelect={setSelectedLayoutId}
-        onAdjust={adjustSelected}
-        onSetValue={setSelectedValue}
-        onColor={setSelectedColor}
-        onRename={handleRenameObject}
-        onAddObject={handleAddObject}
-        onDeleteObject={handleDeleteObject}
-        onSave={saveLayout}
-        onClose={() => setEditing(false)}
-        onReset={resetLayout}
-        onUndo={undoLayout}
-        onRedo={redoLayout}
-        canUndo={historyState.canUndo}
-        canRedo={historyState.canRedo}
-        onExport={exportLayout}
-        onImport={importLayout}
-        message={editorMessage}
-      />}
-      <div className="absolute bottom-2 left-2 rounded bg-[#07111de8] px-2.5 py-1.5 text-[10px] text-slate-200 pointer-events-none">
-        {inAirport ? 'Chuột trái: xoay · Cuộn: thu phóng · Chuột phải: di chuyển · Chạm/kéo: xoay · Chụm: thu phóng' : `PHIÊN ${props.state.scenario?.name ?? 'MÔ PHỎNG'} · ${props.state.isRunning ? props.state.isPaused ? 'TẠM DỪNG' : 'ĐANG CHẠY' : 'SẴN SÀNG'} · ${Math.floor(props.state.elapsedSeconds)} giây`}
-      </div>
       </div>
     </div>
   );

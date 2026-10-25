@@ -1,5 +1,6 @@
 import type { AirportLayout } from '../layout';
 import { useRef, useState } from 'react';
+import { BRANDING } from '../../../config/branding';
 
 export default function LayoutInspector({
   objects,
@@ -98,7 +99,7 @@ export default function LayoutInspector({
               onClick={() => onAddObject?.('sign')}
               className="col-span-2 flex items-center justify-center gap-1.5 rounded-lg border border-sky-500/40 bg-sky-500/15 py-1.5 px-2 text-center text-[11px] font-bold text-sky-200 transition hover:bg-sky-500/25 cursor-pointer shadow-xs"
             >
-              <span>🏷️</span> + Biển hiệu VAA (Sa bàn)
+              <span>🏷️</span> {BRANDING.addSignButton}
             </button>
           </div>
         </div>
@@ -117,11 +118,10 @@ export default function LayoutInspector({
                   key={item.id}
                   type="button"
                   onClick={() => onSelect(item.id)}
-                  className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition cursor-pointer ${
-                    isSelected
-                      ? 'bg-cyan-500/25 text-cyan-200 ring-1 ring-cyan-400/60 font-semibold'
-                      : 'bg-white/5 text-slate-200 hover:bg-white/10'
-                  }`}
+                  className={`flex w-full items-center justify-between rounded-md px-2 py-1.5 text-left text-xs transition cursor-pointer ${isSelected
+                    ? 'bg-cyan-500/25 text-cyan-200 ring-1 ring-cyan-400/60 font-semibold'
+                    : 'bg-white/5 text-slate-200 hover:bg-white/10'
+                    }`}
                 >
                   <span className="truncate flex items-center gap-1.5">
                     <span>{icon}</span>
@@ -205,7 +205,7 @@ export default function LayoutInspector({
               )}
               {current.kind === 'sign' && (
                 <div className="flex gap-1.5 text-[10px]">
-                  <button type="button" onClick={() => onColor('#0d1f36')} className="flex-1 rounded py-1 bg-[#0d1f36] border border-sky-400/40 text-sky-200 font-medium cursor-pointer">Xanh VAA</button>
+                  <button type="button" onClick={() => onColor('#0d1f36')} className="flex-1 rounded py-1 bg-[#0d1f36] border border-sky-400/40 text-sky-200 font-medium cursor-pointer">{BRANDING.signColorNavy}</button>
                   <button type="button" onClick={() => onColor('#1f2937')} className="flex-1 rounded py-1 bg-[#1f2937] border border-slate-400/40 text-slate-200 font-medium cursor-pointer">Xám đen</button>
                   <button type="button" onClick={() => onColor('#78350f')} className="flex-1 rounded py-1 bg-[#78350f] border border-amber-400/40 text-amber-200 font-medium cursor-pointer">Gỗ / Đồng</button>
                 </div>

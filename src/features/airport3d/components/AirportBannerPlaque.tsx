@@ -1,6 +1,7 @@
 import { useMemo } from 'react';
 import { useTexture } from '@react-three/drei';
 import { SRGBColorSpace } from 'three';
+import { HIDE_SCHOOL_BRANDING } from '../../../config/branding';
 
 export default function AirportBannerPlaque({
   selected = false,
@@ -10,7 +11,11 @@ export default function AirportBannerPlaque({
   selected?: boolean;
   editing?: boolean;
 }) {
-  const bannerTexture = useTexture('/textures/vaa-banner-sgn.png');
+  // Ẩn logo trường (Euréka 2026): dùng banner không logo (public/sgn-banner.png).
+  // Khi bật lại nhận diện trường thì quay về banner gốc có logo VAA.
+  const bannerTexture = useTexture(
+    HIDE_SCHOOL_BRANDING ? '/sgn-banner.png' : '/textures/vaa-banner-sgn.png',
+  );
 
   useMemo(() => {
     bannerTexture.colorSpace = SRGBColorSpace;
@@ -18,7 +23,7 @@ export default function AirportBannerPlaque({
     bannerTexture.needsUpdate = true;
   }, [bannerTexture]);
 
-  // Texture aspect ratio is 1024 x 133 (~7.7 : 1)
+  // Cả hai texture đều có tỉ lệ ~7.7 : 1 (1024x133 và 1916x247)
   const width = 28;
   const depth = 3.64;
 

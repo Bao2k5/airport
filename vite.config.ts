@@ -1,4 +1,4 @@
-import { defineConfig } from 'vite';
+import { defineConfig, loadEnv } from 'vite';
 import react from '@vitejs/plugin-react';
 import tailwindcss from '@tailwindcss/vite';
 import { resolve } from 'path';
@@ -74,8 +74,26 @@ function rawTraceServerPlugin() {
   };
 }
 
+// Khôi phục favicon + tiêu đề có nhận diện trường khi VITE_SHOW_SCHOOL_BRANDING=true (xem src/config/branding.ts).
+function schoolBrandingHtmlPlugin() {
+  return {
+    name: 'school-branding-html',
+    transformIndexHtml(html: string) {
+      const env = loadEnv(process.env.NODE_ENV === 'production' ? 'production' : 'development', __dirname, 'VITE_');
+      const show = (process.env.VITE_SHOW_SCHOOL_BRANDING ?? env.VITE_SHOW_SCHOOL_BRANDING) === 'true';
+      if (!show || !html.includes('/app-icon.svg')) return html;
+      return html
+        .replace(
+          /<link rel="icon" type="image\/svg\+xml" href="\/app-icon.svg" \/>/,
+          '<link rel="icon" type="image/x-icon" href="/favicon.ico" />\n    <link rel="icon" type="image/png" href="/vaa-icon.png" />\n    <link rel="shortcut icon" href="/favicon.ico" />',
+        )
+        .replace('<link rel="apple-touch-icon" href="/app-icon.svg" />', '<link rel="apple-touch-icon" href="/vaa-icon.png" />')
+        .replace('<title>Mô Phỏng Sân Bay (FtG)</title>', '<title>VAA — Mô Phỏng Sân Bay (FtG)</title>');
+    },
+  };
+}
 export default defineConfig({
-  plugins: [tailwindcss(), react(), rawTraceServerPlugin()],
+  plugins: [tailwindcss(), react(), rawTraceServerPlugin(), schoolBrandingHtmlPlugin()],
   resolve: {
     dedupe: ['react', 'react-dom'],
   },
