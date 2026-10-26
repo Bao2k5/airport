@@ -13,6 +13,8 @@ import LayoutInspector from './components/LayoutInspector';
 import AirportToolbar from './components/AirportToolbar';
 import LayoutUnlockDialog from './components/LayoutUnlockDialog';
 import { BRANDING } from '../../config/branding';
+import SceneExportBridge, { type SceneExporter } from './export/SceneExportBridge';
+import { downloadGlb } from './export/exportGlb';
 
 function ResponsiveCameraAdjuster({ baseFov = 43 }: { baseFov?: number }) {
   const { camera, size } = useThree();
@@ -103,6 +105,29 @@ export default function Airport3DView(props: Props) {
   const undoStack = useRef<AirportLayout[]>([]);
   const redoStack = useRef<AirportLayout[]>([]);
   const [historyState, setHistoryState] = useState({ canUndo: false, canRedo: false });
+  const exportSceneRef = useRef<SceneExporter | null>(null);
+  const [glbExporting, setGlbExporting] = useState(false);
+  const [glbExportError, setGlbExportError] = useState('');
+  const handleExportGlb = async () => {
+    if (glbExporting) return;
+    setGlbExportError('');
+    setGlbExporting(true);
+    try {
+      // Let the disabled/busy state paint before the heavy scene traversal.
+      await new Promise(resolve => requestAnimationFrame(() => resolve(null)));
+      const exporter = exportSceneRef.current;
+      if (!exporter) {
+        setGlbExportError('Cảnh 3D chưa sẵn sàng, vui lòng thử lại.');
+        return;
+      }
+      downloadGlb(await exporter());
+    } catch (error) {
+      console.error('[GLB export] failed:', error);
+      setGlbExportError('Không xuất được file GLB. Vui lòng thử lại.');
+    } finally {
+      setGlbExporting(false);
+    }
+  };
   const camera = PRESETS.find(item => item.id === preset) ?? PRESETS[0];
   const roomPosition: [number, number, number] = sceneMode === 'room' ? [0, 6.5, 15.5] : sceneMode === 'gnd' ? [-4.4, 2.8, 8.2] : [4.4, 2.8, 8.2];
   const roomTarget: [number, number, number] = sceneMode === 'room' ? [0, 1.5, -0.8] : sceneMode === 'gnd' ? [-4.4, 1.8, -5.3] : [4.4, 1.8, -5.3];
@@ -302,6 +327,7 @@ export default function Airport3DView(props: Props) {
         aircraftList={visibleFlights.map(ac => ({ id: ac.id, callsign: (ac as any).callsign ?? ac.id }))}
         selectedAircraftId={props.state.selectedAircraftId ?? visibleFlights[0]?.id}
         onSelectAircraft={props.onSelectAircraft}
+        onExportGlb={handleExportGlb} exportingGlb={glbExporting} exportGlbError={glbExportError}
         onTerminal={() => {
           const terminalObj = layout.find(item => item.kind === 'terminal');
           const target: [number, number, number] = terminalObj ? terminalObj.position : getAssetZone(props.graph);
@@ -316,6 +342,7 @@ export default function Airport3DView(props: Props) {
         <Canvas key={sceneMode} shadows={scenePreferences.shadows ? { type: PCFShadowMap } : false} gl={{ antialias: true, toneMapping: ACESFilmicToneMapping, toneMappingExposure: 1.12 }} camera={{ position: inAirport ? airportCameraPosition : roomPosition, fov: inAirport ? 43 : sceneMode === 'room' ? 52 : 47, near: inAirport ? 0.5 : 0.1, far: 300 }} dpr={scenePreferences.quality === 'low' ? 1 : [1, Math.min(typeof window !== 'undefined' ? window.devicePixelRatio : 1, 1.5)]} onCreated={({ camera: activeCamera }) => activeCamera.lookAt(...(inAirport ? airportCameraTarget : roomTarget))}>
           <ResponsiveCameraAdjuster baseFov={inAirport ? 43 : sceneMode === 'room' ? 52 : 47} />
           <WebGLContextWatcher />
+          <SceneExportBridge exportRef={exportSceneRef} />
           <Suspense fallback={null}>
             <AirportScene
               {...props}

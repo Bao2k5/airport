@@ -42,7 +42,7 @@ export default function AirportLights({ graph, state, lightScale = 1 }: { graph:
     if (mesh.current.instanceColor) mesh.current.instanceColor.needsUpdate = true;
   }, [fixtures, colors]);
   return <>
-    <instancedMesh ref={mesh} args={[geometry, material, fixtures.length]} frustumCulled={false} />
+    <instancedMesh ref={mesh} name="AirfieldLights" args={[geometry, material, fixtures.length]} frustumCulled={false} />
     {/* 1. Stop Bar Đỏ: Ưu tiên cao nhất, nổi bật và rực rỡ từ Đài KSVKL */}
     <LightGlow fixtures={stopBarLights} state={state} colors={colors} size={12.5 * lightScale} />
     {/* 2. Runway End Đỏ (ICAO): 5 bóng đỏ ngang tim đường băng báo hiệu giới hạn dừng tuyệt đối */}

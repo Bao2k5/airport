@@ -41,5 +41,5 @@ export default function ImportedModel({ config }: { config: ModelPlacement }) {
   const { scene } = useGLTF(MODEL_BASE_URL + config.file);
   const model = useMemo(() => normalizeModel(scene, config), [scene, config]);
   // Geometry/materials/textures belong to useGLTF cache; clones share them.
-  return <group position={config.position} dispose={null}><primitive object={model} /></group>;
+  return <group name={`Terminal_${config.id.replace(/[^A-Za-z0-9_]/g, '_')}`} position={config.position} dispose={null}><primitive object={model} /></group>;
 }

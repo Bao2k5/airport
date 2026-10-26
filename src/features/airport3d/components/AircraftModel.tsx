@@ -43,7 +43,7 @@ export default function AircraftModel({ aircraft, graph, selected, onSelect, sho
   const isEmergencyFire = aircraft.callsign === 'BAV315' && ('role' in aircraft && aircraft.role === 'emergency');
 
   return (
-    <group position={[position[0], position[1] + 0.045, position[2]]} rotation={[0, yaw, 0]} onClick={onSelect ? (event) => { event.stopPropagation(); onSelect(aircraft.id); } : undefined}>
+    <group name={`Aircraft_${(aircraft.callsign || aircraft.id).replace(/[^A-Za-z0-9_]/g, '_')}`} position={[position[0], position[1] + 0.045, position[2]]} rotation={[0, yaw, 0]} onClick={onSelect ? (event) => { event.stopPropagation(); onSelect(aircraft.id); } : undefined}>
       <group rotation={[pitch, 0, 0]}><AircraftAsset color={color} /></group>
 
       {/* Hiệu ứng lửa cho BAV315 cháy động cơ — gắn ở đuôi máy bay */}
@@ -54,7 +54,7 @@ export default function AircraftModel({ aircraft, graph, selected, onSelect, sho
         />
       )}
 
-      {selected && <mesh position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+      {selected && <mesh userData={{ noExport: true }} position={[0, 0.025, 0]} rotation={[-Math.PI / 2, 0, 0]}>
         <ringGeometry args={[1.7, 1.82, 48]} /><meshBasicMaterial color="#ffd166" transparent opacity={0.82} />
       </mesh>}
       {showLabel && <AircraftTag

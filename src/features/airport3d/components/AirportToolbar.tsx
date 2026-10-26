@@ -1,7 +1,10 @@
 import type { ReactNode } from 'react';
 import type { CameraPreset, SceneMode } from '../viewTypes';
 
-export default function AirportToolbar({ sceneMode, preset, presets, editing, onScene, onPreset, onTerminal, onEditor, onWorkstation, children, aircraftList, selectedAircraftId, onSelectAircraft }: {
+export default function AirportToolbar({ sceneMode, preset, presets, editing, onScene, onPreset, onTerminal, onEditor, onWorkstation, children, aircraftList, selectedAircraftId, onSelectAircraft, onExportGlb, exportingGlb = false, exportGlbError = '' }: {
+  onExportGlb: () => void;
+  exportingGlb?: boolean;
+  exportGlbError?: string;
   sceneMode: SceneMode;
   preset: CameraPreset;
   presets: { id: CameraPreset; label: string }[];
@@ -41,6 +44,8 @@ export default function AirportToolbar({ sceneMode, preset, presets, editing, on
       <button type="button" className={`${button()} shrink-0`} onClick={onTerminal}>Khu nhà ga</button>
     </> : <button type="button" className={`${button()} shrink-0`} onClick={onWorkstation}>Mở màn hình FTG</button>}
     <div className="ml-auto flex items-center gap-1.5 md:gap-2 shrink-0">
+      {exportGlbError && <span role="alert" className="max-w-56 truncate text-[11px] md:text-xs font-bold text-red-600" title={exportGlbError}>{exportGlbError}</span>}
+      <button type="button" className={`${button()} shrink-0 disabled:cursor-wait disabled:opacity-60`} onClick={onExportGlb} disabled={exportingGlb} aria-busy={exportingGlb} title="Xuất toàn bộ cảnh 3D đang hiển thị thành một file .glb">{exportingGlb ? 'Đang xuất GLB…' : 'Xuất GLB'}</button>
       {children}
       {sceneMode === 'airport' && <button type="button" className={`${button(editing)} shrink-0`} aria-pressed={editing} onClick={onEditor}>{editing ? 'Đóng và khóa' : 'Chỉnh bố cục'}</button>}
     </div>

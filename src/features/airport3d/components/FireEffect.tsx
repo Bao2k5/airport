@@ -73,7 +73,7 @@ export default function FireEffect({
     useFrame((_, delta) => mixerRef.current?.update(delta));
 
     return (
-        <group position={position} rotation={rotation}>
+        <group name="EngineFire" position={position} rotation={rotation}>
             <primitive object={fireModel} scale={scale} />
         </group>
     );

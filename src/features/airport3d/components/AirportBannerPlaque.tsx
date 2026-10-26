@@ -30,7 +30,7 @@ export default function AirportBannerPlaque({
   return (
     <group position={[0, 0.035, 0]}>
       {/* Borderless banner graphic face sitting flat on the airport surface */}
-      <mesh rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
+      <mesh name="BannerFace" rotation={[-Math.PI / 2, 0, 0]} receiveShadow>
         <planeGeometry args={[width, depth]} />
         <meshBasicMaterial
           map={bannerTexture}
@@ -41,7 +41,7 @@ export default function AirportBannerPlaque({
 
       {/* Subtle selection highlight shown ONLY during editing when selected */}
       {editing && selected && (
-        <mesh position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh userData={{ noExport: true }} position={[0, 0.003, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <planeGeometry args={[width + 0.1, depth + 0.1]} />
           <meshBasicMaterial color="#28d8ff" wireframe />
         </mesh>

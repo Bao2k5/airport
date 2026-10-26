@@ -18,7 +18,7 @@ export default function StandDisplays({ graph, state }: { graph: AirportGraph; s
   return <>{displays.map(({ node, point, heading }) => {
     const flight = fleet.find(a => a.status !== 'departed' && (a.currentNodeId === node.id || a.targetNodeId === node.id));
     const parked = flight && ['parked', 'arrived'].includes(flight.status) && flight.currentNodeId === node.id;
-    return <group key={node.id} position={[point.x, 0, point.z]} rotation={[0, -heading, 0]}>
+    return <group key={node.id} name={`StandSign_${node.label.replace(/[^A-Za-z0-9_]/g, '_')}`} position={[point.x, 0, point.z]} rotation={[0, -heading, 0]}>
       <mesh position={[0, 0.7, 0]} castShadow><cylinderGeometry args={[0.04, 0.065, 1.4, 10]} /><meshStandardMaterial color="#768891" metalness={0.6} /></mesh>
       <mesh position={[0, 1.4, 0]} castShadow><boxGeometry args={[0.6, 0.42, 0.12]} /><meshStandardMaterial color="#17232e" roughness={0.45} /></mesh>
       <Html position={[0, 1.4, 0.07]} transform distanceFactor={1} style={{ pointerEvents: 'none' }}>

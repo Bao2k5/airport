@@ -24,7 +24,7 @@ export default memo(function FodObstacle3D({
   }, [scene]);
 
   return (
-    <group position={position}>
+    <group name="FodObstacle" position={position}>
       {/* 3D Barrier Obstacle centered at ground level */}
       <group rotation={[0, rotationY, 0]} scale={scale}>
         <Center top position={[0, 0, 0]}>

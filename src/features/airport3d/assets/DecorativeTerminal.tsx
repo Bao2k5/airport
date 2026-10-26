@@ -26,7 +26,7 @@ export default function DecorativeTerminal({
       <BoardingConnections detailed={detailed} />
       <group position={[-2.7, 0, 5.1]} scale={0.7}><ServiceVehicle kind={1} /></group>
       {editing && (
-        <mesh position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        <mesh userData={{ noExport: true }} position={[0, 0.15, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[13.5, 14.5, 64]} />
           <meshBasicMaterial color={selected ? '#28d8ff' : '#e6b85c'} side={2} />
         </mesh>

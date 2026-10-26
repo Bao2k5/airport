@@ -33,7 +33,9 @@ function AirportProp({
   showPeople,
   modelsEnabled = true,
   modelDetail = true,
+  exportName,
 }: {
+  exportName?: string;
   onWorkstation?: (role: 'gnd' | 'twr') => void;
   interior?: boolean;
   showPeople?: boolean;
@@ -63,7 +65,7 @@ function AirportProp({
           }}
         />
       )}
-      <group ref={groupRef} position={item.position} rotation={[0, item.rotationY, 0]} scale={item.scale} onClick={click}>
+      <group ref={groupRef} name={exportName} position={item.position} rotation={[0, item.rotationY, 0]} scale={item.scale} onClick={click}>
         {item.kind === 'tower' && <TowerCutaway state={state} graph={graph} onWorkstation={onWorkstation} interior={interior} showPeople={showPeople} />}
         {item.kind === 'mast' && <>
           <mesh position={[0, 3.3, 0]} castShadow><cylinderGeometry args={[0.1, 0.16, 6.6, 8]} /><meshStandardMaterial color="#aab4bb" metalness={0.55} /></mesh>
@@ -87,7 +89,7 @@ function AirportProp({
             <DecorativeTerminal detailed={modelDetail} editing={editing} selected={selected} />
           </Suspense>
         )}
-        {editing && item.kind !== 'terminal' && item.kind !== 'sign' && item.kind !== 'equipment' && <mesh position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
+        {editing && item.kind !== 'terminal' && item.kind !== 'sign' && item.kind !== 'equipment' && <mesh userData={{ noExport: true }} position={[0, 0.12, 0]} rotation={[-Math.PI / 2, 0, 0]}>
           <ringGeometry args={[item.kind === 'tower' ? 1.4 : 0.6, item.kind === 'tower' ? 1.7 : 0.85, 40]} />
           <meshBasicMaterial color={selected ? '#28d8ff' : '#e6b85c'} side={2} />
         </mesh>}
@@ -106,9 +108,20 @@ const MemoAirportProp = memo(AirportProp, (previous, next) =>
   previous.onMove === next.onMove &&
   previous.modelsEnabled === next.modelsEnabled &&
   previous.modelDetail === next.modelDetail &&
+  previous.exportName === next.exportName &&
   previous.graph === next.graph &&
   (previous.item.kind !== 'tower' || previous.state === next.state)
 );
+
+const EXPORT_PREFIX: Record<LayoutObject['kind'], string> = {
+  tower: 'ControlTower',
+  mast: 'LightMast',
+  terminal: 'TerminalZone',
+  sign: 'BannerPlaque',
+  vehicle: 'ServiceVehicle',
+  equipment: 'FodEquipment',
+  hangar: 'Hangar',
+};
 
 const AirportMarkers = memo(function AirportMarkers({ graph }: { graph: AirportGraph }) {
   return <>
@@ -163,6 +176,15 @@ export default function AirportScene({ graph, state, onSelectAircraft, layout, e
     return source.filter(item => item && item.currentNodeId);
   }, [state.aircraft, state.manualFleet, state.scenarioAircraft]);
   const visibleAircraft = aircraft.filter(item => !item.hidden && item.status !== 'departed');
+  // Stable ASCII node names for the GLB export (never derived from user-editable names/ids).
+  const exportNames = useMemo(() => {
+    const counters = new Map<LayoutObject['kind'], number>();
+    return layout.map(item => {
+      const index = (counters.get(item.kind) ?? 0) + 1;
+      counters.set(item.kind, index);
+      return `${EXPORT_PREFIX[item.kind]}_${index}`;
+    });
+  }, [layout]);
 
   return (
     <>
@@ -185,10 +207,11 @@ export default function AirportScene({ graph, state, onSelectAircraft, layout, e
       )}
       {!towerMode && <AirportMarkers graph={graph} />}
       {!towerMode && <StandDisplays graph={graph} state={state} />}
-      {layout.map(item => (
+      {layout.map((item, index) => (
         <MemoAirportProp
           key={item.id}
           item={item}
+          exportName={exportNames[index]}
           editing={editing}
           selected={item.id === selectedLayoutId}
           onSelect={onSelectLayout}
