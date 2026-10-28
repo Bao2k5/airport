@@ -10,7 +10,7 @@ import { SURFACE_SIZE } from './geometry';
 // Dual-layer light rendering:
 // 1. Core (NormalBlending): Sharp, saturated pinpoint center.
 // 2. Halo (AdditiveBlending): Subtle, soft radiant halo that avoids blurring or glaring when viewed from afar.
-export default function LightGlow({ fixtures, state, size, colors: resolvedColors }: { fixtures: Fixture[]; state: SimulationState; size: number; colors?: Map<string, string> }) {
+export default function LightGlow({ fixtures, state, size, colors: resolvedColors, fogPiercing = false }: { fixtures: Fixture[]; state: SimulationState; size: number; colors?: Map<string, string>; fogPiercing?: boolean }) {
   // Sharp, clean LED/halogen core with tight anti-aliased perimeter
   // High-luminance crisp core with solid center
   const coreTexture = useMemo(() => {
@@ -99,6 +99,14 @@ export default function LightGlow({ fixtures, state, size, colors: resolvedColor
   useSafeDispose(coreMaterial);
   useSafeDispose(haloMaterial);
 
+  // Thời tiết xấu (LVC): đèn xuyên sương mù cảnh để FTG luôn đọc được.
+  useLayoutEffect(() => {
+    coreMaterial.fog = !fogPiercing;
+    haloMaterial.fog = !fogPiercing;
+    coreMaterial.needsUpdate = true;
+    haloMaterial.needsUpdate = true;
+  }, [coreMaterial, haloMaterial, fogPiercing]);
+
   useLayoutEffect(() => {
     const positions = geometry.getAttribute('position');
     const colors = geometry.getAttribute('color');
@@ -106,11 +114,11 @@ export default function LightGlow({ fixtures, state, size, colors: resolvedColor
     fixtures.forEach((fixture, index) => {
       const value = resolvedColors?.get(fixture.id) ?? fixtureColor(fixture, state);
       const lit = fixture.kind === 'runway' ||
-                  fixture.kind === 'taxiway' ||
-                  fixture.kind === 'runway_end' ||
-                  fixture.kind === 'runway_centerline' ||
-                  value === AIRPORT_VISUAL.ftgCenterline ||
-                  value === AIRPORT_VISUAL.stopBar;
+        fixture.kind === 'taxiway' ||
+        fixture.kind === 'runway_end' ||
+        fixture.kind === 'runway_centerline' ||
+        value === AIRPORT_VISUAL.ftgCenterline ||
+        value === AIRPORT_VISUAL.stopBar;
       if (lit) {
         positions.setXYZ(index, fixture.point.x, SURFACE_SIZE.elevation + 0.09, fixture.point.z);
         color.set(value);

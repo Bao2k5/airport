@@ -18,6 +18,9 @@ import type { Props, CameraPreset, SceneMode } from '../viewTypes';
 import TowerCutaway from '../TowerCutaway';
 import { toWorld } from '../sceneCoordinates';
 import AirportCameraControls from './AirportCameraControls';
+import WeatherAtmosphere from '../weather/WeatherAtmosphere';
+import RainEffect from '../weather/RainEffect';
+import { getWeatherVisual } from '../weather/weatherParams';
 import TowerCameraControls from './TowerCameraControls';
 
 function AirportProp({
@@ -166,7 +169,11 @@ export default function AirportScene({ graph, state, onSelectAircraft, layout, e
   onCameraPoseChange: (pose: CameraPose) => void;
 }) {
   const night = state.config.timeOfDay === 'night';
-  const lowVisibility = state.config.weather === 'fog' || state.config.weather === 'thunderstorm';
+  const weather = state.config.weather;
+  const weatherVisual = useMemo(() => getWeatherVisual(weather, night), [weather, night]);
+  // Ở chế độ đài KSVKL: không cho mưa rơi vào bên trong cabin.
+  const tower = towerMode ? layout.find(item => item.kind === 'tower') : undefined;
+  const towerExclusion = tower ? { x: tower.position[0], z: tower.position[2], radius: (2.76 + 0.4) * tower.scale, topY: 11.5 * tower.scale } : undefined;
   const aircraft = useMemo(() => {
     const source = state.scenarioAircraft?.length
       ? state.scenarioAircraft as Aircraft[]
@@ -188,16 +195,13 @@ export default function AirportScene({ graph, state, onSelectAircraft, layout, e
 
   return (
     <>
-      <color attach="background" args={[lowVisibility ? '#737c83' : night ? '#081426' : '#a6aaad']} />
-      <fog attach="fog" args={[lowVisibility ? '#899298' : night ? '#101c2c' : '#a6aaad', lowVisibility ? 100 : 130, lowVisibility ? 280 : 290]} />
-      <hemisphereLight args={[night ? '#7893b3' : '#f2f4f6', night ? '#222830' : '#4a4e52', night ? 0.72 : 1.18]} />
-      <ambientLight intensity={night ? 0.48 : 0.38} />
-      <directionalLight position={[-28, 46, 22]} intensity={night ? 0.52 : 2.15} castShadow shadow-mapSize-width={1024} shadow-mapSize-height={1024} shadow-camera-left={-68} shadow-camera-right={105} shadow-camera-top={70} shadow-camera-bottom={-85} shadow-bias={-0.0002} />
+      <WeatherAtmosphere visual={weatherVisual} />
+      {weatherVisual.rain && <RainEffect rain={weatherVisual.rain} exclusion={towerExclusion} />}
       <UnifiedAirportGround graph={graph} layout={layout} />
       {reflections && <SkyEnvironment night={night} />}
       {vehicles && density > 0 && <GroundEquipment graph={graph} state={state} layout={layout} density={density} people={showPeople} />}
       <AirportPavement graph={graph} />
-      <AirportLights graph={graph} state={state} lightScale={lightScale} />
+      <AirportLights graph={graph} state={state} lightScale={lightScale} fogPiercing={weather !== 'clear'} />
       <AirportRestrictions graph={graph} state={state} />
       {/* FOD chỉ hiện khi mô phỏng đã phát hiện và đóng W7A (không hiện ngay từ đầu kịch bản 4) */}
       {state.blockedEdgeIds?.has('E_v3_line_18_p01_v3_line_18_p02') && (

@@ -7,7 +7,7 @@ import { useSafeDispose } from '../hooks/useSafeDispose';
 import LightGlow from './LightGlow';
 import { guidanceColors } from './guidanceColors';
 
-export default function AirportLights({ graph, state, lightScale = 1 }: { graph: AirportGraph; state: SimulationState; lightScale?: number }) {
+export default function AirportLights({ graph, state, lightScale = 1, fogPiercing = false }: { graph: AirportGraph; state: SimulationState; lightScale?: number; fogPiercing?: boolean }) {
   const fixtures = useMemo(() => createLightLayout(graph), [graph]);
   const colors = useMemo(() => guidanceColors(fixtures, graph, state), [fixtures, graph, state]);
   const taxiwayEdgeLights = useMemo(() => fixtures.filter(f => f.kind === 'taxiway'), [fixtures]);
@@ -21,6 +21,11 @@ export default function AirportLights({ graph, state, lightScale = 1 }: { graph:
   const material = useMemo(() => new MeshBasicMaterial({ toneMapped: false }), []);
   useSafeDispose(geometry);
   useSafeDispose(material);
+  // Thời tiết xấu (LVC): đèn sân bay xuyên sương mù cảnh để FTG luôn đọc được.
+  useLayoutEffect(() => {
+    material.fog = !fogPiercing;
+    material.needsUpdate = true;
+  }, [material, fogPiercing]);
   useLayoutEffect(() => {
     if (!mesh.current) return;
     const helper = new Object3D();
@@ -44,16 +49,16 @@ export default function AirportLights({ graph, state, lightScale = 1 }: { graph:
   return <>
     <instancedMesh ref={mesh} name="AirfieldLights" args={[geometry, material, fixtures.length]} frustumCulled={false} />
     {/* 1. Stop Bar Đỏ: Ưu tiên cao nhất, nổi bật và rực rỡ từ Đài KSVKL */}
-    <LightGlow fixtures={stopBarLights} state={state} colors={colors} size={12.5 * lightScale} />
+    <LightGlow fixtures={stopBarLights} state={state} colors={colors} fogPiercing={fogPiercing} size={12.5 * lightScale} />
     {/* 2. Runway End Đỏ (ICAO): 5 bóng đỏ ngang tim đường băng báo hiệu giới hạn dừng tuyệt đối */}
-    <LightGlow fixtures={runwayEndLights} state={state} colors={colors} size={11 * lightScale} />
+    <LightGlow fixtures={runwayEndLights} state={state} colors={colors} fogPiercing={fogPiercing} size={11 * lightScale} />
     {/* 3. Taxiway Centerline FTG Xanh lá: Dải dẫn đường thông minh sắc nét trước mũi tàu */}
-    <LightGlow fixtures={guidanceLights} state={state} colors={colors} size={9.5 * lightScale} />
+    <LightGlow fixtures={guidanceLights} state={state} colors={colors} fogPiercing={fogPiercing} size={9.5 * lightScale} />
     {/* 4. Runway Centerline (ICAO): Trắng dọc thân, đỏ/trắng ở 2 đầu */}
-    <LightGlow fixtures={runwayCenterlineLights} state={state} colors={colors} size={7.2 * lightScale} />
+    <LightGlow fixtures={runwayCenterlineLights} state={state} colors={colors} fogPiercing={fogPiercing} size={7.2 * lightScale} />
     {/* 5. Runway Edge: Trắng và Vàng cảnh báo ở 600m cuối */}
-    <LightGlow fixtures={runwayEdgeLights} state={state} colors={colors} size={6.2 * lightScale} />
+    <LightGlow fixtures={runwayEdgeLights} state={state} colors={colors} fogPiercing={fogPiercing} size={6.2 * lightScale} />
     {/* 6. Taxiway Edge Xanh dương: Dịu mắt định hình mép đường lăn */}
-    <LightGlow fixtures={taxiwayEdgeLights} state={state} colors={colors} size={4.8 * lightScale} />
+    <LightGlow fixtures={taxiwayEdgeLights} state={state} colors={colors} fogPiercing={fogPiercing} size={4.8 * lightScale} />
   </>;
 }
